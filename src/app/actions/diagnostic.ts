@@ -65,12 +65,16 @@ export async function submitDiagnostic(childId: string, attempts: { questionId: 
       return { success: true, aiSummary, topicBreakdown, score, isGuest: true }
     }
 
-    // 4. Authenticated Save (Original Logic)
-    const { data: child } = await supabase
+    const { data: child, error: childError } = await supabase
       .from('children')
       .select('name, xp, level, total_points')
       .eq('id', childId)
-      .single() as any
+      .single()
+
+    if (childError || !child) {
+      console.error('Child not found during diagnostic submission:', childError)
+      return { success: false, error: 'Student profile not found' }
+    }
 
     const prompt = `
       You are an expert 11+ tutor. Analyze the following diagnostic results for a student named ${child?.name || 'the student'}.

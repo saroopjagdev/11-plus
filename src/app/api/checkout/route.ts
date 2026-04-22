@@ -2,10 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  // Use latest stable version or let context decide
-  apiVersion: '2024-12-18.ac' as any,
-})
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -44,11 +41,24 @@ export async function POST(req: Request) {
 
   // 4. Create Checkout Session
   try {
+    // DEV MODE FALLBACK: If no price ID, simulate success
+    if (!process.env.STRIPE_PRO_PRICE_ID && process.env.NODE_ENV === 'development') {
+      console.warn('⚠️ STRIPE_PRO_PRICE_ID is missing. Simulating success in development mode.')
+      
+      // Manually update the profile to pro for the simulation
+      await supabase
+        .from('profiles')
+        .update({ subscription_status: 'pro' })
+        .eq('id', user.id)
+
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard?success=true`, 303)
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
         {
-          price: process.env.STRIPE_PRO_PRICE_ID || 'price_placeholder', // User needs to update this
+          price: process.env.STRIPE_PRO_PRICE_ID || 'price_placeholder',
           quantity: 1,
         },
       ],

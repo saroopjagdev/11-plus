@@ -4,13 +4,15 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import { motion } from 'framer-motion'
 import { BookOpen, Sparkles, AlertCircle, Trophy, Lightbulb } from 'lucide-react'
+import Link from 'next/link'
 
 interface TopicGuideProps {
   title: string
   content: string
+  practiceHref?: string
 }
 
-export function TopicGuide({ title, content }: TopicGuideProps) {
+export function TopicGuide({ title, content, practiceHref }: TopicGuideProps) {
   return (
     <motion.article 
       initial={{ opacity: 0, y: 30 }}
@@ -96,9 +98,12 @@ export function TopicGuide({ title, content }: TopicGuideProps) {
                   <p className="text-sm text-slate-400 font-medium">Put what you just learned into practice.</p>
                </div>
             </div>
-            <button className="px-10 py-5 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200">
+            <Link 
+              href={practiceHref || '/dashboard#hubs'}
+              className="px-10 py-5 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
+            >
                Take Practice Quiz
-            </button>
+            </Link>
          </div>
       </div>
     </motion.article>

@@ -15,6 +15,7 @@ interface DashboardStudentProfileProps {
     level: number
     avatar_url: string | null
     current_streak: number
+    target_exams?: string[] | null
   }
 }
 
@@ -64,6 +65,20 @@ export function DashboardStudentProfile({ child }: DashboardStudentProfileProps)
               </div>
             </div>
           </div>
+
+          {/* Target Exams */}
+          {child.target_exams && child.target_exams.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-6">
+              {child.target_exams.map((exam) => (
+                <span 
+                  key={exam}
+                  className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-black rounded-md border border-indigo-100 uppercase tracking-wider"
+                >
+                  {exam}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* XP Progress Bar */}
           <div className="space-y-2">

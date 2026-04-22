@@ -3,9 +3,7 @@ import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.ac' as any,
-})
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 

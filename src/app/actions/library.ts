@@ -34,7 +34,7 @@ export async function generateTopicGuide(topicSlug: string) {
       topicName,
       content: response.choices[0].message.content || 'Guide content unavailable.'
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('AI Generation Error:', error)
     return {
       success: false,

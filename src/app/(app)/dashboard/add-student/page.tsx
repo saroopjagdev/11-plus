@@ -80,6 +80,28 @@ export default function AddStudentPage() {
               />
             </div>
 
+            <div className="space-y-4">
+              <label className="block text-sm font-bold text-slate-700">
+                Target Exam Boards (Select all that apply)
+              </label>
+              <div className="grid grid-cols-1 gap-3">
+                {['GL Assessment', 'CEM', 'CSSE / Written'].map((board) => (
+                  <label 
+                    key={board} 
+                    className="flex items-center gap-3 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl cursor-pointer hover:border-indigo-200 transition-all has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-500"
+                  >
+                    <input 
+                      type="checkbox" 
+                      name="targetExams" 
+                      value={board} 
+                      className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                    />
+                    <span className="font-bold text-slate-700">{board}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={isPending}

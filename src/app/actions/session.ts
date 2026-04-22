@@ -50,11 +50,16 @@ export async function logPracticeSession({ childId, score, attempts }: SessionRe
 
   // 3. Update Child Stats (Streak & Points)
   // Logic: Only increase streak if they haven't practiced yet today
-  const { data: child } = await supabase
+  const { data: child, error: childError } = await supabase
     .from('children')
     .select('total_points, xp, level, current_streak, last_practice_date')
     .eq('id', childId)
-    .single() as any
+    .single()
+
+  if (childError || !child) {
+    console.error('Child not found during session logging:', childError)
+    return { success: false, error: 'Student profile not found' }
+  }
 
   const today = new Date().toISOString().split('T')[0]
   const lastPractice = child?.last_practice_date

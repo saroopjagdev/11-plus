@@ -22,6 +22,7 @@ create table public.children (
   xp integer default 0,
   level integer default 1,
   avatar_url text,
+  target_exams text[] default '{}',
   last_practice_date date,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
