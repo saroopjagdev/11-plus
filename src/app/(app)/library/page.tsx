@@ -1,8 +1,13 @@
-import React from 'react'
+'use client'
+
+import React, { useState } from 'react'
 import { Book, Search, FileText, ChevronRight, Zap, Target, Brain } from 'lucide-react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function LibraryPage() {
+  const [searchQuery, setSearchQuery] = useState('')
+
   const categories = [
     {
       title: 'Mathematics',
@@ -38,6 +43,14 @@ export default function LibraryPage() {
     }
   ]
 
+  const filteredCategories = categories.map(cat => ({
+    ...cat,
+    topics: cat.topics.filter(topic => 
+      topic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cat.title.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })).filter(cat => cat.topics.length > 0)
+
   return (
     <div className="p-8 lg:p-12 max-w-6xl mx-auto">
       <header className="mb-12">
@@ -51,61 +64,84 @@ export default function LibraryPage() {
         <input 
           type="text" 
           placeholder="Search for a topic (e.g. 'Fractions')" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-white border border-slate-100 rounded-[2rem] py-6 pl-14 pr-8 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all font-medium text-lg shadow-sm"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {categories.map((category, idx) => (
-          <div key={idx} className="space-y-6">
-            <div className="flex items-center gap-3 mb-8">
-              <div className={`${category.color} p-3 rounded-2xl`}>
-                {category.icon}
-              </div>
-              <h2 className="text-2xl font-black text-slate-900">{category.title}</h2>
-            </div>
+        <AnimatePresence mode="popLayout">
+          {filteredCategories.length > 0 ? (
+            filteredCategories.map((category, idx) => (
+              <motion.div 
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                key={category.title} 
+                className="space-y-6"
+              >
+                <div className="flex items-center gap-3 mb-8">
+                  <div className={`${category.color} p-3 rounded-2xl`}>
+                    {category.icon}
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900">{category.title}</h2>
+                </div>
 
-            <div className="space-y-4">
-              {category.topics.map((topic, i) => (
-                <Link 
-                  key={i} 
-                  href={`/library/${topic.name.toLowerCase().replace(/ /g, '-')}`}
-                  className="block p-6 bg-white border border-slate-100 rounded-[2rem] hover:shadow-xl hover:shadow-indigo-50 transition-all group"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-3 py-1 bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-full">
-                      {topic.level}
-                    </span>
-                    <span className="text-slate-300 text-xs font-bold">{topic.readTime} read</span>
-                  </div>
-                  <h4 className="font-bold text-slate-800 text-lg group-hover:text-indigo-600 transition-colors mb-4">{topic.name}</h4>
-                  <div className="flex items-center justify-between text-indigo-600 font-bold text-sm">
-                    <span className="flex items-center gap-2">
-                       <FileText className="h-4 w-4" />
-                       View Notes
-                    </span>
-                    <ChevronRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </Link>
-              ))}
+                <div className="space-y-4">
+                  {category.topics.map((topic, i) => (
+                    <Link 
+                      key={topic.name} 
+                      href={`/library/${topic.name.toLowerCase().replace(/ /g, '-')}`}
+                      className="block p-6 bg-white border border-slate-100 rounded-[2rem] hover:shadow-xl hover:shadow-indigo-50 transition-all group"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="px-3 py-1 bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-full">
+                          {topic.level}
+                        </span>
+                        <span className="text-slate-300 text-xs font-bold">{topic.readTime} read</span>
+                      </div>
+                      <h4 className="font-bold text-slate-800 text-lg group-hover:text-indigo-600 transition-colors mb-4">{topic.name}</h4>
+                      <div className="flex items-center justify-between text-indigo-600 font-bold text-sm">
+                        <span className="flex items-center gap-2">
+                           <FileText className="h-4 w-4" />
+                           View Notes
+                        </span>
+                        <ChevronRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full py-20 text-center">
+               <div className="h-20 w-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Search className="h-10 w-10 text-slate-200" />
+               </div>
+               <h3 className="text-2xl font-bold text-slate-800 mb-2">No results found</h3>
+               <p className="text-slate-400">Try searching for something else, or browse the categories.</p>
             </div>
-          </div>
-        ))}
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Featured Guide placeholder */}
-      <section className="mt-20 bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden">
-         <div className="max-w-xl relative z-10">
-            <h3 className="text-3xl font-black mb-4">Exam Success Handbook</h3>
-            <p className="text-slate-400 mb-8 leading-relaxed">Our comprehensive guide on exam day psychology, time management, and test-taking strategies. A must-read for both parents and students.</p>
-            <button className="px-8 py-4 bg-indigo-600 rounded-2xl font-bold hover:bg-indigo-500 transition-all flex items-center gap-2">
-               Download PDF Guide
-               <Zap className="h-4 w-4 fill-current" />
-            </button>
-         </div>
-         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 opacity-20 blur-[100px] -mr-48 -mt-48" />
-         <Book className="absolute -right-10 -bottom-10 h-64 w-64 text-white/5 opacity-40 rotate-12" />
-      </section>
+      {!searchQuery && (
+        <section className="mt-20 bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden">
+           <div className="max-w-xl relative z-10">
+              <h3 className="text-3xl font-black mb-4">Exam Success Handbook</h3>
+              <p className="text-slate-400 mb-8 leading-relaxed">Our comprehensive guide on exam day psychology, time management, and test-taking strategies. A must-read for both parents and students.</p>
+              <button className="px-8 py-4 bg-indigo-600 rounded-2xl font-bold hover:bg-indigo-500 transition-all flex items-center gap-2">
+                 Download PDF Guide
+                 <Zap className="h-4 w-4 fill-current" />
+              </button>
+           </div>
+           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 opacity-20 blur-[100px] -mr-48 -mt-48" />
+           <Book className="absolute -right-10 -bottom-10 h-64 w-64 text-white/5 opacity-40 rotate-12" />
+        </section>
+      )}
     </div>
   )
 }

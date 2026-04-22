@@ -29,7 +29,14 @@ interface SidebarProps {
   avatarUrl?: string | null
 }
 
-export function Sidebar({ userEmail, subscriptionStatus }: SidebarProps) {
+export function Sidebar({ 
+  userEmail, 
+  subscriptionStatus, 
+  childName, 
+  xp, 
+  level, 
+  avatarUrl 
+}: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
 
@@ -129,7 +136,7 @@ export function Sidebar({ userEmail, subscriptionStatus }: SidebarProps) {
                     <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center text-xl shadow-sm ${
                       AVATAR_COLLECTION.find(a => a.id === avatarUrl)?.bgColor || 'bg-indigo-100'
                     }`}>
-                      {AVATAR_COLLECTION.find(a => a.id === avatarUrl)?.emoji || childName[0]}
+                      {AVATAR_COLLECTION.find(a => a.id === avatarUrl)?.emoji || childName?.[0] || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-slate-800 truncate text-sm">{childName}</p>
