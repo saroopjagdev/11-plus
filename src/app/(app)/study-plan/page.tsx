@@ -19,13 +19,13 @@ export default async function StudyPlanPage() {
   const recommendations = await getStudentRecommendations(supabase, child.id)
 
   const days = [
-    { name: 'Monday', focus: 'Mathematics', task: 'Fractions & Ratios' },
-    { name: 'Tuesday', focus: 'English', task: 'Inference Skills' },
-    { name: 'Wednesday', focus: 'Reasoning', task: 'Logic Patterns' },
-    { name: 'Thursday', focus: 'Mathematics', task: 'Geometry Basics' },
-    { name: 'Friday', focus: 'Mixed', task: 'Full Mock Exam' },
-    { name: 'Saturday', focus: 'Review', task: 'Weak Point Focus' },
-    { name: 'Sunday', focus: 'Rest', task: 'Mindset & Prep' },
+    { name: 'Monday', focus: 'Mathematics', task: 'Fractions & Ratios', href: '/practice/topic/Fractions' },
+    { name: 'Tuesday', focus: 'English', task: 'Inference Skills', href: '/practice/topic/Inference' },
+    { name: 'Wednesday', focus: 'Reasoning', task: 'Logic Patterns', href: '/practice/topic/Logic' },
+    { name: 'Thursday', focus: 'Mathematics', task: 'Geometry Basics', href: '/practice/topic/Geometry' },
+    { name: 'Friday', focus: 'Mixed', task: 'Full Mock Exam', href: '/practice/mock/Maths' },
+    { name: 'Saturday', focus: 'Review', task: 'Weak Point Focus', href: '/practice/drill/Mixed' },
+    { name: 'Sunday', focus: 'Rest', task: 'Mindset & Prep', href: '/library' },
   ]
 
   const todayIndex = new Date().getDay() - 1 // 0-indexed Mon-Sun
@@ -57,7 +57,7 @@ export default async function StudyPlanPage() {
                 
                 <div className="flex flex-wrap gap-4">
                    <Link 
-                     href={recommendations[0]?.action.href || '/dashboard'}
+                     href={currentDay.href}
                      className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
                    >
                      Start Practice
@@ -83,18 +83,23 @@ export default async function StudyPlanPage() {
              <h3 className="text-xl font-bold text-slate-900 mb-8">Weekly Schedule</h3>
              <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
                 {days.map((day, i) => (
-                  <div 
+                  <Link 
                     key={day.name} 
-                    className={`p-4 rounded-2xl border transition-all ${i === todayIndex ? 'bg-indigo-50 border-indigo-200 ring-2 ring-indigo-500/10' : 'bg-slate-50 border-slate-100'}`}
+                    href={day.href}
+                    className={`p-4 rounded-2xl border transition-all hover:scale-105 active:scale-95 group ${i === todayIndex ? 'bg-indigo-50 border-indigo-200 ring-2 ring-indigo-500/10' : 'bg-slate-50 border-slate-100'}`}
                   >
                     <p className={`text-[10px] font-black uppercase mb-3 ${i === todayIndex ? 'text-indigo-600' : 'text-slate-400'}`}>{day.name.slice(0, 3)}</p>
                     <p className={`text-sm font-bold truncate ${i === todayIndex ? 'text-slate-900' : 'text-slate-500'}`}>{day.focus}</p>
-                    {i < todayIndex && (
+                    {i < todayIndex ? (
                        <div className="mt-4 text-emerald-500">
                           <CheckCircle2 className="h-5 w-5" />
                        </div>
+                    ) : (
+                       <div className="mt-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ChevronRight className="h-4 w-4" />
+                       </div>
                     )}
-                  </div>
+                  </Link>
                 ))}
              </div>
           </section>
