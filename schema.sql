@@ -169,39 +169,6 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- Rewards table for Phase 4
-create table public.rewards (
-  id uuid default gen_random_uuid() primary key,
-  child_id uuid references public.children(id) on delete cascade not null,
-  description text not null,
-  target_level integer,
-  target_points integer,
-  is_claimed boolean default false,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- RLS for rewards
-alter table public.rewards enable row level security;
-
-create policy "Users can view rewards for their children"
-  on public.rewards for select
-  using (
-    exists (
-      select 1 from public.children
-      where children.id = rewards.child_id
-      and children.parent_id = auth.uid()
-    )
-  );
-
-create policy "Users can manage rewards for their children"
-  on public.rewards for all
-  using (
-    exists (
-      select 1 from public.children
-      where children.id = rewards.child_id
-      and children.parent_id = auth.uid()
-    )
-  );
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
