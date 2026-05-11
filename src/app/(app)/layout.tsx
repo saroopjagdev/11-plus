@@ -20,7 +20,7 @@ export default async function AppLayout({
   // 2. Fetch profile for subscription status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status')
+    .select('subscription_status, role')
     .eq('id', user.id)
     .single()
 
