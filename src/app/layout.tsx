@@ -8,8 +8,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Ace11+ | AI-Powered 11+ Preparation",
-  description: "Master the 11+ with personalized AI explanations, diagnostic tests, and interactive practice.",
+  title: "Ace 11+ | The AI-Powered 11+ Tutor for Top Grammar Schools",
+  description: "Personalized 11+ preparation for GL, CEM, and ISEB exams. Instant AI tutoring, full mock exams, and real-time performance tracking to help your child secure their place.",
+  keywords: ["11 plus", "grammar school exam", "GL Assessment", "CEM 11+", "Eleven Plus tutor", "AI education"],
 };
 
 export default function RootLayout({

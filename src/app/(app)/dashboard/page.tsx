@@ -5,43 +5,19 @@ import { ClaimResultsPrompt } from '@/components/ClaimResultsPrompt'
 import { MasteryBar } from '@/components/MasteryBar'
 import { DashboardTips } from '@/components/DashboardTips'
 import { DashboardStudentProfile } from '@/components/DashboardStudentProfile'
+import { GoalCountdown } from '@/components/GoalCountdown'
+import { DashboardHubCard } from '@/components/DashboardHubCard'
+import { DailyMission } from '@/components/DailyMission'
+import { ExamRoadmap } from '@/components/ExamRoadmap'
+import { DashboardOnboardingTrigger } from '@/components/onboarding/DashboardOnboardingTrigger'
 import { getStudentRecommendations } from '@/lib/recommendations'
-import { Zap, Target, Star, ArrowUpRight, BookOpen, Brain, BarChart3, Lock, ChevronRight } from 'lucide-react'
+import { Zap, Target, Star, ArrowUpRight, BookOpen, Brain, BarChart3, Lock, ChevronRight, Clock } from 'lucide-react'
+import { CURRICULUM_LADDER, MASTERY_THRESHOLD, MIN_QUESTIONS_FOR_MASTERY } from '@/lib/constants/curriculum'
+import { cn } from '@/lib/utils'
 
-function HubCard({ title, color, icon, items, isPro }: { title: string, color: string, icon: React.ReactNode, items: any[], isPro: boolean }) {
-  const colors: Record<string, string> = {
-    indigo: 'bg-indigo-50 border-indigo-100 text-indigo-900',
-    violet: 'bg-violet-50 border-violet-100 text-violet-900',
-    amber: 'bg-amber-50 border-amber-100 text-amber-900'
-  }
 
-  return (
-    <div className={`p-6 rounded-[2rem] border ${colors[color]} space-y-4 shadow-sm`}>
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-white rounded-xl shadow-sm">
-          {icon}
-        </div>
-        <h3 className="font-bold text-lg">{title}</h3>
-      </div>
-      
-      <div className="space-y-2">
-        {items.map((item, i) => (
-          <Link 
-            key={i} 
-            href={item.href}
-            className="flex items-center justify-between p-3 bg-white/50 hover:bg-white rounded-xl text-sm font-bold transition-all group"
-          >
-            <div className="flex items-center gap-2">
-              {item.label}
-              {item.pro && !isPro && <Lock className="h-3 w-3 text-slate-400" />}
-            </div>
-            <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
+
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -66,9 +42,11 @@ export default async function DashboardPage() {
 
   const childId = children?.[0]?.id
 
-  const { data: mastery } = childId 
+  const { data: masteryData } = childId 
     ? await supabase.from('topic_mastery').select('*').eq('child_id', childId)
     : { data: [] }
+  
+  const mastery = masteryData || []
 
   const { data: diagnostic } = childId
     ? await supabase.from('diagnostic_results').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(1).maybeSingle()
@@ -76,10 +54,39 @@ export default async function DashboardPage() {
 
   const recommendations = childId ? await getStudentRecommendations(supabase, childId) : []
 
+  // 3. Check for Mission Completion (3+ sessions today)
+  const today = new Date().toISOString().split('T')[0]
+  const { data: todayMastery } = childId
+    ? await supabase
+        .from('topic_mastery')
+        .select('topic')
+        .eq('child_id', childId)
+        .gte('last_updated', today)
+    : { data: [] }
+
+  const completedTopics = (todayMastery?.map(m => m.topic).filter(Boolean) || []) as string[]
+  const missionsComplete = recommendations.length > 0 && recommendations.every(rec => completedTopics.includes(rec.topic))
+
+  // 4. Calculate Overall Stats
+  const TOTAL_TOPICS = 17 // Based on run-batch.js curriculum
+  const overallAccuracy = (mastery?.reduce((acc, m) => acc + m.accuracy, 0) || 0) / TOTAL_TOPICS
+
+  const daysRemaining = children?.[0]?.exam_date 
+    ? Math.max(0, Math.ceil((new Date(children[0].exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : null
+
   return (
     <div className="min-h-screen bg-slate-50">
       
       {childId && <ClaimResultsPrompt childId={childId} />}
+      
+      {children?.[0] && (
+        <DashboardOnboardingTrigger 
+          childId={children[0].id}
+          childName={children[0].name}
+          hasCompletedOnboarding={children[0].has_completed_onboarding}
+        />
+      )}
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -97,71 +104,103 @@ export default async function DashboardPage() {
               )}
             </header>
 
-            {/* AI Recommendations */}
-            {recommendations.length > 0 && (
-              <section className="bg-indigo-600 rounded-[2.5rem] p-8 text-white relative overflow-hidden group">
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 text-indigo-200 font-black text-[10px] uppercase tracking-widest mb-6">
-                    <Zap className="h-3 w-3 fill-current" />
-                    Recommended Next Steps
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {recommendations.map((rec, i) => (
-                      <Link 
-                        key={i} 
-                        href={rec.action.href}
-                        className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 p-5 rounded-3xl transition-all flex items-center justify-between group/rec"
-                      >
-                        <div>
-                           <p className="text-indigo-200 text-[10px] font-black uppercase mb-1">{rec.type === 'weakness' ? 'Focus Area' : 'Growth Area'}</p>
-                           <p className="font-bold text-lg leading-tight">{rec.topic}</p>
-                        </div>
-                        <div className="h-10 w-10 bg-white/10 rounded-full flex items-center justify-center group-hover/rec:bg-white/100 group-hover/rec:text-indigo-600 transition-all">
-                           <ArrowUpRight className="h-5 w-5" />
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-                {/* Decorative */}
-                <div className="absolute -right-20 -top-20 h-64 w-64 bg-indigo-400/20 rounded-full blur-[80px]" />
-              </section>
-            )}
+            {/* Today's Mission & Roadmap */}
+            <div className="space-y-6">
+               {recommendations.length > 0 && (
+                 <div className="space-y-4">
+                   <div className="flex items-center justify-between px-2">
+                      <div className="flex items-center gap-2">
+                         <Clock className="h-4 w-4 text-slate-400" />
+                         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Daily Goal: 30 Mins</span>
+                      </div>
+                      <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md uppercase">
+                         {missionsComplete ? "Target Reached! ✨" : `${Math.min(100, Math.round((completedTopics.length / (recommendations.length || 3)) * 100))}% toward goal`}
+                      </span>
+                   </div>
+                   <DailyMission 
+                     recommendations={recommendations} 
+                     childName={children?.[0]?.name || 'Student'} 
+                     isComplete={missionsComplete}
+                     completedTopics={completedTopics}
+                   />
+                 </div>
+               )}
+
+               <ExamRoadmap 
+                 overallAccuracy={overallAccuracy}
+                 daysRemaining={daysRemaining}
+                 examDate={children?.[0]?.exam_date}
+               />
+            </div>
 
             {/* Learning Hubs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <HubCard 
+              <DashboardHubCard 
                 title="Mathematics" 
                 color="indigo" 
-                icon={<BookOpen className="h-6 w-6 text-indigo-600" />}
+                icon={<Target className="h-6 w-6 text-indigo-600" />}
                 items={[
-                  { label: 'Full Mock Test', href: '/practice/mock/Maths', pro: true },
-                  { label: 'Daily Drill (Mixed)', href: '/practice/drill/Maths' },
-                  { label: 'Fractions Master', href: '/practice/topic/Fractions' },
-                  { label: 'Geometry Basics', href: '/practice/topic/Geometry' },
+                  { label: 'Full Mock Test', href: '/practice/mock/Maths', pro: true, locked: false, mastered: true },
+                  { label: 'Arithmetic hub', href: '/practice/topic/Arithmetic', locked: false, mastered: true },
+                  ...CURRICULUM_LADDER
+                    .filter(l => l.subject === 'Maths' && l.topic !== 'Arithmetic')
+                    .map(l => {
+                      const prereq = mastery.find(m => m.topic === l.prerequisite)
+                      const isMastered = prereq && prereq.accuracy >= MASTERY_THRESHOLD && prereq.questions_answered >= MIN_QUESTIONS_FOR_MASTERY
+                      return {
+                        label: `${l.topic} topic`,
+                        href: `/practice/topic/${l.topic}`,
+                        locked: !!l.prerequisite,
+                        mastered: !!isMastered,
+                        prerequisite: l.prerequisite
+                      }
+                    })
                 ]}
                 isPro={profile?.subscription_status === 'pro'}
               />
-              <HubCard 
+              <DashboardHubCard 
                 title="English" 
                 color="violet" 
                 icon={<BookOpen className="h-6 w-6 text-violet-600" />}
                 items={[
-                  { label: 'Full Mock Test', href: '/practice/mock/English', pro: true },
-                  { label: 'Vocabulary Drill', href: '/practice/drill/English' },
-                  { label: 'Synonyms topic', href: '/practice/topic/Synonyms' },
-                  { label: 'Spelling practice', href: '/practice/topic/Spelling' },
+                  { label: 'Full Mock Test', href: '/practice/mock/English', pro: true, locked: false, mastered: true },
+                  { label: 'Vocabulary Drill', href: '/practice/drill/English', locked: false, mastered: true },
+                  ...CURRICULUM_LADDER
+                    .filter(l => l.subject === 'English')
+                    .map(l => {
+                      const prereq = l.prerequisite ? mastery.find(m => m.topic === l.prerequisite) : null
+                      const isMastered = !l.prerequisite || (prereq && prereq.accuracy >= MASTERY_THRESHOLD && prereq.questions_answered >= MIN_QUESTIONS_FOR_MASTERY)
+                      return {
+                        label: `${l.topic} topic`,
+                        href: `/practice/topic/${l.topic}`,
+                        locked: !!l.prerequisite,
+                        mastered: !!isMastered,
+                        prerequisite: l.prerequisite
+                      }
+                    })
                 ]}
                 isPro={profile?.subscription_status === 'pro'}
               />
-              <HubCard 
+              <DashboardHubCard 
                 title="Reasoning" 
                 color="amber" 
                 icon={<Brain className="h-6 w-6 text-amber-600" />}
                 items={[
-                  { label: 'Verbal Mock', href: '/practice/mock/Verbal Reasoning', pro: true },
-                  { label: 'Logic Drills', href: '/practice/drill/Verbal Reasoning' },
+                  { label: 'Verbal Mock', href: '/practice/mock/Verbal Reasoning', pro: true, locked: false, mastered: true },
+                  { label: 'Logic Drills', href: '/practice/drill/Verbal Reasoning', locked: false, mastered: true },
+                  ...CURRICULUM_LADDER
+                    .filter(l => l.subject === 'Verbal Reasoning')
+                    .map(l => {
+                      const prereq = l.prerequisite ? mastery.find(m => m.topic === l.prerequisite) : null
+                      const isMastered = !l.prerequisite || (prereq && prereq.accuracy >= MASTERY_THRESHOLD && prereq.questions_answered >= MIN_QUESTIONS_FOR_MASTERY)
+                      return {
+                        label: `${l.topic} topic`,
+                        href: `/practice/topic/${l.topic}`,
+                        locked: !!l.prerequisite,
+                        mastered: !!isMastered,
+                        prerequisite: l.prerequisite
+                      }
+                    })
                 ]}
                 isPro={profile?.subscription_status === 'pro'}
               />
@@ -215,6 +254,13 @@ export default async function DashboardPage() {
 
           {/* Right Sidebar Section (Secondary Stats) */}
           <div className="space-y-8">
+             {children?.[0] && (
+               <GoalCountdown 
+                 examDate={children?.[0]?.exam_date}
+                 childName={children?.[0]?.name || 'Student'} 
+               />
+             )}
+
              <DashboardTips />
 
              <section className="space-y-4">

@@ -28,8 +28,26 @@ export default async function StudyPlanPage() {
     { name: 'Sunday', focus: 'Rest', task: 'Mindset & Prep', href: '/library' },
   ]
 
-  const todayIndex = new Date().getDay() - 1 // 0-indexed Mon-Sun
-  const currentDay = days[todayIndex >= 0 ? todayIndex : 6]
+  // 3. Fetch Weekly Activity
+  const startOfWeek = new Date()
+  startOfWeek.setDate(startOfWeek.getDate() - (startOfWeek.getDay() === 0 ? 6 : startOfWeek.getDay() - 1))
+  startOfWeek.setHours(0, 0, 0, 0)
+  
+  const { data: weeklySessions } = await supabase
+    .from('sessions')
+    .select('completed_at')
+    .eq('child_id', child.id)
+    .gte('completed_at', startOfWeek.toISOString())
+
+  const completedDays = new Set(
+    weeklySessions?.map(s => {
+      const d = new Date(s.completed_at)
+      return d.getDay() === 0 ? 6 : d.getDay() - 1
+    }) || []
+  )
+
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1 // 0-indexed Mon-Sun
+  const currentDay = days[todayIndex]
 
   return (
     <div className="p-8 lg:p-12 max-w-6xl mx-auto">
@@ -90,7 +108,7 @@ export default async function StudyPlanPage() {
                   >
                     <p className={`text-[10px] font-black uppercase mb-3 ${i === todayIndex ? 'text-indigo-600' : 'text-slate-400'}`}>{day.name.slice(0, 3)}</p>
                     <p className={`text-sm font-bold truncate ${i === todayIndex ? 'text-slate-900' : 'text-slate-500'}`}>{day.focus}</p>
-                    {i < todayIndex ? (
+                    {completedDays.has(i) ? (
                        <div className="mt-4 text-emerald-500">
                           <CheckCircle2 className="h-5 w-5" />
                        </div>

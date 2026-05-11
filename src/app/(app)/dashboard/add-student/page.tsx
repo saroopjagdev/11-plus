@@ -34,13 +34,13 @@ export default function AddStudentPage() {
           Back to Dashboard
         </Link>
 
-        <div className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-indigo-100/50 border border-indigo-50">
-          <div className="mb-10 text-center">
-            <div className="h-16 w-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-lg shadow-indigo-100">
-              <UserPlus className="h-8 w-8" />
+        <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-indigo-100/50 border border-indigo-50">
+          <div className="mb-6 text-center">
+            <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-indigo-100">
+              <UserPlus className="h-6 w-6" />
             </div>
-            <h1 className="text-3xl font-black text-slate-900 mb-2">Add a Student</h1>
-            <p className="text-slate-500">Register your child to start practicing.</p>
+            <h1 className="text-2xl font-black text-slate-900 mb-1">Add a Student</h1>
+            <p className="text-slate-500 text-sm">Register your child to start practicing.</p>
           </div>
 
           {error && (
@@ -49,7 +49,7 @@ export default function AddStudentPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-bold text-slate-700 mb-2">
                 Child's Name
@@ -88,7 +88,7 @@ export default function AddStudentPage() {
                 {['GL Assessment', 'CEM', 'CSSE / Written'].map((board) => (
                   <label 
                     key={board} 
-                    className="flex items-center gap-3 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl cursor-pointer hover:border-indigo-200 transition-all has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-500"
+                    className="flex items-center gap-3 p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl cursor-pointer hover:border-indigo-200 transition-all has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-500"
                   >
                     <input 
                       type="checkbox" 

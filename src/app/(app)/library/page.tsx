@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Book, Zap, Target, Brain } from 'lucide-react'
 import { LibrarySearch } from '@/components/LibrarySearch'
+import Link from 'next/link'
 
 export default async function LibraryPage() {
   const supabase = await createClient()
@@ -66,10 +67,10 @@ export default async function LibraryPage() {
          <div className="max-w-xl relative z-10">
             <h3 className="text-3xl font-black mb-4">Exam Success Handbook</h3>
             <p className="text-slate-400 mb-8 leading-relaxed">Our comprehensive guide on exam day psychology, time management, and test-taking strategies. A must-read for both parents and students.</p>
-            <button className="px-8 py-4 bg-indigo-600 rounded-2xl font-bold hover:bg-indigo-500 transition-all flex items-center gap-2">
-               Download PDF Guide
+            <Link href="/library/handbook" className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 rounded-2xl font-bold hover:bg-indigo-500 transition-all">
+               Read Success Handbook
                <Zap className="h-4 w-4 fill-current" />
-            </button>
+            </Link>
          </div>
          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 opacity-20 blur-[100px] -mr-48 -mt-48" />
          <Book className="absolute -right-10 -bottom-10 h-64 w-64 text-white/5 opacity-40 rotate-12" />

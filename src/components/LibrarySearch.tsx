@@ -39,13 +39,13 @@ export function LibrarySearch({ categories, targetExams }: LibrarySearchProps) {
     <div className="space-y-12">
       {/* Search Bar */}
       <div className="relative mb-16">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600" />
         <input 
           type="text" 
           placeholder="Search for a topic (e.g. 'Fractions')" 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-white border border-slate-100 rounded-[2rem] py-6 pl-14 pr-8 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all font-medium text-lg shadow-sm"
+          className="w-full bg-white border border-slate-100 rounded-[2rem] py-6 pl-14 pr-8 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all font-medium text-lg shadow-sm text-slate-900 placeholder:text-slate-500"
         />
       </div>
 
@@ -77,7 +77,7 @@ export function LibrarySearch({ categories, targetExams }: LibrarySearchProps) {
                     return (
                       <Link 
                         key={topic.name} 
-                        href={`/library/${topic.name.toLowerCase().replace(/ /g, '-')}`}
+                        href={`/library/topic/${encodeURIComponent(topic.name)}`}
                         className="block p-6 bg-white border border-slate-100 rounded-[2rem] hover:shadow-xl hover:shadow-indigo-50 transition-all group relative overflow-hidden"
                       >
                         {isTargeted && (
@@ -87,19 +87,16 @@ export function LibrarySearch({ categories, targetExams }: LibrarySearchProps) {
                           </div>
                         )}
                         
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="px-3 py-1 bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-full">
-                            {topic.level}
-                          </span>
-                          <span className="text-slate-300 text-xs font-bold">{topic.readTime} read</span>
+                        <div>
+                          <h4 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{topic.name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{topic.level}</span>
+                            <span className="h-1 w-1 bg-slate-200 rounded-full" />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{topic.readTime}</span>
+                          </div>
                         </div>
-                        <h4 className="font-bold text-slate-800 text-lg group-hover:text-indigo-600 transition-colors mb-4">{topic.name}</h4>
-                        <div className="flex items-center justify-between text-indigo-600 font-bold text-sm">
-                          <span className="flex items-center gap-2">
-                             <FileText className="h-4 w-4" />
-                             View Notes
-                          </span>
-                          <ChevronRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+                        <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                          <ChevronRight className="h-4 w-4" />
                         </div>
                       </Link>
                     )

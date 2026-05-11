@@ -36,35 +36,35 @@ export default async function PricingPage() {
             <h3 className="text-xl font-bold text-slate-900 mb-2">Standard</h3>
             <p className="text-slate-500 text-sm">Perfect for baseline diagnostics.</p>
           </div>
-          
+
           <div className="mb-8">
             <span className="text-5xl font-black text-slate-900">Free</span>
             <span className="text-slate-400 font-bold ml-2">/ month</span>
           </div>
 
           <div className="space-y-4 mb-10">
-             <FeatureItem label="1 Full Diagnostic Baseline" />
-             <FeatureItem label="5 Daily Practice Questions" />
-             <FeatureItem label="Basic Topic Mastery Stats" />
-             <FeatureItem label="Single Student Profile" />
-             <FeatureItem label="Limited AI Explanations" disabled />
-             <FeatureItem label="Full Mock Exams" disabled />
+            <FeatureItem label="1 Full Diagnostic Baseline" />
+            <FeatureItem label="5 Daily Practice Questions" />
+            <FeatureItem label="Basic Topic Mastery Stats" />
+            <FeatureItem label="Single Student Profile" />
+            <FeatureItem label="Limited AI Explanations" disabled />
+            <FeatureItem label="Full Mock Exams" disabled />
           </div>
 
-          <button 
-             disabled 
-             className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold transition-all cursor-not-allowed"
+          <button
+            disabled
+            className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold transition-all cursor-not-allowed"
           >
-             Current Plan
+            Current Plan
           </button>
         </div>
 
         {/* Pro Plan */}
         <div className="bg-slate-900 p-10 rounded-[2.5rem] border-4 border-indigo-500 shadow-2xl shadow-indigo-200 relative overflow-hidden transform scale-105 z-10">
           <div className="absolute top-0 right-0 p-4">
-             <div className="bg-indigo-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Most Popular</div>
+            <div className="bg-indigo-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Most Popular</div>
           </div>
-          
+
           <div className="mb-8 relative z-10">
             <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
               Ace11+ Pro
@@ -72,49 +72,49 @@ export default async function PricingPage() {
             </h3>
             <p className="text-slate-400 text-sm">Everything needed for competitive success.</p>
           </div>
-          
+
           <div className="mb-8 relative z-10">
-            <span className="text-5xl font-black text-white">£14.99</span>
+            <span className="text-5xl font-black text-white">£19.99</span>
             <span className="text-slate-400 font-bold ml-2">/ month</span>
           </div>
 
           <div className="space-y-4 mb-10 relative z-10">
-             <FeatureItem label="Unlimited Diagnostic Retakes" invert />
-             <FeatureItem label="Unlimited Daily Drills" invert />
-             <FeatureItem label="Access to all Full Mocks" invert />
-             <FeatureItem label="Unlimited AI Tutor Explanations" invert />
-             <FeatureItem label="Advanced Performance Analytics" invert />
-             <FeatureItem label="Priority Topic Recommendations" invert />
+            <FeatureItem label="Unlimited Diagnostic Retakes" invert />
+            <FeatureItem label="Unlimited Daily Drills" invert />
+            <FeatureItem label="Access to all Full Mocks" invert />
+            <FeatureItem label="Unlimited AI Tutor Explanations" invert />
+            <FeatureItem label="Advanced Performance Analytics" invert />
+            <FeatureItem label="Priority Topic Recommendations" invert />
           </div>
 
           {isPro ? (
             <button className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
-               Active Subscription
-               <ShieldCheck className="h-5 w-5" />
+              Active Subscription
+              <ShieldCheck className="h-5 w-5" />
             </button>
           ) : (
             <form action="/api/checkout" method="POST">
-               <button 
-                 type="submit"
-                 className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 active:scale-95"
-               >
-                  Upgrade to Pro
-                  <Zap className="h-5 w-5 fill-current" />
-               </button>
+              <button
+                type="submit"
+                className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 active:scale-95"
+              >
+                Upgrade to Pro
+                <Zap className="h-5 w-5 fill-current" />
+              </button>
             </form>
           )}
-          
+
           <div className="absolute -right-20 -bottom-20 h-64 w-64 bg-indigo-500/20 rounded-full blur-[80px]" />
         </div>
       </div>
 
       <div className="mt-16 text-center">
-         <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-8">Trusted by parents for</p>
-         <div className="flex flex-wrap justify-center gap-12 opacity-30 grayscale pointer-events-none">
-            <span className="text-lg font-black">GL ASSESSMENT</span>
-            <span className="text-lg font-black">CEM EXAM</span>
-            <span className="text-lg font-black">ISEB CURRICULUM</span>
-         </div>
+        <p className="text-slate-600 text-xs font-bold uppercase tracking-[0.2em] mb-8">Trusted by parents for</p>
+        <div className="flex flex-wrap justify-center gap-12 pointer-events-none">
+          <span className="text-lg font-black text-slate-800">GL ASSESSMENT</span>
+          <span className="text-lg font-black text-slate-800">CEM EXAM</span>
+          <span className="text-lg font-black text-slate-800">ISEB CURRICULUM</span>
+        </div>
       </div>
     </div>
   )

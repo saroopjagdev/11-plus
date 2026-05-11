@@ -28,7 +28,7 @@ export function CelebrationModal({ isOpen, type, level, streak, onClose }: Celeb
             onClick={onClose}
             className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
           />
-          
+
           <Confetti
             width={width}
             height={height}
@@ -65,8 +65,8 @@ export function CelebrationModal({ isOpen, type, level, streak, onClose }: Celeb
 
               <div className="bg-slate-50 p-6 rounded-2xl mb-8 border border-slate-100">
                 <p className="text-slate-500 font-medium leading-relaxed">
-                  {type === 'level-up' 
-                    ? "Your consistency is paying off! You've unlocked even more challenges on your 11+ journey." 
+                  {type === 'level-up'
+                    ? "Your consistency is paying off! You've unlocked even more challenges on your 11+ journey."
                     : "You're building an incredible learning habit. Keep showing up every day to reach the top!"}
                 </p>
               </div>

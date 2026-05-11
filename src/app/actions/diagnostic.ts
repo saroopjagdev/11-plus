@@ -16,7 +16,7 @@ interface TopicResult {
   total: number
 }
 
-export async function submitDiagnostic(childId: string, attempts: { questionId: string; isCorrect: boolean; topic: string; subject: string }[]) {
+export async function submitDiagnostic(childId: string | null, attempts: { questionId: string; isCorrect: boolean; topic: string; subject: string }[]) {
   const supabase = await createClient()
 
   try {
@@ -42,7 +42,8 @@ export async function submitDiagnostic(childId: string, attempts: { questionId: 
     const topicBreakdown = Object.values(topics).map(t => ({
       topic: t.topic,
       subject: t.subject,
-      accuracy: Math.round((t.correct / t.total) * 100)
+      accuracy: Math.round((t.correct / t.total) * 100),
+      questions_answered: t.total
     }))
 
     // 3. Handle Guest Mode (No DB Save)
@@ -113,6 +114,7 @@ export async function submitDiagnostic(childId: string, attempts: { questionId: 
         subject: topic.subject,
         topic: topic.topic,
         accuracy: topic.accuracy,
+        questions_answered: topic.questions_answered,
         last_updated: new Date().toISOString()
       }, { onConflict: 'child_id,topic' })
     }
@@ -178,6 +180,7 @@ export async function claimGuestDiagnostic(childId: string, data: { score: numbe
       subject: topic.subject,
       topic: topic.topic,
       accuracy: topic.accuracy,
+      questions_answered: topic.questions_answered || 0,
       last_updated: new Date().toISOString()
     }, { onConflict: 'child_id,topic' })
   }

@@ -1,75 +1,45 @@
+import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-
-  // 1. Get User
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // 2. Fetch Profile to get stripe_customer_id if exists
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('stripe_customer_id')
-    .eq('id', user.id)
-    .single()
-
-  let customerId = profile?.stripe_customer_id
-
-  // 3. Create Stripe Customer if not exists
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      metadata: {
-        supabaseUUID: user.id,
-      },
-    })
-    customerId = customer.id
-    
-    // Save to profile
-    await supabase
-      .from('profiles')
-      .update({ stripe_customer_id: customerId })
-      .eq('id', user.id)
-  }
-
-  // 4. Create Checkout Session
   try {
-    // DEV MODE FALLBACK: If no price ID, simulate success
-    if (!process.env.STRIPE_PRO_PRICE_ID && process.env.NODE_ENV === 'development') {
-      console.warn('⚠️ STRIPE_PRO_PRICE_ID is missing. Simulating success in development mode.')
-      
-      // Manually update the profile to pro for the simulation
-      await supabase
-        .from('profiles')
-        .update({ subscription_status: 'pro' })
-        .eq('id', user.id)
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard?success=true`, 303)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const priceId = process.env.NEXT_PUBLIC_PRO_PRICE_ID
+    if (!priceId) {
+       return NextResponse.json({ error: 'Price ID not configured' }, { status: 500 })
     }
 
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
+      payment_method_types: ['card'],
       line_items: [
         {
-          price: process.env.STRIPE_PRO_PRICE_ID || 'price_placeholder',
+          price: priceId,
           quantity: 1,
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/pricing?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing`,
+      customer_email: user.email,
+      metadata: {
+        userId: user.id,
+      },
     })
 
-    return NextResponse.redirect(session.url!, 303)
-  } catch (err: any) {
-    console.error('Stripe Error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    if (!session.url) {
+        return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 })
+    }
+
+    return NextResponse.redirect(session.url, 303)
+  } catch (error: any) {
+    console.error('Stripe Checkout Error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

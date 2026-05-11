@@ -17,6 +17,9 @@ create table public.children (
   parent_id uuid references public.profiles(id) on delete cascade not null,
   name text not null,
   age integer,
+  target_schools jsonb default '[]',
+  exam_date date,
+  has_completed_onboarding boolean default false,
   current_streak integer default 0,
   total_points integer default 0,
   xp integer default 0,
@@ -27,15 +30,27 @@ create table public.children (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- PASSAGES: Long texts for English Comprehension
+create table public.passages (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null,
+  content text not null,
+  author text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- QUESTIONS: Practice content
 create table public.questions (
   id uuid primary key default uuid_generate_v4(),
-  subject text not null check (subject in ('Maths', 'English', 'Verbal Reasoning')),
+  subject text not null check (subject in ('Maths', 'English', 'Verbal Reasoning', 'Non-Verbal Reasoning')),
   topic text not null,
   difficulty text check (difficulty in ('Easy', 'Medium', 'Hard')),
+  type text check (type in ('mcq', 'written')) default 'mcq',
   question_text text not null,
-  options jsonb not null, -- Array of strings
+  options jsonb, -- Array of strings (optional for written questions)
   correct_answer text not null,
+  passage_id uuid references public.passages(id) on delete set null,
+  image_url text, -- For NVR questions
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -53,7 +68,7 @@ create table public.explanations (
 create table public.sessions (
   id uuid primary key default uuid_generate_v4(),
   child_id uuid references public.children(id) on delete cascade not null,
-  type text check (type in ('practice', 'diagnostic')) default 'practice',
+  type text check (type in ('practice', 'diagnostic', 'mock')) default 'practice',
   started_at timestamp with time zone default timezone('utc'::text, now()) not null,
   completed_at timestamp with time zone,
   score integer default 0
@@ -93,17 +108,29 @@ create table public.diagnostic_results (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- WEEKLY REPORTS: AI-generated summaries for parents
+create table public.weekly_reports (
+  id uuid primary key default uuid_generate_v4(),
+  child_id uuid references public.children(id) on delete cascade not null,
+  week_start_date date not null,
+  ai_summary text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique (child_id, week_start_date)
+);
+
 -- ROW LEVEL SECURITY (RLS)
 
 -- Enable RLS on all tables
 alter table public.profiles enable row level security;
 alter table public.children enable row level security;
 alter table public.questions enable row level security;
+alter table public.passages enable row level security;
 alter table public.explanations enable row level security;
 alter table public.sessions enable row level security;
 alter table public.question_attempts enable row level security;
 alter table public.topic_mastery enable row level security;
 alter table public.diagnostic_results enable row level security;
+alter table public.weekly_reports enable row level security;
 
 -- Policies for Profiles
 create policy "Users can view their own profile" on public.profiles
@@ -121,6 +148,9 @@ create policy "Parents can insert children" on public.children
 
 -- Policies for Questions (Public Select)
 create policy "Anyone can view questions" on public.questions
+  for select using (true);
+
+create policy "Anyone can view passages" on public.passages
   for select using (true);
 
 -- Policies for Explanations (Public Select)
@@ -156,6 +186,13 @@ create policy "View own diagnostic results" on public.diagnostic_results
   for select using (auth.uid() in (select parent_id from public.children where id = child_id));
 
 create policy "Insert diagnostic results for own children" on public.diagnostic_results
+  for insert with check (auth.uid() in (select parent_id from public.children where id = child_id));
+
+-- Policies for Weekly Reports
+create policy "Parents can view their children's weekly reports" on public.weekly_reports
+  for select using (auth.uid() in (select parent_id from public.children where id = child_id));
+
+create policy "Insert weekly reports for own children" on public.weekly_reports
   for insert with check (auth.uid() in (select parent_id from public.children where id = child_id));
 
 -- FUNCTIONS & TRIGGERS

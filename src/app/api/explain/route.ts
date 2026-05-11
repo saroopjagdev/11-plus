@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       You are a friendly 11+ tutor. Explain this question to a 9-year-old child.
       
       Question: ${question.question_text}
-      Options: ${question.options.join(', ')}
+      ${question.options ? `Options: ${question.options.join(', ')}` : 'Type: Written Answer'}
       Correct Answer: ${question.correct_answer}
       Subject: ${question.subject}
       Topic: ${question.topic}
@@ -76,9 +76,12 @@ export async function POST(request: Request) {
 
     if (!explanationContent) throw new Error('No explanation generated')
 
-    // 5. Store in DB (Note: In the PRD, we store only if marked helpful later, but for MVP caching is good)
-    // Actually, PRD says: "if explanation exists -> return. Else: generate -> return. If marked helpful -> store."
-    // So for now, I'll just return it. I'll implement the "helpful" save in a separate action.
+    // 5. Cache in DB immediately for speed
+    await supabase.from('explanations').insert({
+      question_id: questionId,
+      explanation_text: explanationContent,
+      is_verified: false
+    })
     
     return NextResponse.json({ explanation: explanationContent, cached: false })
   } catch (error: any) {

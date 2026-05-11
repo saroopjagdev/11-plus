@@ -243,6 +243,7 @@ export function DiagnosticSession({ questions, childId }: DiagnosticSessionProps
   }
 
   return (
+    <>
     <div className="h-[100dvh] flex flex-col bg-slate-50 overflow-hidden">
       {/* Header & Progress - Fixed at Top */}
       <div className="max-w-4xl mx-auto w-full px-6 pt-6 pb-2 shrink-0">
@@ -333,7 +334,6 @@ export function DiagnosticSession({ questions, childId }: DiagnosticSessionProps
           )}
         </div>
       </div>
-      </div>
 
       <CelebrationModal 
         isOpen={!!levelUpData}
@@ -342,6 +342,7 @@ export function DiagnosticSession({ questions, childId }: DiagnosticSessionProps
         onClose={() => setLevelUpData(null)}
       />
     </div>
+    </>
   )
 }
 

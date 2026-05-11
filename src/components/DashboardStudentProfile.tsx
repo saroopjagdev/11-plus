@@ -15,7 +15,8 @@ interface DashboardStudentProfileProps {
     level: number
     avatar_url: string | null
     current_streak: number
-    target_exams?: string[] | null
+    target_schools?: string[] | null
+    exam_date?: string | null
   }
 }
 
@@ -61,20 +62,25 @@ export function DashboardStudentProfile({ child }: DashboardStudentProfileProps)
               <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mt-0.5">
                 <span className="text-indigo-600">Streak: {child.current_streak} days</span>
                 <span className="h-1 w-1 bg-slate-200 rounded-full" />
-                <span>Expert Student</span>
+                <span>
+                  {child.level <= 3 ? 'Novice Student' :
+                   child.level <= 7 ? 'Rising Scholar' :
+                   child.level <= 12 ? 'Elite Student' :
+                   'Exam Master'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Target Exams */}
-          {child.target_exams && child.target_exams.length > 0 && (
+          {/* Target Schools */}
+          {child.target_schools && child.target_schools.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-6">
-              {child.target_exams.map((exam) => (
+              {child.target_schools.map((school) => (
                 <span 
-                  key={exam}
+                  key={school}
                   className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-black rounded-md border border-indigo-100 uppercase tracking-wider"
                 >
-                  {exam}
+                  {school}
                 </span>
               ))}
             </div>

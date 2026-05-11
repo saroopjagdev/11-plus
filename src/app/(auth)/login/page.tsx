@@ -11,9 +11,11 @@ export default async function LoginPage({
     <div className="flex min-h-screen items-center justify-center bg-indigo-50 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8 rounded-3xl bg-white p-10 shadow-xl shadow-indigo-100 ring-1 ring-indigo-50">
         <div>
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 font-bold text-white text-2xl shadow-lg shadow-indigo-200">
-            A
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="Ace 11+" 
+            className="mx-auto h-20 w-20 object-contain rounded-2xl shadow-lg shadow-indigo-200"
+          />
           <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-slate-900">
             Welcome Back!
           </h2>

@@ -27,6 +27,7 @@ interface SidebarProps {
   xp?: number
   level?: number
   avatarUrl?: string | null
+  role?: string
 }
 
 export function Sidebar({ 
@@ -35,13 +36,15 @@ export function Sidebar({
   childName, 
   xp, 
   level, 
-  avatarUrl 
+  avatarUrl,
+  role
 }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    ...(role === 'parent' ? [{ label: 'Parent View', href: '/parent/dashboard', icon: Sparkles }] : []),
     { label: 'Study Plan', href: '/study-plan', icon: Calendar },
     { label: 'Practice Hubs', href: '/dashboard#hubs', icon: BookOpen },
     { label: 'Topic Library', href: '/library', icon: GraduationCap },
@@ -78,12 +81,14 @@ export function Sidebar({
       `}>
         <div className="flex flex-col h-full p-6">
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-12">
-            <div className="h-10 w-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-100">
-              A
-            </div>
-            <span className="font-bold text-slate-900 text-xl tracking-tight">Ace11+</span>
-          </div>
+          <Link href="/dashboard" className="flex items-center gap-3 mb-12">
+            <img 
+              src="/logo.png" 
+              alt="Ace 11+" 
+              className="h-12 w-12 object-contain rounded-xl"
+            />
+            <span className="font-bold text-slate-900 text-xl tracking-tight">Ace 11+</span>
+          </Link>
 
           {/* Nav Links */}
           <nav className="flex-1 space-y-2">

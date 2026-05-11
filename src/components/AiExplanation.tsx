@@ -4,13 +4,15 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ThumbsUp, ThumbsDown, Loader2, X } from 'lucide-react'
 import { saveExplanation } from '@/app/actions/explain'
+import ReactMarkdown from 'react-markdown'
 
 interface AiExplanationProps {
   questionId: string
   onClose: () => void
+  isPro?: boolean
 }
 
-export function AiExplanation({ questionId, onClose }: AiExplanationProps) {
+export function AiExplanation({ questionId, onClose, isPro = false }: AiExplanationProps) {
   const [explanation, setExplanation] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [feedbackGiven, setFeedbackGiven] = useState(false)
@@ -79,12 +81,10 @@ export function AiExplanation({ questionId, onClose }: AiExplanationProps) {
             </div>
           ) : explanation ? (
             <div className="space-y-4">
-              <div className="prose prose-slate prose-indigo max-w-none">
-                {explanation.split('\n').map((line, i) => (
-                  <p key={i} className="text-slate-700 leading-relaxed min-h-[1em]">
-                    {line}
-                  </p>
-                ))}
+              <div className="prose prose-slate prose-indigo max-w-none text-slate-700 leading-relaxed font-medium">
+                <ReactMarkdown>
+                  {explanation}
+                </ReactMarkdown>
               </div>
 
               {!feedbackGiven && (

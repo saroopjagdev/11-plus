@@ -34,7 +34,7 @@ export default async function AnalyticsPage() {
   // 4. Fetch Mastery for Radar
   const { data: mastery } = await supabase
     .from('topic_mastery')
-    .select('subject, accuracy')
+    .select('subject, accuracy, questions_answered')
     .eq('child_id', childId)
 
   // Format Trend Data: Assuming sessions are 10 questions each for score %

@@ -1,44 +1,71 @@
 'use server'
 
 import OpenAI from 'openai'
+import { createClient } from '@/lib/supabase/server'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-export async function generateTopicGuide(topicSlug: string) {
-  const topicName = topicSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+export async function getTopicGuide(topicName: string) {
+  const supabase = await createClient()
 
+  // 1. Check if guide exists
+  const { data: existing } = await supabase
+    .from('topic_guides')
+    .select('*')
+    .eq('topic_name', topicName)
+    .maybeSingle()
+
+  if (existing) return existing
+
+  // 2. Generate if not exists
   const prompt = `
-    You are an elite 11+ tutor. Write a comprehensive, child-friendly study guide for the topic: "${topicName}".
+    You are an elite 11+ tutor for top grammar schools. 
+    Write a comprehensive, professional study guide for the topic: "${topicName}".
     
-    Structure the guide exactly like this:
-    1. **Introduction**: What is this topic and why is it important for the 11+?
-    2. **Core Concepts**: Explain 2-3 key rules or methods. Use simple language and clear examples.
-    3. **The 11+ Secret**: A "pro-tip" or mental shortcut that elite students use.
-    4. **Common Traps**: What do students usually get wrong? How to avoid them.
-    5. **Sample Question**: Write 1 high-quality 11+ style multiple-choice question with the correct answer explained.
+    IMPORTANT: Return the response as a JSON object with this structure:
+    {
+      "overview": "A 2-3 sentence engaging overview of the topic.",
+      "key_concepts": [
+        {"title": "Concept Name", "text": "Explanation..."},
+        {"title": "Concept Name", "text": "Explanation..."}
+      ],
+      "pro_tip": "A short, punchy secret trick for exam success."
+    }
     
-    Tone: Encouraging, exciting, and professional.
-    Format: Use clean Markdown. Avoid technical jargon.
+    Tone: Encouraging, premium, and expert.
   `
 
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" }
     })
 
-    return {
-      success: true,
-      topicName,
-      content: response.choices[0].message.content || 'Guide content unavailable.'
+    const guideData = JSON.parse(response.choices[0].message.content || '{}')
+    
+    const newGuide = {
+      topic_name: topicName,
+      overview: guideData.overview,
+      key_concepts: guideData.key_concepts,
+      pro_tip: guideData.pro_tip,
+      created_at: new Date().toISOString()
     }
+
+    // 3. Save to DB (Fire and forget, or handle error)
+    await supabase.from('topic_guides').insert(newGuide)
+
+    return newGuide
   } catch (error) {
-    console.error('AI Generation Error:', error)
-    return {
-      success: false,
-      error: 'The AI tutor is busy right now. Please try again in a few minutes!'
-    }
+    console.error('Topic Guide AI Error:', error)
+    return null
   }
+}
+
+export async function generateTopicGuide(topicSlug: string) {
+  // Legacy function support
+  const topicName = topicSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+  return getTopicGuide(topicName)
 }

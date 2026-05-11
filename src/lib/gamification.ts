@@ -11,14 +11,14 @@ export const BASE_LEVEL_THRESHOLD = 500
  * Uses a basic curve where leveling up gets exponentially harder.
  */
 export function calculateLevel(xp: number): number {
-  return Math.floor(Math.sqrt(xp / 100)) + 1
+  return Math.floor(Math.sqrt(xp / 400)) + 1
 }
 
 /**
  * Calculates XP needed to reached the NEXT level.
  */
 export function getXPThreshold(level: number): number {
-  return Math.pow(level, 2) * 100
+  return Math.pow(level, 2) * 400
 }
 
 /**
