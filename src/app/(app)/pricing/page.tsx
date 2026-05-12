@@ -19,30 +19,30 @@ export default async function PricingPage() {
   const isPro = profile?.subscription_status === 'pro'
 
   return (
-    <div className="p-8 lg:p-12 max-w-5xl mx-auto">
-      <header className="text-center mb-16">
-        <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-full mb-6">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+      <header className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-full mb-4">
           <Sparkles className="h-4 w-4 text-indigo-600" />
           <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest">Elevate Learning</span>
         </div>
-        <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight mb-4">Invest in their success.</h1>
-        <p className="text-slate-500 text-lg max-w-xl mx-auto">Choose the plan that gives your child the edge in their 11+ preparation.</p>
+        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">Invest in their success.</h1>
+        <p className="text-slate-500 text-base max-w-xl mx-auto">Choose the plan that gives your child the edge in their 11+ preparation.</p>
       </header>
 
-      <div className="grid md:grid-cols-2 gap-8 items-start">
+      <div className="grid md:grid-cols-2 gap-6 items-start">
         {/* Standard Plan */}
-        <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Standard</h3>
-            <p className="text-slate-500 text-sm">Perfect for baseline diagnostics.</p>
+        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-slate-900 mb-1">Standard</h3>
+            <p className="text-slate-500 text-xs">Perfect for baseline diagnostics.</p>
           </div>
 
-          <div className="mb-8">
-            <span className="text-5xl font-black text-slate-900">Free</span>
+          <div className="mb-6">
+            <span className="text-4xl font-black text-slate-900">Free</span>
             <span className="text-slate-400 font-bold ml-2">/ month</span>
           </div>
 
-          <div className="space-y-4 mb-10">
+          <div className="space-y-3 mb-6">
             <FeatureItem label="1 Full Diagnostic Baseline" />
             <FeatureItem label="5 Daily Practice Questions" />
             <FeatureItem label="Basic Topic Mastery Stats" />
@@ -53,32 +53,32 @@ export default async function PricingPage() {
 
           <button
             disabled
-            className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold transition-all cursor-not-allowed"
+            className="w-full py-3 bg-slate-50 text-slate-400 rounded-xl font-bold transition-all cursor-not-allowed text-sm"
           >
             Current Plan
           </button>
         </div>
 
         {/* Pro Plan */}
-        <div className="bg-slate-900 p-10 rounded-[2.5rem] border-4 border-indigo-500 shadow-2xl shadow-indigo-200 relative overflow-hidden transform scale-105 z-10">
-          <div className="absolute top-0 right-0 p-4">
-            <div className="bg-indigo-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Most Popular</div>
+        <div className="bg-slate-900 p-6 rounded-[2.5rem] border-4 border-indigo-500 shadow-2xl shadow-indigo-200 relative overflow-hidden transform scale-105 z-10">
+          <div className="absolute top-0 right-0 p-3">
+            <div className="bg-indigo-500 text-white px-2 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest">Most Popular</div>
           </div>
 
-          <div className="mb-8 relative z-10">
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+          <div className="mb-6 relative z-10">
+            <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
               Ace11+ Pro
               <Star className="h-4 w-4 text-amber-400 fill-current" />
             </h3>
-            <p className="text-slate-400 text-sm">Everything needed for competitive success.</p>
+            <p className="text-slate-400 text-xs">Everything needed for competitive success.</p>
           </div>
 
-          <div className="mb-8 relative z-10">
-            <span className="text-5xl font-black text-white">£19.99</span>
+          <div className="mb-6 relative z-10">
+            <span className="text-4xl font-black text-white">£19.99</span>
             <span className="text-slate-400 font-bold ml-2">/ month</span>
           </div>
 
-          <div className="space-y-4 mb-10 relative z-10">
+          <div className="space-y-3 mb-6 relative z-10">
             <FeatureItem label="Unlimited Diagnostic Retakes" invert />
             <FeatureItem label="Unlimited Daily Drills" invert />
             <FeatureItem label="Access to all Full Mocks" invert />
@@ -88,18 +88,18 @@ export default async function PricingPage() {
           </div>
 
           {isPro ? (
-            <button className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+            <button className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 text-sm">
               Active Subscription
-              <ShieldCheck className="h-5 w-5" />
+              <ShieldCheck className="h-4 w-4" />
             </button>
           ) : (
             <form action="/api/checkout" method="POST">
               <button
                 type="submit"
-                className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 active:scale-95"
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 active:scale-95"
               >
                 Upgrade to Pro
-                <Zap className="h-5 w-5 fill-current" />
+                <Zap className="h-4 w-4 fill-current" />
               </button>
             </form>
           )}
@@ -108,8 +108,8 @@ export default async function PricingPage() {
         </div>
       </div>
 
-      <div className="mt-16 text-center">
-        <p className="text-slate-600 text-xs font-bold uppercase tracking-[0.2em] mb-8">Trusted by parents for</p>
+      <div className="mt-10 text-center">
+        <p className="text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">Trusted by parents for</p>
         <div className="flex flex-wrap justify-center gap-12 pointer-events-none">
           <span className="text-lg font-black text-slate-800">GL ASSESSMENT</span>
           <span className="text-lg font-black text-slate-800">CEM EXAM</span>
