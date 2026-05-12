@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Brain, Clock, ShieldCheck, Zap, Sparkles, BookOpen } from 'lucide-react'
+import { ArrowLeft, Brain, Clock, ShieldCheck, Zap, Sparkles, BookOpen, Target } from 'lucide-react'
 import Link from 'next/link'
 
 export default function HandbookPage() {
