@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { login } from '@/app/actions/auth'
+import { login, resendEmail } from '@/app/actions/auth'
 
 export default async function LoginPage({
   searchParams,
@@ -32,7 +32,24 @@ export default async function LoginPage({
 
         {message && (
           <div className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-600 ring-1 ring-indigo-100">
-            {message}
+            <p className="mb-3">{message}</p>
+            {message.includes('Check your email') && (
+              <form action={resendEmail} className="flex flex-col gap-2">
+                <input 
+                  type="email" 
+                  name="email" 
+                  placeholder="Enter your email" 
+                  className="bg-white px-3 py-1.5 rounded-lg border border-indigo-100 text-xs focus:ring-1 focus:ring-indigo-400 outline-none"
+                  required
+                />
+                <button 
+                  type="submit"
+                  className="text-[10px] font-black uppercase tracking-widest text-indigo-700 hover:text-indigo-900 transition-colors text-left"
+                >
+                  Didn't get it? Resend Email →
+                </button>
+              </form>
+            )}
           </div>
         )}
 

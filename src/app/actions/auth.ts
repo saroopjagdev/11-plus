@@ -47,3 +47,27 @@ export async function signOut() {
   revalidatePath('/', 'layout')
   redirect('/')
 }
+
+export async function resendEmail(formData: FormData) {
+  const supabase = await createClient()
+  const email = formData.get('email') as string
+  
+  if (!email) {
+    return redirect('/login?error=Email is required to resend confirmation')
+  }
+
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    }
+  })
+
+  if (error) {
+    return redirect('/login?error=' + encodeURIComponent(error.message))
+  }
+
+  redirect('/login?message=Confirmation email resent. Please check your inbox.')
+}
+
