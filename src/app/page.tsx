@@ -8,9 +8,9 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src="/logo.png" 
-              alt="Ace 11+" 
+            <img
+              src="/logo.png"
+              alt="Ace 11+"
               className="h-12 w-12 object-contain rounded-xl"
             />
             <span className="font-bold text-slate-900 text-xl tracking-tight">Ace 11+</span>
@@ -236,7 +236,7 @@ export default function LandingPage() {
                 Start Your 7-Day Free Trial
               </Link>
               <p className="text-center text-slate-400 text-[10px] font-bold mt-4 uppercase tracking-widest leading-relaxed">
-                Card required for verification. <br/>
+                Card required for verification. <br />
                 No charge until day 7. Cancel anytime.
               </p>
             </div>
@@ -263,7 +263,7 @@ export default function LandingPage() {
             />
             <FAQItem
               question="Can I track my child's progress?"
-              answer="Yes! As a parent, you have a dedicated dashboard that shows exactly which topics your child is mastering and which ones need more focus. You'll also receive weekly AI-generated summaries."
+              answer="Yes! As a parent, you have a dedicated dashboard that shows exactly which topics your child is mastering and which ones need more focus. You'll also receive weekly summaries."
             />
           </div>
         </div>
