@@ -1,11 +1,20 @@
-import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 import { login, resendEmail } from '@/app/actions/auth'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string, message?: string }>
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (user) {
+    redirect('/dashboard')
+  }
+
   const { error, message } = await searchParams;
   return (
     <div className="flex min-h-screen items-center justify-center bg-indigo-50 px-4 py-12 sm:px-6 lg:px-8">
@@ -32,24 +41,7 @@ export default async function LoginPage({
 
         {message && (
           <div className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-600 ring-1 ring-indigo-100">
-            <p className="mb-3">{message}</p>
-            {message.includes('Check your email') && (
-              <form action={resendEmail} className="flex flex-col gap-2">
-                <input 
-                  type="email" 
-                  name="email" 
-                  placeholder="Enter your email" 
-                  className="bg-white px-3 py-1.5 rounded-lg border border-indigo-100 text-xs focus:ring-1 focus:ring-indigo-400 outline-none"
-                  required
-                />
-                <button 
-                  type="submit"
-                  className="text-[10px] font-black uppercase tracking-widest text-indigo-700 hover:text-indigo-900 transition-colors text-left"
-                >
-                  Didn't get it? Resend Email →
-                </button>
-              </form>
-            )}
+            {message}
           </div>
         )}
 
@@ -121,6 +113,30 @@ export default async function LoginPage({
             Create an account
           </Link>
         </p>
+
+        <details className="mt-4 group">
+          <summary className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 cursor-pointer list-none transition-colors">
+            Didn't receive a confirmation email?
+          </summary>
+          <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <p className="text-[10px] text-slate-500 mb-3 font-medium">Enter your email and we'll send a fresh link.</p>
+            <form action={resendEmail} className="flex flex-col gap-2">
+              <input 
+                type="email" 
+                name="email" 
+                placeholder="parent@example.com" 
+                className="bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20"
+                required
+              />
+              <button 
+                type="submit"
+                className="py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all active:scale-95"
+              >
+                Resend Link
+              </button>
+            </form>
+          </div>
+        </details>
       </div>
     </div>
   )
