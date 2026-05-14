@@ -32,32 +32,27 @@ export default async function SettingsPage() {
               </div>
               <div>
                  <h2 className="text-xl font-black text-slate-900">Personal Information</h2>
-                 <p className="text-slate-400 text-sm font-medium">Update your name and email address.</p>
+                 <p className="text-slate-400 text-sm font-medium">Your account details.</p>
               </div>
            </div>
            
            <div className="grid gap-6">
               <div className="space-y-2">
                  <label className="text-xs font-black uppercase text-slate-400 tracking-widest ml-1">Full Name</label>
-                 <input 
-                   type="text" 
-                   defaultValue={profile?.full_name || ''} 
-                   className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-                 />
+                 <div className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700">
+                   {profile?.full_name || <span className="text-slate-400">Not set</span>}
+                 </div>
               </div>
               <div className="space-y-2">
-                 <label className="text-xs font-black uppercase text-slate-400 tracking-widest ml-1">Email Address</label>
-                 <input 
-                   type="email" 
-                   value={user.email} 
-                   disabled
-                   className="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl font-bold text-slate-400 cursor-not-allowed"
-                 />
+                 <label className="text-xs font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-1">
+                   Email Address
+                   <span className="text-[9px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full ml-1 normal-case font-bold tracking-normal">cannot be changed</span>
+                 </label>
+                 <div className="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl font-bold text-slate-400 select-none">
+                   {user!.email}
+                 </div>
               </div>
            </div>
-           <button className="mt-8 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all">
-              Save Changes
-           </button>
         </section>
 
         {/* Subscription Section */}
