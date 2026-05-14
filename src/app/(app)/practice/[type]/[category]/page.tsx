@@ -21,10 +21,6 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
 
   // 1. Auth check
   const { data: { user } } = await supabase.auth.getUser()
-  console.log('--- Practice Session Debug ---')
-  console.log('Type:', type)
-  console.log('Category:', category)
-  console.log('User:', user?.id)
   
   if (!user) redirect('/login')
 

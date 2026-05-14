@@ -1,8 +1,17 @@
 import { stripe } from '@/lib/stripe'
-import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { createClient } from '@supabase/supabase-js'
+
+// Use the service role client for webhook operations.
+// The normal server client relies on cookies (which webhooks don't have).
+function createServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -22,16 +31,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Webhook Error: ${error.message}` }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
+  // Handle successful checkout — upgrade user to Pro
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.userId
+    const stripeCustomerId = session.customer as string
 
     if (userId) {
+      // Store the Stripe Customer ID so we can look up the user on cancellation
       const { error } = await supabase
         .from('profiles')
-        .update({ subscription_status: 'pro' })
+        .update({ 
+          subscription_status: 'pro',
+          stripe_customer_id: stripeCustomerId 
+        })
         .eq('id', userId)
 
       if (error) {
@@ -40,11 +55,33 @@ export async function POST(req: Request) {
     }
   }
 
-  // Handle subscription cancellations/updates
+  // Handle subscription cancellation — downgrade user to Free
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
-    // You'd ideally look up the user by Stripe Customer ID here
-    // For now, let's keep it simple. Real apps should store stripe_customer_id in profiles.
+    const stripeCustomerId = subscription.customer as string
+
+    if (stripeCustomerId) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ subscription_status: 'free' })
+        .eq('stripe_customer_id', stripeCustomerId)
+
+      if (error) {
+        console.error('Error downgrading user subscription:', error)
+      }
+    }
+  }
+
+  // Handle failed payments — optionally downgrade or notify
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice
+    const stripeCustomerId = invoice.customer as string
+
+    if (stripeCustomerId) {
+      console.error(`Payment failed for customer: ${stripeCustomerId}`)
+      // Stripe will retry automatically. After all retries fail, 
+      // it sends customer.subscription.deleted which we handle above.
+    }
   }
 
   return NextResponse.json({ received: true })
