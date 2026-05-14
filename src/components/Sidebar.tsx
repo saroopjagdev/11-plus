@@ -5,13 +5,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { getLevelProgress } from '@/lib/gamification'
 import { AVATAR_COLLECTION } from '@/lib/constants/avatars'
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  BarChart3, 
-  CreditCard, 
-  Settings, 
-  Menu, 
+import {
+  LayoutDashboard,
+  BookOpen,
+  BarChart3,
+  CreditCard,
+  Settings,
+  Menu,
   X,
   Sparkles,
   ChevronRight,
@@ -30,12 +30,12 @@ interface SidebarProps {
   role?: string
 }
 
-export function Sidebar({ 
-  userEmail, 
-  subscriptionStatus, 
-  childName, 
-  xp, 
-  level, 
+export function Sidebar({
+  userEmail,
+  subscriptionStatus,
+  childName,
+  xp,
+  level,
   avatarUrl,
   role
 }: SidebarProps) {
@@ -59,7 +59,7 @@ export function Sidebar({
   return (
     <>
       {/* Mobile Toggle */}
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="lg:hidden fixed top-6 left-4 z-50 p-2 bg-white rounded-xl shadow-lg border border-slate-100"
       >
@@ -68,7 +68,7 @@ export function Sidebar({
 
       {/* Backdrop */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
@@ -82,9 +82,9 @@ export function Sidebar({
         <div className="flex flex-col h-full p-6">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-3 mb-12">
-            <img 
-              src="/logo.png" 
-              alt="Ace 11+" 
+            <img
+              src="/logo.png"
+              alt="Ace 11+"
               className="h-12 w-12 object-contain rounded-xl"
             />
             <span className="font-bold text-slate-900 text-xl tracking-tight">Ace 11+</span>
@@ -95,14 +95,14 @@ export function Sidebar({
             {navItems.map((item) => {
               const isActive = pathname === item.href
               return (
-                <Link 
+                <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={`
                     flex items-center justify-between p-3 rounded-2xl font-bold transition-all group
-                    ${isActive 
-                      ? 'bg-indigo-50 text-indigo-600' 
+                    ${isActive
+                      ? 'bg-indigo-50 text-indigo-600'
                       : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}
                   `}
                 >
@@ -138,9 +138,8 @@ export function Sidebar({
               {childName ? (
                 <div className="bg-slate-50 rounded-[1.5rem] p-4 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center text-xl shadow-sm ${
-                      AVATAR_COLLECTION.find(a => a.id === avatarUrl)?.bgColor || 'bg-indigo-100'
-                    }`}>
+                    <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center text-xl shadow-sm ${AVATAR_COLLECTION.find(a => a.id === avatarUrl)?.bgColor || 'bg-indigo-100'
+                      }`}>
                       {AVATAR_COLLECTION.find(a => a.id === avatarUrl)?.emoji || childName?.[0] || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -150,12 +149,12 @@ export function Sidebar({
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Mini XP Bar */}
                   <div className="space-y-1">
                     <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-indigo-500 rounded-full transition-all duration-500" 
+                      <div
+                        className="h-full bg-indigo-500 rounded-full transition-all duration-500"
                         style={{ width: `${getLevelProgress(xp || 0)}%` }}
                       />
                     </div>

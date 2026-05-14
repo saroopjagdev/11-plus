@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Settings, User, CreditCard, Bell, Shield, LogOut } from 'lucide-react'
 import Link from 'next/link'
+import { signOut } from '@/app/actions/auth'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -93,8 +94,8 @@ export default async function SettingsPage() {
 
         {/* Logout */}
         <div className="pt-6">
-           <form action="/auth/signout" method="post">
-              <button className="w-full p-5 bg-rose-50 text-rose-600 rounded-[2rem] font-black hover:bg-rose-100 transition-all flex items-center justify-center gap-2">
+           <form action={signOut}>
+              <button type="submit" className="w-full p-5 bg-rose-50 text-rose-600 rounded-[2rem] font-black hover:bg-rose-100 transition-all flex items-center justify-center gap-2">
                  <LogOut className="h-5 w-5" />
                  Sign Out
               </button>
