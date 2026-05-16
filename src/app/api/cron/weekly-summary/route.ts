@@ -2,9 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function GET(request: Request) {
+  const resend = new Resend(process.env.RESEND_API_KEY || 'no_key_for_build')
+
   // 1. Security Check (Basic Token check)
   const { searchParams } = new URL(request.url)
   const token = searchParams.get('token')
