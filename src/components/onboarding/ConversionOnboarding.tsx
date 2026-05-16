@@ -197,7 +197,7 @@ export function ConversionOnboarding({ childId, childName, isOpen, onClose }: Co
                     <Sparkles className="h-6 w-6 text-amber-500" />
                   </div>
                   <h2 className="text-3xl font-black text-slate-900 leading-tight">Unlock Your Full Potential</h2>
-                  <p className="text-slate-500 font-medium">Upgrade to **Ace11+ Pro** for the most advanced preparation toolkit.</p>
+                  <p className="text-slate-500 font-medium">Upgrade to <span className="font-bold text-slate-900">Ace 11+ Pro</span> for the most advanced preparation toolkit.</p>
                 </div>
 
                 <div className="space-y-4">

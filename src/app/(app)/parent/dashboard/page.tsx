@@ -33,7 +33,7 @@ export default async function ParentDashboardPage() {
 
   // 3. Get/Generate Weekly Report
   let report = await getWeeklyReport(child.id)
-  
+
   if (!report) {
     // Attempt to generate if it's the first visit of the week
     const genResult = await generateWeeklyReport(child.id)
@@ -76,7 +76,7 @@ export default async function ParentDashboardPage() {
                 </div>
                 <h2 className="text-2xl font-black text-slate-900">Subject Mastery</h2>
               </div>
-              
+
               <ParentCharts subjectData={stats.subjectStats} />
             </section>
 
@@ -89,9 +89,6 @@ export default async function ParentDashboardPage() {
                       <Sparkles className="h-6 w-6 text-indigo-400" />
                     </div>
                     <h2 className="text-2xl font-black italic tracking-tight">Weekly "Exam Trap" Report</h2>
-                  </div>
-                  <div className="px-4 py-1.5 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-200 border border-white/10">
-                    AI Analysis
                   </div>
                 </div>
 
@@ -120,7 +117,7 @@ export default async function ParentDashboardPage() {
                 <Clock className="h-5 w-5 text-indigo-600" />
                 Recent Activity
               </h3>
-              
+
               <div className="space-y-4">
                 {stats.recentSessions.length > 0 ? stats.recentSessions.map((session, i) => (
                   <div key={session.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-100 transition-colors">

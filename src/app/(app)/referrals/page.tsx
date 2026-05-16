@@ -9,13 +9,29 @@ export default async function ReferralsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+  let profile = await supabase
     .from('profiles')
-    .select('referral_code, referral_count, pending_referral_credits, subscription_status')
+    .select('referral_code, referral_count, pending_referral_credits, subscription_status, email')
     .eq('id', user.id)
     .single()
+    .then(res => res.data)
 
-  const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL}/signup?ref=${profile?.referral_code || ''}`
+  // AUTO-HEAL: If user doesn't have a referral code yet, generate and save one
+  if (profile && !profile.referral_code) {
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase()
+    const base = profile.email?.split('@')[0].substring(0, 5).toUpperCase() || 'ACE'
+    const newCode = `${base}${randomSuffix}`
+    
+    await supabase
+      .from('profiles')
+      .update({ referral_code: newCode })
+      .eq('id', user.id)
+    
+    // Update local profile object
+    profile.referral_code = newCode
+  }
+
+  const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL || ''}/signup?ref=${profile?.referral_code || ''}`
   const count = profile?.referral_count || 0
   const pending = profile?.pending_referral_credits || 0
   const isFree = profile?.subscription_status !== 'pro'
@@ -30,7 +46,7 @@ export default async function ReferralsPage() {
         </div>
         <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Give 50%, get a month.</h1>
         <p className="text-slate-500 text-lg max-w-xl">
-          Invite other parents to Ace 11+. When they join using your link, they'll get **50% off** their first month, and you'll get a full month for free.
+          Invite other parents to Ace 11+. When they join using your link, they'll get <span className="font-bold text-slate-900">50% off</span> their first month, and you'll get a full month for free.
         </p>
       </header>
 
@@ -54,24 +70,37 @@ export default async function ReferralsPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Referral Card */}
         <div className="lg:col-span-2 space-y-8">
-          <section className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-            <h3 className="text-xl font-black text-slate-900 mb-6">Your Referral Link</h3>
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <div className="flex-1 p-4 bg-slate-50 border border-slate-100 rounded-2xl font-mono text-sm text-slate-600 break-all">
-                {referralLink}
+          <section className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <Share2 className="h-5 w-5 text-indigo-600" />
+              <h3 className="text-xl font-black text-slate-900">Invite Parents</h3>
+            </div>
+            
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+              Copy your unique link below and share it with friends, family, or in parent groups. 
+              Anyone who signs up with this link will automatically have their discount applied.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 p-4 bg-slate-50 border border-slate-100 rounded-2xl font-mono text-sm text-indigo-600 flex items-center overflow-hidden">
+                <span className="truncate">{referralLink}</span>
               </div>
               <button 
-                className="px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200 shrink-0"
+                className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all active:scale-95 shadow-xl shadow-indigo-100 shrink-0"
               >
                 <Copy className="h-4 w-4" />
                 Copy Link
               </button>
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-               <ShareButton icon={<MessageSquare className="h-5 w-5" />} label="WhatsApp" color="emerald" />
-               <ShareButton icon={<Share2 className="h-5 w-5" />} label="Email" color="indigo" />
-               <ShareButton icon={<Users className="h-5 w-5" />} label="Messenger" color="sky" />
+            
+            <div className="mt-8 pt-8 border-t border-slate-50 flex items-center justify-between">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Also share via</div>
+              <a 
+                href={`mailto:?subject=50% off Ace 11+&body=I've been using Ace 11+ to help prepare for the exams. If you use my link you get 50% off your first month: ${referralLink}`}
+                className="text-xs font-black text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 transition-colors"
+              >
+                Email Invitation
+              </a>
             </div>
           </section>
 
@@ -141,20 +170,6 @@ export default async function ReferralsPage() {
         </div>
       </div>
     </div>
-  )
-}
-
-function ShareButton({ icon, label, color }: { icon: React.ReactNode, label: string, color: string }) {
-  const colors: any = {
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100',
-    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100',
-    sky: 'bg-sky-50 text-sky-600 border-sky-100 hover:bg-sky-100'
-  }
-  return (
-    <button className={`p-4 rounded-2xl border ${colors[color]} flex flex-col items-center gap-2 transition-all font-bold text-sm`}>
-      {icon}
-      {label}
-    </button>
   )
 }
 
