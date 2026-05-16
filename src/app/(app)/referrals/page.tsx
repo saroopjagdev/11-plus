@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Gift, Copy, Share2, Users, CheckCircle2, Sparkles, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+import { CopyButton } from '@/components/CopyButton'
 
 export default async function ReferralsPage() {
   const supabase = await createClient()
@@ -85,12 +86,7 @@ export default async function ReferralsPage() {
               <div className="flex-1 p-4 bg-slate-50 border border-slate-100 rounded-2xl font-mono text-sm text-indigo-600 flex items-center overflow-hidden">
                 <span className="truncate">{referralLink}</span>
               </div>
-              <button 
-                className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all active:scale-95 shadow-xl shadow-indigo-100 shrink-0"
-              >
-                <Copy className="h-4 w-4" />
-                Copy Link
-              </button>
+              <CopyButton text={referralLink} />
             </div>
             
             <div className="mt-8 pt-8 border-t border-slate-50 flex items-center justify-between">
