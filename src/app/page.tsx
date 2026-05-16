@@ -280,7 +280,7 @@ export default function LandingPage() {
         <div className="flex gap-10">
           <Link href="/privacy" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Privacy</Link>
           <Link href="/terms" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Terms</Link>
-          <a href="mailto:support@ace11plus.co.uk" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Contact</a>
+          <a href="mailto:support@ace11plus.org" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Contact</a>
         </div>
         <p className="text-xs font-bold text-slate-300">© 2025 Ace 11+ Intelligence. All rights reserved.</p>
       </footer>

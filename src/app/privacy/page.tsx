@@ -50,7 +50,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-black text-slate-900 mb-4">4. Contact Us</h2>
               <p className="text-slate-500 leading-relaxed">
-                If you have any questions about this Privacy Policy, please contact us at support@ace11plus.co.uk.
+                If you have any questions about this Privacy Policy, please contact us at support@ace11plus.org.
               </p>
             </section>
           </div>
