@@ -32,13 +32,13 @@ export default function LandingPage() {
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-full mb-8">
             <Sparkles className="h-4 w-4 text-indigo-600" />
-            <span className="text-xs font-bold text-indigo-700 uppercase tracking-widest leading-none">The Future of 11+ Preparation</span>
+            <span className="text-xs font-bold text-indigo-700 uppercase tracking-widest leading-none">Personalized 11+ Preparation</span>
           </div>
           <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black text-slate-900 leading-[0.95] mb-8 tracking-tighter">
             Ace the <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">11 Plus.</span>
           </h1>
           <p className="text-slate-500 text-xl leading-relaxed mb-10 max-w-lg font-medium">
-            Personalized practice, instant AI-driven tutoring, and deep diagnostic analytics designed to build confidence and mastery.
+            Adaptive practice, smart step-by-step tutoring, and deep diagnostic analytics designed to build confidence and mastery for Year 4 and Year 5 students.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Link href="/signup" className="w-full sm:w-auto px-10 py-5 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-2xl shadow-indigo-200">
@@ -115,7 +115,7 @@ export default function LandingPage() {
               <div className="h-8 w-8 bg-amber-100 rounded-full flex items-center justify-center">
                 <Sparkles className="h-4 w-4 text-amber-600 fill-current" />
               </div>
-              <span className="text-sm font-black text-slate-900 tracking-tight">AI Explanation</span>
+              <span className="text-sm font-black text-slate-900 tracking-tight">Smart Guidance</span>
             </div>
             <p className="text-xs leading-relaxed text-slate-600 font-semibold italic">"Think of fractions like slices of a pizza..."</p>
           </div>
@@ -139,7 +139,7 @@ export default function LandingPage() {
       <section id="features" className="max-w-7xl mx-auto px-6 py-40">
         <div className="text-center max-w-3xl mx-auto mb-24">
           <h2 className="text-5xl font-black text-slate-900 mb-8 tracking-tight">The ultimate toolkit for success.</h2>
-          <p className="text-slate-500 text-xl font-medium leading-relaxed">We've automated the hard part of 11+ prep so you can focus on building confidence and mastery.</p>
+          <p className="text-slate-500 text-xl font-medium leading-relaxed">We've automated the hard part of 11+ prep so you can focus on building confidence. Designed specifically for Year 4 and Year 5 students.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-10">
@@ -151,7 +151,7 @@ export default function LandingPage() {
           />
           <FeatureCard
             icon={<Brain className="h-8 w-8" />}
-            title="Smart AI Tutor"
+            title="Adaptive Tutor"
             desc="Get instant, friendly explanations tailored to a 10-year-old's level. It's like having a tutor available 24/7."
             color="violet"
           />
@@ -176,7 +176,7 @@ export default function LandingPage() {
                 <span className="text-indigo-400">covers every angle.</span>
               </h2>
               <p className="text-slate-400 text-xl mb-12 leading-relaxed">
-                Our AI builds a custom learning ladder for every student, ensuring they master the basics before moving to the high-difficulty challenges.
+                Our adaptive platform builds a custom learning ladder for every student, ensuring they master the basics before moving to the high-difficulty challenges.
               </p>
 
               <div className="grid gap-4">
@@ -195,6 +195,81 @@ export default function LandingPage() {
               <div className="space-y-6">
                 <CurriculumCard title="Arithmetic" level="Easy" marks="50" progress={100} />
                 <CurriculumCard title="Algebra" level="Medium" marks="25" progress={65} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Parent Dashboard Showcase */}
+      <section className="bg-white py-40 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col lg:flex-row-reverse gap-20 items-center">
+            <div className="lg:w-1/2">
+              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-full mb-8">
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest leading-none">For Parents & Tutors</span>
+              </div>
+              <h2 className="text-5xl font-black text-slate-900 mb-8 leading-tight tracking-tight">
+                Full visibility into <br />
+                <span className="text-emerald-600">their progress.</span>
+              </h2>
+              <p className="text-slate-500 text-xl mb-12 leading-relaxed font-medium">
+                No more guessing. Our dedicated parent dashboard gives you a deep-dive into exactly where your child is excelling and where they need a helping hand.
+              </p>
+
+              <div className="space-y-8">
+                <div className="flex gap-4">
+                  <div className="h-12 w-12 bg-slate-900 rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
+                    <Sparkles className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-black text-slate-900 mb-2">"Exam Trap" Analysis</h4>
+                    <p className="text-slate-500 text-sm leading-relaxed">Our engine identifies recurring patterns in mistakes—like rushing word problems or logic gaps—and summarizes them for you.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-black text-slate-900 mb-2">Weekly Summary Emails</h4>
+                    <p className="text-slate-500 text-sm leading-relaxed">Receive a professional progress report every Monday morning covering XP gained, topics mastered, and upcoming goals.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:w-1/2 relative">
+              <div className="absolute -inset-10 bg-emerald-100 rounded-full blur-[100px] opacity-40" />
+              <div className="relative bg-white p-4 rounded-[3.5rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden">
+                <div className="bg-slate-50 p-8 rounded-[2.8rem] border border-slate-200">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center border border-slate-200 shadow-sm">
+                      <div className="h-4 w-4 bg-emerald-500 rounded-full" />
+                    </div>
+                    <span className="font-black text-slate-900">Student: Charlie J.</span>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6">
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Exam Trap Identified</h5>
+                    <p className="text-sm font-bold text-slate-800 leading-relaxed">
+                      Charlie is consistently struggling with <span className="text-emerald-600 italic underline decoration-2">Multi-step Word Problems</span>.
+                      He often skips the second operation in a question, leading to "Near-Miss" errors.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">XP Gained</div>
+                      <div className="text-2xl font-black text-indigo-600">+1,240</div>
+                    </div>
+                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Studied</div>
+                      <div className="text-2xl font-black text-slate-900">4h 12m</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -225,7 +300,7 @@ export default function LandingPage() {
 
               <div className="space-y-4 mb-10">
                 <PricingFeature text="Full 2,000+ Question Bank" />
-                <PricingFeature text="Unlimited AI Explanations" />
+                <PricingFeature text="Unlimited Smart Explanations" />
                 <PricingFeature text="Parent Insight Dashboard" />
                 <PricingFeature text="Detailed Diagnostic Exams" />
                 <PricingFeature text="Study Guides & Cheat Sheets" />
@@ -237,40 +312,43 @@ export default function LandingPage() {
               </Link>
               <p className="text-center text-slate-400 text-[10px] font-bold mt-4 uppercase tracking-widest leading-relaxed">
                 Card required for verification. <br />
-                No charge until day 7. Cancel anytime.
+                No charge until day 7. Your subscription begins <br />
+                automatically unless cancelled.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="bg-slate-50 py-40">
-        <div className="max-w-3xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Common Questions</h2>
-            <p className="text-slate-500 font-medium">Everything you need to know about Ace 11+.</p>
-          </div>
+      {/* FAQ Section */}ensur
+      <div className="text-center mb-20">
+        <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Common Questions</h2>
+        <p className="text-slate-500 font-medium">Everything you need to know about Ace 11+.</p>
+      </div>
 
-          <div className="space-y-6">
-            <FAQItem
-              question="Is this suitable for both GL and CEM boards?"
-              answer="Absolutely. Our question bank is dynamically updated to cover the specific logic and formatting of both GL Assessment and CEM, as well as common Private School entrance exams."
-            />
-            <FAQItem
-              question="How does the AI tutoring work?"
-              answer="Whenever a student gets a question wrong or feels stuck, they can click 'Explain'. Our AI instantly analyzes the specific question and provides a child-friendly, step-by-step breakdown of how to reach the answer."
-            />
-            <FAQItem
-              question="Can I track my child's progress?"
-              answer="Yes! As a parent, you have a dedicated dashboard that shows exactly which topics your child is mastering and which ones need more focus. You'll also receive weekly summaries."
-            />
-          </div>
-        </div>
-      </section>
+      <div className="space-y-6">
+        <FAQItem
+          question="What age group is Ace 11+ intended for?"
+          answer="Ace 11+ is specifically optimized for students in Year 4 and Year 5 (Ages 8-10) who are preparing to sit the 11+ exam at the start of Year 6. Starting early ensures a stress-free, adaptive learning path that builds foundational mastery before moving to high-difficulty challenges."
+        />
+        <FAQItem
+          question="Is this suitable for both GL and CEM boards?"
+          answer="Absolutely. Our question bank is dynamically updated to cover the specific logic and formatting of both GL Assessment and CEM, as well as common Private School entrance exams."
+        />
+        <FAQItem
+          question="How does the smart tutoring work?"
+          answer="Whenever a student gets a question wrong or feels stuck, they can click 'Explain'. Our system instantly analyzes the specific question and provides a child-friendly, step-by-step breakdown of how to reach the answer."
+        />
+        <FAQItem
+          question="Can I track my child's progress?"
+          answer="Yes! As a parent, you have a dedicated dashboard that shows exactly which topics your child is mastering and which ones need more focus. You'll also receive weekly summaries."
+        />
+      </div>
+    </div>
+      </section >
 
-      {/* Footer */}
-      <footer className="max-w-7xl mx-auto px-6 py-20 flex flex-col sm:flex-row justify-between items-center gap-10">
+    {/* Footer */ }
+    < footer className = "max-w-7xl mx-auto px-6 py-20 flex flex-col sm:flex-row justify-between items-center gap-10" >
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-100">
             A
@@ -282,9 +360,9 @@ export default function LandingPage() {
           <Link href="/terms" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Terms</Link>
           <a href="mailto:support@ace11plus.org" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Contact</a>
         </div>
-        <p className="text-xs font-bold text-slate-300">© 2025 Ace 11+ Intelligence. All rights reserved.</p>
-      </footer>
-    </div>
+        <p className="text-xs font-bold text-slate-300">© 2026 Ace 11+ Intelligence. All rights reserved.</p>
+      </footer >
+    </div >
   )
 }
 

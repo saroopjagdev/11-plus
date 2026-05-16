@@ -72,12 +72,13 @@ export default function AddStudentPage() {
                 id="age"
                 name="age"
                 type="number"
-                min="5"
-                max="18"
+                min="7"
+                max="12"
                 required
-                placeholder="e.g. 9"
+                placeholder="e.g. 9 (Year 5)"
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 focus:bg-white focus:border-indigo-500 transition-all outline-none text-slate-900 font-medium text-sm"
               />
+              <p className="text-[10px] text-slate-500 mt-1.5 ml-1 font-medium">Ace 11+ is optimized for students in Year 4 and Year 5 (Ages 8-10).</p>
             </div>
 
             <div className="space-y-2">
