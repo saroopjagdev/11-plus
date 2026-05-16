@@ -17,7 +17,8 @@ import {
   ChevronRight,
   GraduationCap,
   Calendar,
-  Trophy
+  Trophy,
+  Gift
 } from 'lucide-react'
 
 interface SidebarProps {

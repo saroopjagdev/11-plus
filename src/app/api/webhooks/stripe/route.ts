@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     const stripeCustomerId = invoice.customer as string
 
     // Only process if it's a subscription payment (not a one-off)
-    if (invoice.subscription && stripeCustomerId) {
+    if ((invoice as any).subscription && stripeCustomerId) {
       // 1. Find the referee's profile
       const { data: referee, error: refError } = await supabase
         .from('profiles')
@@ -129,6 +129,13 @@ export async function POST(req: Request) {
 
   // Handle failed payments — optionally downgrade or notify
   if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice
+    const stripeCustomerId = invoice.customer as string
+
+    if (stripeCustomerId) {
+      console.error(`Payment failed for customer: ${stripeCustomerId}`)
+    }
+  }
 
   return NextResponse.json({ received: true })
 }

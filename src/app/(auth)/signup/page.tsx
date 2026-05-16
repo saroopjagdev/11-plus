@@ -5,9 +5,9 @@ import { CheckCircle2, ShieldCheck, Target, TrendingUp } from 'lucide-react'
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; ref?: string }>
 }) {
-  const { error } = await searchParams;
+  const { error, ref } = await searchParams;
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Left Sidebar - Value Proposition */}
@@ -90,7 +90,7 @@ export default async function SignupPage({
           )}
 
           <form action={signup} className="mt-8 space-y-6">
-            <input type="hidden" name="referralCode" defaultValue={searchParams.ref} />
+            <input type="hidden" name="referralCode" defaultValue={ref} />
             <div className="space-y-5 rounded-md">
               <div>
                 <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-1.5">
