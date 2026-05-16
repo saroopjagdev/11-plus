@@ -15,10 +15,15 @@ export async function GET(request: Request) {
 
   const supabase = await createClient()
 
-  // 2. Fetch all parents with children
+  // 2. Fetch parents in batches who haven't received a report in the last 6 days
+  const sixDaysAgo = new Date()
+  sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
+
   const { data: parents, error: parentsError } = await supabase
     .from('profiles')
     .select('id, email, children (*)')
+    .or(`last_report_sent_at.lt.${sixDaysAgo.toISOString()},last_report_sent_at.is.null`)
+    .limit(50) // Process in batches to avoid timeouts
 
   if (parentsError) {
     return NextResponse.json({ error: parentsError.message }, { status: 500 })
@@ -28,6 +33,12 @@ export async function GET(request: Request) {
 
   for (const parent of parents) {
     if (!parent.children || parent.children.length === 0) continue
+
+    // Mark as processed immediately to prevent duplicate runs
+    await supabase
+      .from('profiles')
+      .update({ last_report_sent_at: new Date().toISOString() })
+      .eq('id', parent.id)
 
     for (const child of parent.children) {
       // 3. Fetch Weekly Progress

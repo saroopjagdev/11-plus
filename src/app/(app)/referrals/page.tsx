@@ -11,12 +11,14 @@ export default async function ReferralsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('referral_code, referral_count')
+    .select('referral_code, referral_count, pending_referral_credits, subscription_status')
     .eq('id', user.id)
     .single()
 
   const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL}/signup?ref=${profile?.referral_code || ''}`
   const count = profile?.referral_count || 0
+  const pending = profile?.pending_referral_credits || 0
+  const isFree = profile?.subscription_status !== 'pro'
   const maxReferrals = 5
 
   return (
@@ -32,6 +34,23 @@ export default async function ReferralsPage() {
         </p>
       </header>
 
+      {isFree && pending > 0 && (
+        <div className="mb-8 p-6 bg-amber-50 border border-amber-100 rounded-[2.5rem] flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div>
+              <h4 className="font-black text-amber-900">You have £{(pending * 19.99).toFixed(2)} waiting for you!</h4>
+              <p className="text-amber-700/60 text-sm font-medium">Join Pro today to automatically claim your referral credits.</p>
+            </div>
+          </div>
+          <Link href="/pricing" className="px-6 py-3 bg-amber-600 text-white rounded-xl font-bold text-sm hover:bg-amber-700 transition-all shadow-lg shadow-amber-200 shrink-0">
+            Claim Rewards
+          </Link>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Referral Card */}
         <div className="lg:col-span-2 space-y-8">
@@ -43,7 +62,6 @@ export default async function ReferralsPage() {
               </div>
               <button 
                 className="px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200 shrink-0"
-                // In a real client component, this would handle the clipboard
               >
                 <Copy className="h-4 w-4" />
                 Copy Link
@@ -62,7 +80,9 @@ export default async function ReferralsPage() {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-xl font-black mb-1">Your Progress</h3>
-                  <p className="text-slate-400 text-sm font-medium">You've earned {count} out of {maxReferrals} free months.</p>
+                  <p className="text-slate-400 text-sm font-medium">
+                    {pending > 0 ? `You've earned ${count} months (${pending} pending).` : `You've earned ${count} out of ${maxReferrals} free months.`}
+                  </p>
                 </div>
                 <div className="h-16 w-16 bg-white/10 rounded-2xl flex items-center justify-center">
                   <Sparkles className="h-8 w-8 text-amber-400" />

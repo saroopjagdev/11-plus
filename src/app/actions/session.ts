@@ -70,15 +70,15 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
     const newTotalQuestions = existingMastery.questions_answered + totalCount
     
     // Use an Exponential Moving Average (EMA) to heavily weight recent sessions.
-    // The weight is proportional to the number of questions answered in the session, capped at 0.5.
-    // This allows students to recover from early poor performance much faster.
     const weight = Math.min(totalCount / 50, 0.5) 
     const newAccuracy = (sessionAccuracy * weight) + (existingMastery.accuracy * (1 - weight))
+    const hasMastered = existingMastery.has_ever_mastered || newAccuracy >= 85
     
     await supabase
       .from('topic_mastery')
       .update({
         accuracy: Math.round(newAccuracy),
+        has_ever_mastered: hasMastered,
         questions_answered: newTotalQuestions,
         last_updated: new Date().toISOString()
       })
@@ -91,6 +91,7 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
         subject,
         topic,
         accuracy: Math.round(sessionAccuracy),
+        has_ever_mastered: sessionAccuracy >= 85,
         questions_answered: totalCount,
         last_updated: new Date().toISOString()
       })

@@ -40,7 +40,37 @@ export async function POST(req: Request) {
     const stripeCustomerId = session.customer as string
 
     if (userId) {
-      // Store the Stripe Customer ID so we can look up the user on cancellation
+      // 1. Check for any pending referral credits
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('pending_referral_credits')
+        .eq('id', userId)
+        .single()
+
+      if (profile?.pending_referral_credits && profile.pending_referral_credits > 0) {
+        try {
+          // Calculate total banked credit (£19.99 * credits)
+          const totalCredit = profile.pending_referral_credits * 1999
+          
+          await stripe.customers.createBalanceTransaction(stripeCustomerId, {
+            amount: -totalCredit,
+            currency: 'gbp',
+            description: `Banked Referral Credits: ${profile.pending_referral_credits} months applied`,
+          })
+
+          // Reset pending credits in DB
+          await supabase
+            .from('profiles')
+            .update({ pending_referral_credits: 0 })
+            .eq('id', userId)
+
+          console.log(`Applied ${profile.pending_referral_credits} banked credits to user ${userId}`)
+        } catch (creditErr) {
+          console.error('Error applying banked credits:', creditErr)
+        }
+      }
+
+      // 2. Standard upgrade to Pro
       const { error } = await supabase
         .from('profiles')
         .update({ 
@@ -80,7 +110,7 @@ export async function POST(req: Request) {
     // Only process if it's a subscription payment (not a one-off)
     if ((invoice as any).subscription && stripeCustomerId) {
       // 1. Find the referee's profile
-      const { data: referee, error: refError } = await supabase
+      const { data: referee } = await supabase
         .from('profiles')
         .select('id, referred_by, referral_rewarded')
         .eq('stripe_customer_id', stripeCustomerId)
@@ -89,38 +119,40 @@ export async function POST(req: Request) {
       // 2. If they were referred and haven't been rewarded yet
       if (referee?.referred_by && !referee.referral_rewarded) {
         // 3. Find the referrer
-        const { data: referrer, error: referrerError } = await supabase
+        const { data: referrer } = await supabase
           .from('profiles')
-          .select('id, stripe_customer_id, referral_count')
+          .select('id, stripe_customer_id, referral_count, pending_referral_credits')
           .eq('id', referee.referred_by)
           .single()
 
         // 4. Apply reward if referrer is under the cap (5)
         if (referrer && (referrer.referral_count || 0) < 5) {
           try {
-            // Apply £19.99 credit to referrer's Stripe account
+            // IF REFERRER HAS STRIPE ID: Apply credit immediately
             if (referrer.stripe_customer_id) {
               await stripe.customers.createBalanceTransaction(referrer.stripe_customer_id, {
-                amount: -1999, // £19.99 in pence (negative means credit)
+                amount: -1999,
                 currency: 'gbp',
                 description: 'Referral Reward: 1 Free Month',
               })
+              
+              // Use atomic increment RPC to prevent race conditions
+              await supabase.rpc('increment_referral_count', { user_id: referrer.id })
+            } 
+            // IF REFERRER IS FREE: Bank the credit for later
+            else {
+              await supabase.rpc('bank_referral_credit', { user_id: referrer.id })
             }
 
-            // 5. Update database: Increment referrer count and mark referee as rewarded
-            await supabase
-              .from('profiles')
-              .update({ referral_count: (referrer.referral_count || 0) + 1 })
-              .eq('id', referrer.id)
-
+            // Mark referee as rewarded
             await supabase
               .from('profiles')
               .update({ referral_rewarded: true })
               .eq('id', referee.id)
 
-            console.log(`Referral reward issued: ${referrer.id} credited for ${referee.id}`)
+            console.log(`Referral reward processed: ${referrer.id} credited for ${referee.id}`)
           } catch (stripeErr) {
-            console.error('Error creating Stripe balance transaction:', stripeErr)
+            console.error('Error processing referral reward:', stripeErr)
           }
         }
       }
