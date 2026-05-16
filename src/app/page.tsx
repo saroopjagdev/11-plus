@@ -320,35 +320,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ Section */}ensur
-      <div className="text-center mb-20">
-        <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Common Questions</h2>
-        <p className="text-slate-500 font-medium">Everything you need to know about Ace 11+.</p>
-      </div>
+      {/* FAQ Section */}
+      <section className="bg-slate-50 py-40">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Common Questions</h2>
+            <p className="text-slate-500 font-medium">Everything you need to know about Ace 11+.</p>
+          </div>
 
-      <div className="space-y-6">
-        <FAQItem
-          question="What age group is Ace 11+ intended for?"
-          answer="Ace 11+ is specifically optimized for students in Year 4 and Year 5 (Ages 8-10) who are preparing to sit the 11+ exam at the start of Year 6. Starting early ensures a stress-free, adaptive learning path that builds foundational mastery before moving to high-difficulty challenges."
-        />
-        <FAQItem
-          question="Is this suitable for both GL and CEM boards?"
-          answer="Absolutely. Our question bank is dynamically updated to cover the specific logic and formatting of both GL Assessment and CEM, as well as common Private School entrance exams."
-        />
-        <FAQItem
-          question="How does the smart tutoring work?"
-          answer="Whenever a student gets a question wrong or feels stuck, they can click 'Explain'. Our system instantly analyzes the specific question and provides a child-friendly, step-by-step breakdown of how to reach the answer."
-        />
-        <FAQItem
-          question="Can I track my child's progress?"
-          answer="Yes! As a parent, you have a dedicated dashboard that shows exactly which topics your child is mastering and which ones need more focus. You'll also receive weekly summaries."
-        />
-      </div>
-    </div>
-      </section >
+          <div className="space-y-6">
+            <FAQItem
+              question="What age group is Ace 11+ intended for?"
+              answer="Ace 11+ is specifically optimized for students in Year 4 and Year 5 (Ages 8-10) who are preparing to sit the 11+ exam at the start of Year 6. Starting early ensures a stress-free, adaptive learning path that builds foundational mastery before moving to high-difficulty challenges."
+            />
+            <FAQItem
+              question="Is this suitable for both GL and CEM boards?"
+              answer="Absolutely. Our question bank is dynamically updated to cover the specific logic and formatting of both GL Assessment and CEM, as well as common Private School entrance exams."
+            />
+            <FAQItem
+              question="How does the smart tutoring work?"
+              answer="Whenever a student gets a question wrong or feels stuck, they can click 'Explain'. Our system instantly analyzes the specific question and provides a child-friendly, step-by-step breakdown of how to reach the answer."
+            />
+            <FAQItem
+              question="Can I track my child's progress?"
+              answer="Yes! As a parent, you have a dedicated dashboard that shows exactly which topics your child is mastering and which ones need more focus. You'll also receive weekly summaries."
+            />
+          </div>
+        </div>
+      </section>
 
-    {/* Footer */ }
-    < footer className = "max-w-7xl mx-auto px-6 py-20 flex flex-col sm:flex-row justify-between items-center gap-10" >
+      {/* Footer */}
+      <footer className="max-w-7xl mx-auto px-6 py-20 flex flex-col sm:flex-row justify-between items-center gap-10">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-100">
             A
@@ -361,8 +363,8 @@ export default function LandingPage() {
           <a href="mailto:support@ace11plus.org" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Contact</a>
         </div>
         <p className="text-xs font-bold text-slate-300">© 2026 Ace 11+ Intelligence. All rights reserved.</p>
-      </footer >
-    </div >
+      </footer>
+    </div>
   )
 }
 
