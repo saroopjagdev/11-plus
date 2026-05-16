@@ -16,6 +16,12 @@ export async function POST(req: Request) {
        return NextResponse.json({ error: 'Price ID not configured' }, { status: 500 })
     }
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('referred_by')
+      .eq('id', user.id)
+      .single()
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -25,6 +31,10 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'subscription',
+      subscription_data: {
+        trial_period_days: 7,
+      },
+      discounts: profile?.referred_by ? [{ coupon: 'REFERRAL50' }] : [],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing`,
       customer_email: user.email,

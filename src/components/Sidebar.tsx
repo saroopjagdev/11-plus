@@ -50,7 +50,8 @@ export function Sidebar({
     { label: 'Topic Library', href: '/library', icon: GraduationCap },
     { label: 'Performance', href: '/analytics', icon: BarChart3 },
     { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
-    { label: 'Subscription', href: '/pricing', icon: CreditCard },
+    { label: 'Refer a Friend', href: '/referrals', icon: Gift },
+    { label: subscriptionStatus === 'pro' ? 'Billing' : 'Subscription', href: subscriptionStatus === 'pro' ? '/api/portal' : '/pricing', icon: CreditCard, isAction: subscriptionStatus === 'pro' },
     { label: 'Settings', href: '/settings', icon: Settings },
   ]
 
@@ -92,8 +93,25 @@ export function Sidebar({
 
           {/* Nav Links */}
           <nav className="flex-1 space-y-2">
-            {navItems.map((item) => {
+            {navItems.map((item: any) => {
               const isActive = pathname === item.href
+              
+              if (item.isAction) {
+                return (
+                  <form key={item.href} action={item.href} method="POST">
+                    <button
+                      type="submit"
+                      className="w-full flex items-center justify-between p-3 rounded-2xl font-bold transition-all group text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </div>
+                    </button>
+                  </form>
+                )
+              }
+
               return (
                 <Link
                   key={item.href}

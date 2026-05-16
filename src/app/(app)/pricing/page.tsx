@@ -12,21 +12,36 @@ export default async function PricingPage() {
   // 2. Profile Check
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status')
+    .select('subscription_status, referred_by')
     .eq('id', user.id)
     .single()
 
   const isPro = profile?.subscription_status === 'pro'
+  const isReferred = !!profile?.referred_by
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto">
       <header className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-full mb-4">
-          <Sparkles className="h-4 w-4 text-indigo-600" />
-          <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest">Elevate Learning</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">Invest in their success.</h1>
-        <p className="text-slate-500 text-base max-w-xl mx-auto">Choose the plan that gives your child the edge in their 11+ preparation.</p>
+        {isReferred ? (
+          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-full mb-4 animate-bounce-slow">
+            <Sparkles className="h-4 w-4 text-emerald-600" />
+            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Referral Discount Applied: 50% OFF</span>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-full mb-4">
+            <Sparkles className="h-4 w-4 text-indigo-600" />
+            <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest">Elevate Learning</span>
+          </div>
+        )}
+        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">
+          {isReferred ? "Your friend got you a deal." : "Invest in their success."}
+        </h1>
+        <p className="text-slate-500 text-base max-w-xl mx-auto">
+          {isReferred 
+            ? "Join Ace 11+ Pro today and get 50% off your first month after your trial ends."
+            : "Choose the plan that gives your child the edge in their 11+ preparation."
+          }
+        </p>
       </header>
 
       <div className="grid md:grid-cols-2 gap-6 items-start">
@@ -98,9 +113,14 @@ export default async function PricingPage() {
                 type="submit"
                 className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 active:scale-95"
               >
-                Upgrade to Pro
+                Start 7-Day Free Trial
                 <Zap className="h-4 w-4 fill-current" />
               </button>
+              <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest mt-4 leading-relaxed">
+                No charge until day 7. <br />
+                Subscription begins automatically <br />
+                unless cancelled.
+              </p>
             </form>
           )}
 

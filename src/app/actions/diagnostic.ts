@@ -55,6 +55,7 @@ export async function submitDiagnostic(childId: string | null, attempts: { quest
 
         Provide an encouraging, tutor-style review (3-4 sentences). 
         Highlight strengths and suggest why they should join Ace11+ to improve the weaker areas.
+        STRICT: DO NOT use markdown bolding (no **).
       `
 
       const response = await openai.chat.completions.create({
@@ -86,6 +87,7 @@ export async function submitDiagnostic(childId: string | null, attempts: { quest
       - Highlight 1-2 strengths.
       - Identify 1-2 areas for improvement.
       - Sound encouraging and professional.
+      STRICT: DO NOT use markdown bolding (no **).
     `
 
     const response = await openai.chat.completions.create({

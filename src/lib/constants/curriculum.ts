@@ -30,4 +30,4 @@ export const CURRICULUM_LADDER: TopicPrerequisite[] = [
 ]
 
 export const MASTERY_THRESHOLD = 85
-export const MIN_QUESTIONS_FOR_MASTERY = 15
+export const MIN_QUESTIONS_FOR_MASTERY = 50

@@ -68,7 +68,12 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
 
   if (existingMastery) {
     const newTotalQuestions = existingMastery.questions_answered + totalCount
-    const newAccuracy = ((existingMastery.accuracy * existingMastery.questions_answered) + (sessionAccuracy * totalCount)) / newTotalQuestions
+    
+    // Use an Exponential Moving Average (EMA) to heavily weight recent sessions.
+    // The weight is proportional to the number of questions answered in the session, capped at 0.5.
+    // This allows students to recover from early poor performance much faster.
+    const weight = Math.min(totalCount / 50, 0.5) 
+    const newAccuracy = (sessionAccuracy * weight) + (existingMastery.accuracy * (1 - weight))
     
     await supabase
       .from('topic_mastery')

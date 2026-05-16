@@ -72,17 +72,63 @@ export async function POST(req: Request) {
     }
   }
 
-  // Handle failed payments — optionally downgrade or notify
-  if (event.type === 'invoice.payment_failed') {
+  // Handle successful payments — issue referral rewards
+  if (event.type === 'invoice.payment_succeeded') {
     const invoice = event.data.object as Stripe.Invoice
     const stripeCustomerId = invoice.customer as string
 
-    if (stripeCustomerId) {
-      console.error(`Payment failed for customer: ${stripeCustomerId}`)
-      // Stripe will retry automatically. After all retries fail, 
-      // it sends customer.subscription.deleted which we handle above.
+    // Only process if it's a subscription payment (not a one-off)
+    if (invoice.subscription && stripeCustomerId) {
+      // 1. Find the referee's profile
+      const { data: referee, error: refError } = await supabase
+        .from('profiles')
+        .select('id, referred_by, referral_rewarded')
+        .eq('stripe_customer_id', stripeCustomerId)
+        .single()
+
+      // 2. If they were referred and haven't been rewarded yet
+      if (referee?.referred_by && !referee.referral_rewarded) {
+        // 3. Find the referrer
+        const { data: referrer, error: referrerError } = await supabase
+          .from('profiles')
+          .select('id, stripe_customer_id, referral_count')
+          .eq('id', referee.referred_by)
+          .single()
+
+        // 4. Apply reward if referrer is under the cap (5)
+        if (referrer && (referrer.referral_count || 0) < 5) {
+          try {
+            // Apply £19.99 credit to referrer's Stripe account
+            if (referrer.stripe_customer_id) {
+              await stripe.customers.createBalanceTransaction(referrer.stripe_customer_id, {
+                amount: -1999, // £19.99 in pence (negative means credit)
+                currency: 'gbp',
+                description: 'Referral Reward: 1 Free Month',
+              })
+            }
+
+            // 5. Update database: Increment referrer count and mark referee as rewarded
+            await supabase
+              .from('profiles')
+              .update({ referral_count: (referrer.referral_count || 0) + 1 })
+              .eq('id', referrer.id)
+
+            await supabase
+              .from('profiles')
+              .update({ referral_rewarded: true })
+              .eq('id', referee.id)
+
+            console.log(`Referral reward issued: ${referrer.id} credited for ${referee.id}`)
+          } catch (stripeErr) {
+            console.error('Error creating Stripe balance transaction:', stripeErr)
+          }
+        }
+      }
     }
   }
+
+  // Handle failed payments — optionally downgrade or notify
+  if (event.type === 'invoice.payment_failed') {
 
   return NextResponse.json({ received: true })
 }

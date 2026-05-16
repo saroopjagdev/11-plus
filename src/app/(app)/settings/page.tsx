@@ -55,23 +55,38 @@ export default async function SettingsPage() {
            </div>
         </section>
 
-        {/* Subscription Section */}
-        <section className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-           <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                 <div className="h-16 w-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
-                    <CreditCard className="h-8 w-8" />
-                 </div>
-                 <div>
-                    <h2 className="text-xl font-black text-slate-900">Subscription Plan</h2>
-                    <p className="text-slate-400 text-sm font-medium">You are currently on the <span className="text-indigo-600 font-bold uppercase">{profile?.subscription_status || 'Free'}</span> plan.</p>
-                 </div>
-              </div>
-              <Link href="/pricing" className="px-6 py-3 bg-white border-2 border-slate-100 text-slate-900 rounded-xl font-bold hover:bg-slate-50 transition-all">
-                 Manage Plan
-              </Link>
-           </div>
-        </section>
+         {/* Subscription Section */}
+         <section className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between mb-8">
+               <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
+                     <CreditCard className="h-8 w-8" />
+                  </div>
+                  <div>
+                     <h2 className="text-xl font-black text-slate-900">Subscription Plan</h2>
+                     <div className="flex items-center gap-2">
+                        <span className="text-indigo-600 font-bold uppercase text-sm">{profile?.subscription_status || 'Free'}</span>
+                        {profile?.subscription_status === 'pro' && !profile?.stripe_customer_id && (
+                           <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-wider">Free Trial</span>
+                        )}
+                     </div>
+                  </div>
+               </div>
+               
+               {profile?.subscription_status === 'pro' ? (
+                  <form action="/api/portal" method="POST">
+                    <button type="submit" className="px-6 py-3 bg-white border-2 border-slate-100 text-slate-900 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center gap-2">
+                       Manage Billing
+                       <CreditCard className="h-4 w-4" />
+                    </button>
+                  </form>
+               ) : (
+                  <Link href="/pricing" className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all">
+                     Upgrade to Pro
+                  </Link>
+               )}
+            </div>
+         </section>
 
         {/* Security Section */}
         <section className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">

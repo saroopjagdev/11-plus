@@ -16,10 +16,12 @@ export default async function SignupPage({
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-violet-500 rounded-full blur-3xl opacity-50" />
         
         <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-3 mb-20 inline-block">
-            <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 font-bold text-xl shadow-lg">
-              A
-            </div>
+          <Link href="/" className="flex items-center gap-3 mb-20 inline-flex">
+            <img 
+              src="/logo.png" 
+              alt="Ace 11+" 
+              className="h-12 w-12 object-contain rounded-xl shadow-lg bg-white p-1"
+            />
             <span className="font-bold text-2xl tracking-tight">Ace 11+</span>
           </Link>
 
@@ -88,6 +90,7 @@ export default async function SignupPage({
           )}
 
           <form action={signup} className="mt-8 space-y-6">
+            <input type="hidden" name="referralCode" defaultValue={searchParams.ref} />
             <div className="space-y-5 rounded-md">
               <div>
                 <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-1.5">

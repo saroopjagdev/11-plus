@@ -25,19 +25,49 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const supabase = await createClient()
 
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  const referralCode = formData.get('referralCode') as string
 
-  const { error } = await supabase.auth.signUp(data)
+  const { data: { user }, error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
 
   if (error) {
     return redirect('/signup?error=' + encodeURIComponent(error.message))
   }
 
-  // After signup, Supabase might require email confirmation.
-  // For MVP, we can assume auto-confirm is off or user needs to check email.
+  if (user) {
+    // Generate a unique referral code for the new user (e.g. PART OF EMAIL + RANDOM)
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase()
+    const base = email.split('@')[0].substring(0, 5).toUpperCase()
+    const newReferralCode = `${base}${randomSuffix}`
+
+    let referredBy = null
+    if (referralCode) {
+      const { data: referrer } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('referral_code', referralCode)
+        .single()
+      
+      if (referrer) {
+        referredBy = referrer.id
+      }
+    }
+
+    // Update the profile with the referral info
+    // We use upsert in case the trigger already created it
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      email: email,
+      referral_code: newReferralCode,
+      referred_by: referredBy,
+      subscription_status: 'free'
+    })
+  }
+
   redirect('/login?message=Check your email to continue')
 }
 

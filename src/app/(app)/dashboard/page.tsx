@@ -6,7 +6,7 @@ import { MasteryBar } from '@/components/MasteryBar'
 import { DashboardTips } from '@/components/DashboardTips'
 import { DashboardStudentProfile } from '@/components/DashboardStudentProfile'
 import { GoalCountdown } from '@/components/GoalCountdown'
-import { DashboardHubCard } from '@/components/DashboardHubCard'
+import { RoadmapTabs } from '@/components/RoadmapTabs'
 import { DailyMission } from '@/components/DailyMission'
 import { ExamRoadmap } from '@/components/ExamRoadmap'
 import { DashboardOnboardingTrigger } from '@/components/onboarding/DashboardOnboardingTrigger'
@@ -133,78 +133,14 @@ export default async function DashboardPage() {
                />
             </div>
 
-            {/* Learning Hubs */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <DashboardHubCard 
-                title="Mathematics" 
-                color="indigo" 
-                icon={<Target className="h-6 w-6 text-indigo-600" />}
-                items={[
-                  { label: 'Full Mock Test', href: '/practice/mock/Maths', pro: true, locked: false, mastered: true },
-                  { label: 'Arithmetic hub', href: '/practice/topic/Arithmetic', locked: false, mastered: true },
-                  ...CURRICULUM_LADDER
-                    .filter(l => l.subject === 'Maths' && l.topic !== 'Arithmetic')
-                    .map(l => {
-                      const prereq = mastery.find(m => m.topic === l.prerequisite)
-                      const isMastered = prereq && prereq.accuracy >= MASTERY_THRESHOLD && prereq.questions_answered >= MIN_QUESTIONS_FOR_MASTERY
-                      return {
-                        label: `${l.topic} topic`,
-                        href: `/practice/topic/${l.topic}`,
-                        locked: !!l.prerequisite,
-                        mastered: !!isMastered,
-                        prerequisite: l.prerequisite
-                      }
-                    })
-                ]}
-                isPro={profile?.subscription_status === 'pro'}
-              />
-              <DashboardHubCard 
-                title="English" 
-                color="violet" 
-                icon={<BookOpen className="h-6 w-6 text-violet-600" />}
-                items={[
-                  { label: 'Full Mock Test', href: '/practice/mock/English', pro: true, locked: false, mastered: true },
-                  { label: 'Vocabulary Drill', href: '/practice/drill/English', locked: false, mastered: true },
-                  ...CURRICULUM_LADDER
-                    .filter(l => l.subject === 'English')
-                    .map(l => {
-                      const prereq = l.prerequisite ? mastery.find(m => m.topic === l.prerequisite) : null
-                      const isMastered = !l.prerequisite || (prereq && prereq.accuracy >= MASTERY_THRESHOLD && prereq.questions_answered >= MIN_QUESTIONS_FOR_MASTERY)
-                      return {
-                        label: `${l.topic} topic`,
-                        href: `/practice/topic/${l.topic}`,
-                        locked: !!l.prerequisite,
-                        mastered: !!isMastered,
-                        prerequisite: l.prerequisite
-                      }
-                    })
-                ]}
-                isPro={profile?.subscription_status === 'pro'}
-              />
-              <DashboardHubCard 
-                title="Reasoning" 
-                color="amber" 
-                icon={<Brain className="h-6 w-6 text-amber-600" />}
-                items={[
-                  { label: 'Verbal Mock', href: '/practice/mock/Verbal Reasoning', pro: true, locked: false, mastered: true },
-                  { label: 'Logic Drills', href: '/practice/drill/Verbal Reasoning', locked: false, mastered: true },
-                  ...CURRICULUM_LADDER
-                    .filter(l => l.subject === 'Verbal Reasoning')
-                    .map(l => {
-                      const prereq = l.prerequisite ? mastery.find(m => m.topic === l.prerequisite) : null
-                      const isMastered = !l.prerequisite || (prereq && prereq.accuracy >= MASTERY_THRESHOLD && prereq.questions_answered >= MIN_QUESTIONS_FOR_MASTERY)
-                      return {
-                        label: `${l.topic} topic`,
-                        href: `/practice/topic/${l.topic}`,
-                        locked: !!l.prerequisite,
-                        mastered: !!isMastered,
-                        prerequisite: l.prerequisite
-                      }
-                    })
-                ]}
-                isPro={profile?.subscription_status === 'pro'}
-              />
-            </div>
+            {/* Learning Journey Hubs */}
+            <RoadmapTabs 
+              mastery={mastery}
+              curriculum={CURRICULUM_LADDER}
+              threshold={MASTERY_THRESHOLD}
+              minQuestions={MIN_QUESTIONS_FOR_MASTERY}
+              isPro={profile?.subscription_status === 'pro'}
+            />
 
             {/* Topic Mastery Section */}
             <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
