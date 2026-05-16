@@ -15,6 +15,11 @@ export default function LandingPage() {
             />
             <span className="font-bold text-slate-900 text-xl tracking-tight">Ace 11+</span>
           </div>
+          <div className="hidden lg:flex items-center bg-indigo-50 border border-indigo-100 px-4 py-1.5 rounded-full">
+            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Free Baseline Assessment Available</span>
+            <Link href="/diagnostic" className="ml-3 text-[10px] font-black text-indigo-700 underline underline-offset-2">Start Now</Link>
+          </div>
+
           <div className="hidden md:flex items-center gap-10">
             <a href="#features" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">Features</a>
             <a href="#curriculum" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">Curriculum</a>
@@ -45,9 +50,10 @@ export default function LandingPage() {
               Start Free Trial
               <ArrowRight className="h-5 w-5" />
             </Link>
-            <a href="#curriculum" className="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 border-2 border-slate-100 rounded-2xl font-bold text-lg hover:border-indigo-200 transition-all text-center">
-              View Curriculum
-            </a>
+            <Link href="/diagnostic" className="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 border-2 border-slate-100 rounded-2xl font-bold text-lg hover:border-indigo-200 transition-all text-center flex items-center justify-center gap-2">
+              Take Free Diagnostic
+              <Target className="h-5 w-5 text-indigo-600" />
+            </Link>
           </div>
           <div className="mt-12 flex items-center gap-4">
             <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
@@ -161,6 +167,78 @@ export default function LandingPage() {
             desc="Our question bank is strictly aligned with GL, CEM, and top Private School entrance exams."
             color="emerald"
           />
+        </div>
+      </section>
+
+      {/* New Readiness Section */}
+      <section className="bg-slate-50 py-40 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-20 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-100 px-4 py-2 rounded-full mb-8">
+              <Target className="h-4 w-4 text-amber-600" />
+              <span className="text-xs font-bold text-amber-700 uppercase tracking-widest leading-none">Baseline Assessment</span>
+            </div>
+            <h2 className="text-5xl font-black text-slate-900 mb-8 leading-tight tracking-tight">
+              Is your child <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">11+ Ready?</span>
+            </h2>
+            <p className="text-slate-500 text-xl mb-10 leading-relaxed font-medium">
+              Don't leave success to chance. Our rigorous diagnostic test uses real exam-standard questions to map your child's current ability against the 11+ requirements.
+            </p>
+            <ul className="space-y-4 mb-10">
+              <li className="flex items-center gap-3 font-bold text-slate-700">
+                <div className="h-6 w-6 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                  <Check className="h-3.5 w-3.5" />
+                </div>
+                Detailed Topic Breakdown
+              </li>
+              <li className="flex items-center gap-3 font-bold text-slate-700">
+                <div className="h-6 w-6 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                  <Check className="h-3.5 w-3.5" />
+                </div>
+                Personalized Learning Recommendations
+              </li>
+              <li className="flex items-center gap-3 font-bold text-slate-700">
+                <div className="h-6 w-6 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                  <Check className="h-3.5 w-3.5" />
+                </div>
+                No account required to start
+              </li>
+            </ul>
+            <Link href="/diagnostic" className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">
+              Start Free Assessment
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+          </div>
+
+          <div className="relative">
+             <div className="absolute -inset-10 bg-amber-100 rounded-full blur-[120px] opacity-30" />
+             <div className="relative bg-white p-8 rounded-[3rem] border border-slate-100 shadow-2xl">
+                <div className="text-center mb-8">
+                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Current Status</div>
+                   <div className="text-4xl font-black text-slate-900">Developing</div>
+                </div>
+                
+                <div className="h-4 w-full bg-slate-50 rounded-full overflow-hidden mb-8 border border-slate-100 flex items-center px-1">
+                   <div className="h-2 w-[65%] bg-gradient-to-r from-amber-400 to-orange-500 rounded-full" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div className="text-[10px] font-black text-slate-400 uppercase mb-1">Score</div>
+                      <div className="text-xl font-black text-slate-900">14/20</div>
+                   </div>
+                   <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
+                      <div className="text-[10px] font-black text-indigo-400 uppercase mb-1">Goal</div>
+                      <div className="text-xl font-black text-indigo-900">20/20</div>
+                   </div>
+                </div>
+
+                <div className="mt-8 p-6 bg-indigo-600 rounded-3xl text-white">
+                   <p className="text-sm font-medium italic opacity-90">"Focus on Multi-step Word Problems to reach the Competent level."</p>
+                </div>
+             </div>
+          </div>
         </div>
       </section>
 

@@ -54,17 +54,18 @@ export default async function DashboardPage() {
 
   const recommendations = childId ? await getStudentRecommendations(supabase, childId) : []
 
-  // 3. Check for Mission Completion (3+ sessions today)
+  // 3. Check for Mission Completion (only count 'practice' sessions today)
   const today = new Date().toISOString().split('T')[0]
-  const { data: todayMastery } = childId
+  const { data: todaySessions } = childId
     ? await supabase
-        .from('topic_mastery')
+        .from('sessions')
         .select('topic')
         .eq('child_id', childId)
-        .gte('last_updated', today)
+        .eq('type', 'practice')
+        .gte('completed_at', today)
     : { data: [] }
 
-  const completedTopics = (todayMastery?.map(m => m.topic).filter(Boolean) || []) as string[]
+  const completedTopics = Array.from(new Set(todaySessions?.map(s => s.topic).filter(Boolean) || [])) as string[]
   const missionsComplete = recommendations.length > 0 && recommendations.every(rec => completedTopics.includes(rec.topic))
 
   // 4. Calculate Overall Stats

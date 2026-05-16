@@ -49,13 +49,18 @@ export async function submitDiagnostic(childId: string | null, attempts: { quest
     // 3. Handle Guest Mode (No DB Save)
     if (!childId) {
       const prompt = `
-        You are an expert 11+ tutor. Analyze these diagnostic results for a prospective student.
+        You are an expert, direct 11+ tutor. Analyze these diagnostic results for a prospective student.
+        The 11+ is extremely competitive. If they aren't at 100%, they aren't "11+ Ready" yet.
+        
         Overall Score: ${score} / ${attempts.length}
         Topic Breakdown: ${JSON.stringify(topicBreakdown)}
 
-        Provide an encouraging, tutor-style review (3-4 sentences). 
-        Highlight strengths and suggest why they should join Ace11+ to improve the weaker areas.
-        STRICT: DO NOT use markdown bolding (no **).
+        Provide a blunt, honest, and professional tutor-style review (2-3 sentences). 
+        - DO NOT be overly flowery or use "AI" enthusiasm. 
+        - Tell them exactly where they stand: "Foundation", "Developing", or "Competent".
+        - State clearly what needs to be fixed to reach 100%.
+        - Example: "Saroop is currently at the Developing level. While they understand Synonyms, the failure in Fractions and Decimals will be a barrier to entry at top schools. We need to drill these weak points immediately to reach 100% readiness."
+        STRICT: NO markdown bolding (**). NO flowery adjectives like "wonderful". NO mention of AI.
       `
 
       const response = await openai.chat.completions.create({
@@ -79,15 +84,17 @@ export async function submitDiagnostic(childId: string | null, attempts: { quest
     }
 
     const prompt = `
-      You are an expert 11+ tutor. Analyze the following diagnostic results for a student named ${child?.name || 'the student'}.
+      You are an expert, direct 11+ tutor. Analyze the following results for ${child?.name || 'the student'}.
+      The 11+ standard is 100% readiness.
+
       Overall Score: ${score} / ${attempts.length}
       Topic Breakdown: ${JSON.stringify(topicBreakdown)}
 
-      Provide a child-friendly and parent-friendly review (3-4 sentences). 
-      - Highlight 1-2 strengths.
-      - Identify 1-2 areas for improvement.
-      - Sound encouraging and professional.
-      STRICT: DO NOT use markdown bolding (no **).
+      Provide a blunt, honest review (2-3 sentences). 
+      - Identify the exact topics holding them back from 100%.
+      - No "AI" fluff or "wonderful" adjectives.
+      - Be direct about the competitive reality.
+      STRICT: NO markdown bolding (**). NO mention of AI.
     `
 
     const response = await openai.chat.completions.create({
@@ -158,6 +165,19 @@ export async function submitDiagnostic(childId: string | null, attempts: { quest
 
     throw new Error('Failed to save diagnostic results. Please try again.')
   }
+}
+
+export async function captureLead(email: string, metadata: any) {
+  const supabase = await createClient()
+  
+  // We'll save to a 'leads' table (assuming we create it or just log for now)
+  // For now, let's just log it. In production, this would go to a CRM or DB table.
+  console.log('Lead Captured:', { email, metadata, date: new Date().toISOString() })
+  
+  // If we had a leads table:
+  // await supabase.from('leads').insert({ email, metadata, source: 'diagnostic' })
+  
+  return { success: true }
 }
 
 export async function claimGuestDiagnostic(childId: string, data: { score: number, breakdown: any[], aiSummary: string }) {

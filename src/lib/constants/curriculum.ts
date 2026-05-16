@@ -29,5 +29,13 @@ export const CURRICULUM_LADDER: TopicPrerequisite[] = [
   { topic: 'Number Series', subject: 'Verbal Reasoning' },
 ]
 
+export const MASTERY_TIERS = [
+  { level: 1, label: 'Bronze', minAccuracy: 80, minQuestions: 20, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+  { level: 2, label: 'Silver', minAccuracy: 85, minQuestions: 100, color: 'text-slate-500', bgColor: 'bg-slate-50' },
+  { level: 3, label: 'Gold', minAccuracy: 90, minQuestions: 250, color: 'text-amber-600', bgColor: 'bg-amber-50' },
+  { level: 4, label: 'Platinum', minAccuracy: 95, minQuestions: 500, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+  { level: 5, label: 'Diamond', minAccuracy: 98, minQuestions: 1000, color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
+]
+
 export const MASTERY_THRESHOLD = 85
-export const MIN_QUESTIONS_FOR_MASTERY = 50
+export const MIN_QUESTIONS_FOR_MASTERY = 20 // Level 1 threshold

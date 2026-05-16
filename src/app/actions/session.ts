@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { calculateLevel } from '@/lib/gamification'
+import { MASTERY_TIERS } from '@/lib/constants/curriculum'
 
 interface SessionResult {
   childId: string
@@ -28,6 +29,8 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
       child_id: childId,
       score: score,
       type: type,
+      topic: topic,
+      subject: subject,
       completed_at: new Date().toISOString()
     })
     .select()
@@ -67,32 +70,58 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
     .maybeSingle()
 
   if (existingMastery) {
-    const newTotalQuestions = existingMastery.questions_answered + totalCount
+    const newTotalQuestions = (existingMastery.questions_answered || 0) + totalCount
+    const newTotalCorrect = (existingMastery.total_correct || 0) + correctCount
     
-    // Use an Exponential Moving Average (EMA) to heavily weight recent sessions.
-    const weight = Math.min(totalCount / 50, 0.5) 
+    // Use an Exponential Moving Average (EMA) that is slower for long-term progression
+    const weight = 0.1 // Fixed slow weight for "sticky" progress
     const newAccuracy = (sessionAccuracy * weight) + (existingMastery.accuracy * (1 - weight))
-    const hasMastered = existingMastery.has_ever_mastered || newAccuracy >= 85
+    
+    // Calculate new mastery level
+    const currentAccuracy = Math.round(newAccuracy)
+    let newMasteryLevel = 0
+    for (const tier of [...MASTERY_TIERS].reverse()) {
+      if (currentAccuracy >= tier.minAccuracy && newTotalQuestions >= tier.minQuestions) {
+        newMasteryLevel = tier.level
+        break
+      }
+    }
+
+    const hasMastered = existingMastery.has_ever_mastered || newMasteryLevel >= 1
     
     await supabase
       .from('topic_mastery')
       .update({
-        accuracy: Math.round(newAccuracy),
+        accuracy: currentAccuracy,
         has_ever_mastered: hasMastered,
         questions_answered: newTotalQuestions,
+        total_correct: newTotalCorrect,
+        mastery_level: newMasteryLevel,
         last_updated: new Date().toISOString()
       })
       .eq('id', existingMastery.id)
   } else {
+    // New topic entry
+    const accuracy = Math.round(sessionAccuracy)
+    let masteryLevel = 0
+    for (const tier of [...MASTERY_TIERS].reverse()) {
+      if (accuracy >= tier.minAccuracy && totalCount >= tier.minQuestions) {
+        masteryLevel = tier.level
+        break
+      }
+    }
+
     await supabase
       .from('topic_mastery')
       .insert({
         child_id: childId,
         subject,
         topic,
-        accuracy: Math.round(sessionAccuracy),
-        has_ever_mastered: sessionAccuracy >= 85,
+        accuracy: accuracy,
+        has_ever_mastered: masteryLevel >= 1,
         questions_answered: totalCount,
+        total_correct: correctCount,
+        mastery_level: masteryLevel,
         last_updated: new Date().toISOString()
       })
   }
