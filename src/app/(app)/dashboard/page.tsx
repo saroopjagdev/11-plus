@@ -8,7 +8,6 @@ import { DashboardStudentProfile } from '@/components/DashboardStudentProfile'
 import { GoalCountdown } from '@/components/GoalCountdown'
 import { RoadmapTabs } from '@/components/RoadmapTabs'
 import { DailyMission } from '@/components/DailyMission'
-import { ExamRoadmap } from '@/components/ExamRoadmap'
 import { DashboardOnboardingTrigger } from '@/components/onboarding/DashboardOnboardingTrigger'
 import { getStudentRecommendations } from '@/lib/recommendations'
 import { Zap, Target, Star, ArrowUpRight, BookOpen, Brain, BarChart3, Lock, ChevronRight, Clock } from 'lucide-react'
@@ -68,14 +67,6 @@ export default async function DashboardPage() {
   const completedTopics = Array.from(new Set(todaySessions?.map(s => s.topic).filter(Boolean) || [])) as string[]
   const missionsComplete = recommendations.length > 0 && recommendations.every(rec => completedTopics.includes(rec.topic))
 
-  // 4. Calculate Overall Stats
-  const TOTAL_TOPICS = 17 // Based on run-batch.js curriculum
-  const overallAccuracy = (mastery?.reduce((acc, m) => acc + m.accuracy, 0) || 0) / TOTAL_TOPICS
-
-  const daysRemaining = children?.[0]?.exam_date 
-    ? Math.max(0, Math.ceil((new Date(children[0].exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-    : null
-
   return (
     <div className="min-h-screen bg-slate-50">
       
@@ -126,12 +117,6 @@ export default async function DashboardPage() {
                    />
                  </div>
                )}
-
-               <ExamRoadmap 
-                 overallAccuracy={overallAccuracy}
-                 daysRemaining={daysRemaining}
-                 examDate={children?.[0]?.exam_date}
-               />
             </div>
 
             {/* Learning Journey Hubs */}
