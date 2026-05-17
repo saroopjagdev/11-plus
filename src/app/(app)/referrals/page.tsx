@@ -17,13 +17,20 @@ export default async function ReferralsPage() {
     .single()
     .then(res => res.data)
 
-  // AUTO-HEAL: If user doesn't have a referral code yet, generate and save one
+  // AUTO-HEAL: If user doesn't have a referral code yet, generate and save one using the service client
   if (profile && !profile.referral_code) {
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase()
     const base = profile.email?.split('@')[0].substring(0, 5).toUpperCase() || 'ACE'
     const newCode = `${base}${randomSuffix}`
     
-    await supabase
+    // Import createClient directly from supabase-js for the service role
+    const { createClient: createServiceClient } = require('@supabase/supabase-js')
+    const serviceClient = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    await serviceClient
       .from('profiles')
       .update({ referral_code: newCode })
       .eq('id', user.id)
