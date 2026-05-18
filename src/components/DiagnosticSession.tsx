@@ -44,12 +44,12 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
   const handleCheck = () => {
     if (!selectedAnswer) return
     const isCorrect = selectedAnswer === currentQuestion.correct_answer
-    
-    setAttempts([...attempts, { 
-      questionId: currentQuestion.id, 
-      isCorrect, 
-      topic: currentQuestion.topic, 
-      subject: currentQuestion.subject 
+
+    setAttempts([...attempts, {
+      questionId: currentQuestion.id,
+      isCorrect,
+      topic: currentQuestion.topic,
+      subject: currentQuestion.subject
     }])
     setShowFeedback(true)
   }
@@ -100,170 +100,170 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
     return (
       <div className="h-full overflow-y-auto custom-scrollbar">
         <div className="max-w-3xl mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-[3rem] p-10 shadow-2xl shadow-indigo-100 border-2 border-indigo-50"
-        >
-          <div className="text-center mb-10">
-            <div className="h-20 w-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Trophy className="h-10 w-10 text-amber-600" />
-            </div>
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Diagnostic Complete!</h2>
-            {childId ? (
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-slate-500">We&apos;ve mapped out {questions[0]?.subject || 'the'} ability across all topics.</p>
-                <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                  <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                  Saved to student profile
-                </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-[3rem] p-10 shadow-2xl shadow-indigo-100 border-2 border-indigo-50"
+          >
+            <div className="text-center mb-10">
+              <div className="h-20 w-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Trophy className="h-10 w-10 text-amber-600" />
               </div>
-            ) : (
-              <p className="text-slate-500">We&apos;ve mapped out your current ability across all topics.</p>
+              <h2 className="text-3xl font-black text-slate-900 mb-2">Diagnostic Complete!</h2>
+              {childId ? (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-slate-500">We&apos;ve mapped out {questions[0]?.subject || 'the'} ability across all topics.</p>
+                  <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                    <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    Saved to student profile
+                  </div>
+                </div>
+              ) : (
+                <p className="text-slate-500">We&apos;ve mapped out your current ability across all topics.</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 mb-10">
+              <div className="bg-indigo-50 rounded-3xl p-6 text-center">
+                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Status</p>
+                <p className="text-3xl font-black text-indigo-600">
+                  {results.score / questions.length === 1 ? '11+ Ready' :
+                    results.score / questions.length >= 0.86 ? 'Competent' :
+                      results.score / questions.length >= 0.61 ? 'Developing' : 'Foundation'}
+                </p>
+              </div>
+              <div className="bg-emerald-50 rounded-3xl p-6 text-center">
+                <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">Score</p>
+                <p className="text-3xl font-black text-emerald-600">{results.score} / {questions.length}</p>
+              </div>
+            </div>
+
+            {results.aiSummary && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-indigo-600 text-white rounded-3xl p-8 mb-10 relative overflow-hidden shadow-xl shadow-indigo-100"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Target className="h-20 w-20" />
+                </div>
+                <h4 className="text-sm font-black uppercase tracking-widest mb-4 text-indigo-200">Adaptive Tutor Review</h4>
+                <p className="text-lg font-medium leading-relaxed italic relative z-10">
+                  "{results.aiSummary}"
+                </p>
+              </motion.div>
             )}
-          </div>
 
-          <div className="grid grid-cols-2 gap-6 mb-10">
-            <div className="bg-indigo-50 rounded-3xl p-6 text-center">
-              <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Status</p>
-              <p className="text-3xl font-black text-indigo-600">
-                {results.score / questions.length === 1 ? '11+ Ready' : 
-                 results.score / questions.length >= 0.86 ? 'Competent' :
-                 results.score / questions.length >= 0.61 ? 'Developing' : 'Foundation'}
-              </p>
-            </div>
-            <div className="bg-emerald-50 rounded-3xl p-6 text-center">
-              <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">Score</p>
-              <p className="text-3xl font-black text-emerald-600">{results.score} / {questions.length}</p>
-            </div>
-          </div>
-
-          {results.aiSummary && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-indigo-600 text-white rounded-3xl p-8 mb-10 relative overflow-hidden shadow-xl shadow-indigo-100"
-            >
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Target className="h-20 w-20" />
-              </div>
-              <h4 className="text-sm font-black uppercase tracking-widest mb-4 text-indigo-200">Adaptive Tutor Review</h4>
-              <p className="text-lg font-medium leading-relaxed italic relative z-10">
-                "{results.aiSummary}"
-              </p>
-            </motion.div>
-          )}
-
-          <div className="space-y-6 mb-12">
-            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <BarChart2 className="h-5 w-5 text-indigo-500" />
-              Topic Breakdown
-            </h3>
-            <div className="grid gap-4">
-              {results.breakdown.map((item, idx) => (
-                <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-slate-700">{item.topic}</span>
-                    <span className={item.accuracy >= 70 ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>
-                      {item.accuracy}%
-                    </span>
+            <div className="space-y-6 mb-12">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <BarChart2 className="h-5 w-5 text-indigo-500" />
+                Topic Breakdown
+              </h3>
+              <div className="grid gap-4">
+                {results.breakdown.map((item, idx) => (
+                  <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-bold text-slate-700">{item.topic}</span>
+                      <span className={item.accuracy >= 70 ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>
+                        {item.accuracy}%
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${item.accuracy}%` }}
+                        className={`h-full ${item.accuracy >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.accuracy}%` }}
-                      className={`h-full ${item.accuracy >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                    />
+                ))}
+              </div>
+            </div>
+
+            {/* Recommended Path - Conversion Section */}
+            <section className="border-t-2 border-dashed border-slate-100 pt-10 mt-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-indigo-100 p-2 rounded-xl">
+                  <Play className="h-5 w-5 text-indigo-600 fill-current" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Recommended Next Steps</h3>
+              </div>
+
+              <div className="relative group">
+                {/* Blurred Mock Content for Guests */}
+                <div className={cn("space-y-4", !childId && "blur-sm pointer-events-none select-none opacity-50")}>
+                  <div className="p-5 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                        <Target className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800">Advanced Fractions Drill</p>
+                        <p className="text-xs text-slate-500">Focus on your weakest area identified by our tutor</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-300" />
+                  </div>
+                  <div className="p-5 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                        <Brain className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800">Reading Comprehension Mock</p>
+                        <p className="text-xs text-slate-500">Timed exercise to boost exam speed</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-300" />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recommended Path - Conversion Section */}
-          <section className="border-t-2 border-dashed border-slate-100 pt-10 mt-10">
-            <div className="flex items-center gap-3 mb-6">
-               <div className="bg-indigo-100 p-2 rounded-xl">
-                  <Play className="h-5 w-5 text-indigo-600 fill-current" />
-               </div>
-               <h3 className="text-xl font-bold text-slate-900">Recommended Next Steps</h3>
-            </div>
-            
-            <div className="relative group">
-               {/* Blurred Mock Content for Guests */}
-               <div className={cn("space-y-4", !childId && "blur-sm pointer-events-none select-none opacity-50")}>
-                  <div className="p-5 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-between">
-                     <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
-                           <Target className="h-5 w-5" />
-                        </div>
-                        <div>
-                           <p className="font-bold text-slate-800">Advanced Fractions Drill</p>
-                           <p className="text-xs text-slate-500">Focus on your weakest area identified by our tutor</p>
-                        </div>
-                     </div>
-                     <ArrowRight className="h-5 w-5 text-slate-300" />
-                  </div>
-                  <div className="p-5 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-between">
-                     <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
-                           <Brain className="h-5 w-5" />
-                        </div>
-                        <div>
-                           <p className="font-bold text-slate-800">Reading Comprehension Mock</p>
-                           <p className="text-xs text-slate-500">Timed exercise to boost exam speed</p>
-                        </div>
-                     </div>
-                     <ArrowRight className="h-5 w-5 text-slate-300" />
-                  </div>
-               </div>
 
                 {!childId && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/40 rounded-3xl backdrop-blur-[2px]">
-                     <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border-2 border-indigo-100 text-center max-w-sm">
-                        <p className="text-lg font-bold text-slate-900 mb-2">Unlock Your Full Report</p>
-                        <p className="text-sm text-slate-500 mb-6">Enter your email to save your results and receive a detailed personalized learning plan.</p>
-                        
-                        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href = `/signup?email=${encodeURIComponent(guestEmail)}&guest_diag=true`; }}>
-                           <input 
-                              type="email" 
-                              required 
-                              value={guestEmail}
-                              onChange={(e) => setGuestEmail(e.target.value)}
-                              placeholder="parent@email.com"
-                              className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-sm"
-                           />
-                           <button 
-                              type="submit"
-                              className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100"
-                           >
-                              Get My Full Analysis
-                           </button>
-                        </form>
-                        <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-widest">Free Forever • No Credit Card Required</p>
-                     </div>
-                  </div>
-               )}
-            </div>
-          </section>
+                    <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border-2 border-indigo-100 text-center max-w-sm">
+                      <p className="text-lg font-bold text-slate-900 mb-2">Unlock Your Full Report</p>
+                      <p className="text-sm text-slate-500 mb-6">Enter your email to save your results and receive a detailed personalized learning plan.</p>
 
-          {childId && (
-            <div className="space-y-4 mt-10">
-              <button
-                 onClick={() => window.location.href = '/dashboard'}
-                 className="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200"
-              >
-                 Go to My Learning Dashboard
-                 <ArrowRight className="h-5 w-5" />
-              </button>
-              <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-                Signed in as {userEmail || 'registered user'}
-              </p>
-            </div>
-          )}
-        </motion.div>
+                      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href = `/signup?email=${encodeURIComponent(guestEmail)}&guest_diag=true`; }}>
+                        <input
+                          type="email"
+                          required
+                          value={guestEmail}
+                          onChange={(e) => setGuestEmail(e.target.value)}
+                          placeholder="parent@email.com"
+                          className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-sm text-slate-900 placeholder:text-slate-400"
+                        />
+                        <button
+                          type="submit"
+                          className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100"
+                        >
+                          Get My Full Analysis
+                        </button>
+                      </form>
+                      <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-widest">No Credit Card Required</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {childId && (
+              <div className="space-y-4 mt-10">
+                <button
+                  onClick={() => window.location.href = '/dashboard'}
+                  className="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200"
+                >
+                  Go to My Learning Dashboard
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+                <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+                  Signed in as {userEmail || 'registered user'}
+                </p>
+              </div>
+            )}
+          </motion.div>
+        </div>
       </div>
-    </div>
     )
   }
 
@@ -279,42 +279,42 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
 
   return (
     <>
-    <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
-      {/* Header & Progress - Fixed at Top with margin for breathing room */}
-      <div className="max-w-4xl mx-auto w-full px-6 pt-10 shrink-0">
-        <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-3">
-               <div className="bg-amber-100 p-1.5 rounded-lg">
+      <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
+        {/* Header & Progress - Fixed at Top with margin for breathing room */}
+        <div className="max-w-4xl mx-auto w-full px-6 pt-10 shrink-0">
+          <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-amber-100 p-1.5 rounded-lg">
                   <Target className="h-4 w-4 text-amber-600" />
-               </div>
-              <span className="text-sm font-bold text-slate-700">Diagnostic Assessment</span>
-              <span className="h-1 w-1 bg-slate-300 rounded-full" />
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                {currentQuestion.topic}
-              </span>
+                </div>
+                <span className="text-sm font-bold text-slate-700">Diagnostic Assessment</span>
+                <span className="h-1 w-1 bg-slate-300 rounded-full" />
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  {currentQuestion.topic}
+                </span>
+              </div>
+              <div className="relative h-3 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner flex items-center px-0.5">
+                <motion.div
+                  layoutId="diag-progress"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  className="h-2 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"
+                />
+              </div>
             </div>
-            <div className="relative h-3 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner flex items-center px-0.5">
-              <motion.div
-                layoutId="diag-progress"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                className="h-2 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"
-              />
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5 leading-none">Question</div>
-            <div className="text-3xl font-black text-slate-900 leading-none">
-              {currentIndex + 1}<span className="text-slate-200">/</span>{questions.length}
+            <div className="text-right shrink-0">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5 leading-none">Question</div>
+              <div className="text-3xl font-black text-slate-900 leading-none">
+                {currentIndex + 1}<span className="text-slate-200">/</span>{questions.length}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Question Area & Footer - Grouped tightly */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col items-center gap-6">
-         <div className="max-w-4xl w-full">
+        {/* Main Question Area & Footer - Grouped tightly */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col items-center gap-6">
+          <div className="max-w-4xl w-full">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
@@ -333,50 +333,50 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                 />
               </motion.div>
             </AnimatePresence>
-         </div>
+          </div>
 
-        {/* Action Bar - Brought closer to card */}
-        <div className="max-w-4xl w-full py-4 shrink-0">
-          <div className="flex flex-col items-center gap-4">
-            {!showFeedback ? (
-              <button
-                onClick={handleCheck}
-                disabled={!selectedAnswer}
-                className={cn(
-                  "w-full max-w-sm py-5 rounded-2xl font-black text-lg shadow-xl shadow-amber-200/20 transition-all transform active:scale-95",
-                  selectedAnswer 
-                    ? "bg-amber-500 text-white hover:bg-amber-600" 
-                    : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-                )}
-              >
-                Check Answer
-              </button>
-            ) : (
-              <div className="w-full max-w-sm flex flex-col gap-3">
-                 <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-3 text-indigo-700 shadow-sm">
+          {/* Action Bar - Brought closer to card */}
+          <div className="max-w-4xl w-full py-4 shrink-0">
+            <div className="flex flex-col items-center gap-4">
+              {!showFeedback ? (
+                <button
+                  onClick={handleCheck}
+                  disabled={!selectedAnswer}
+                  className={cn(
+                    "w-full max-w-sm py-5 rounded-2xl font-black text-lg shadow-xl shadow-amber-200/20 transition-all transform active:scale-95",
+                    selectedAnswer
+                      ? "bg-amber-500 text-white hover:bg-amber-600"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
+                  )}
+                >
+                  Check Answer
+                </button>
+              ) : (
+                <div className="w-full max-w-sm flex flex-col gap-3">
+                  <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-3 text-indigo-700 shadow-sm">
                     <Brain className="h-5 w-5 shrink-0" />
                     <p className="text-sm font-bold">Diagnostic mode doesn&apos;t allow redo&apos;s. Next challenge!</p>
-                 </div>
-                 <button
-                  onClick={handleNext}
-                  className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
-                >
-                  {currentIndex < questions.length - 1 ? 'Next Challenge' : 'Finish & See Results'}
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-              </div>
-            )}
+                  </div>
+                  <button
+                    onClick={handleNext}
+                    className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
+                  >
+                    {currentIndex < questions.length - 1 ? 'Next Challenge' : 'Finish & See Results'}
+                    <ArrowRight className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <CelebrationModal 
-        isOpen={!!levelUpData}
-        type="level-up"
-        level={levelUpData?.level}
-        onClose={() => setLevelUpData(null)}
-      />
-    </div>
+        <CelebrationModal
+          isOpen={!!levelUpData}
+          type="level-up"
+          level={levelUpData?.level}
+          onClose={() => setLevelUpData(null)}
+        />
+      </div>
     </>
   )
 }
