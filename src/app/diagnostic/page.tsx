@@ -23,28 +23,33 @@ export default async function DiagnosticPage() {
   }
 
   // 3. Fetch a rigorous, comprehensive mix of questions
-  // We need 4 Easy, 6 Medium, 10 Hard covering all 17 topics.
+  // We need 4 Easy, 6 Medium, 10 Hard covering non-comprehension topics.
   
-  // Shuffle topics to ensure different questions each time
-  const topics = [...CURRICULUM_LADDER].sort(() => Math.random() - 0.5)
+  // Shuffle topics to ensure different questions each time, excluding Comprehension
+  const topics = CURRICULUM_LADDER
+    .filter(t => t.topic !== 'Comprehension')
+    .sort(() => Math.random() - 0.5)
   const easyTopics = topics.slice(0, 4).map(t => t.topic)
   const mediumTopics = topics.slice(4, 10).map(t => t.topic)
-  const hardTopics = topics.slice(10, 17).map(t => t.topic)
+  const hardTopics = topics.slice(10, 16).map(t => t.topic)
 
-  // Fetch pools for each difficulty/topic group
+  // Fetch pools for each difficulty/topic group, ensuring no Comprehension or passage-tied questions
   const [easyPool, mediumPool, hardPool, extraHardPool] = await Promise.all([
-    supabase.from('questions').select('*').in('topic', easyTopics).eq('difficulty', 'Easy'),
-    supabase.from('questions').select('*').in('topic', mediumTopics).eq('difficulty', 'Medium'),
-    supabase.from('questions').select('*').in('topic', hardTopics).eq('difficulty', 'Hard'),
-    supabase.from('questions').select('*').eq('difficulty', 'Hard').limit(20) // Extra pool for variety and filling gaps
+    supabase.from('questions').select('*').in('topic', easyTopics).eq('difficulty', 'Easy').is('passage_id', null),
+    supabase.from('questions').select('*').in('topic', mediumTopics).eq('difficulty', 'Medium').is('passage_id', null),
+    supabase.from('questions').select('*').in('topic', hardTopics).eq('difficulty', 'Hard').is('passage_id', null),
+    supabase.from('questions').select('*').eq('difficulty', 'Hard').neq('topic', 'Comprehension').is('passage_id', null).limit(20) // Extra pool for variety and filling gaps
   ])
 
   const selectedQuestions: any[] = []
   const usedIds = new Set<string>()
 
+  // Helper validation to ensure no passage-tied or comprehension questions slip through
+  const isValidQuestion = (q: any) => q && q.topic !== 'Comprehension' && !q.passage_id
+
   // 1. Pick one Easy per easyTopic
   easyTopics.forEach(topic => {
-    const q = easyPool.data?.find(q => q.topic === topic && !usedIds.has(q.id))
+    const q = easyPool.data?.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
     if (q) {
       selectedQuestions.push(q)
       usedIds.add(q.id)
@@ -53,7 +58,7 @@ export default async function DiagnosticPage() {
 
   // 2. Pick one Medium per mediumTopic
   mediumTopics.forEach(topic => {
-    const q = mediumPool.data?.find(q => q.topic === topic && !usedIds.has(q.id))
+    const q = mediumPool.data?.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
     if (q) {
       selectedQuestions.push(q)
       usedIds.add(q.id)
@@ -62,7 +67,7 @@ export default async function DiagnosticPage() {
 
   // 3. Pick one Hard per hardTopic
   hardTopics.forEach(topic => {
-    const q = hardPool.data?.find(q => q.topic === topic && !usedIds.has(q.id))
+    const q = hardPool.data?.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
     if (q) {
       selectedQuestions.push(q)
       usedIds.add(q.id)
@@ -70,7 +75,7 @@ export default async function DiagnosticPage() {
   })
 
   // 4. Fill to 20 questions with Hard questions (prioritize topic variety)
-  const remainingHard = (extraHardPool.data || []).filter(q => !usedIds.has(q.id))
+  const remainingHard = (extraHardPool.data || []).filter(q => !usedIds.has(q.id) && isValidQuestion(q))
   while (selectedQuestions.length < 20 && remainingHard.length > 0) {
     const q = remainingHard.shift()
     if (q) {
@@ -81,9 +86,9 @@ export default async function DiagnosticPage() {
 
   // Final fallback: if still not 20, just get any random ones (shouldn't happen with decent bank)
   if (selectedQuestions.length < 20) {
-    const { data: fallback } = await supabase.from('questions').select('*').limit(20)
+    const { data: fallback } = await supabase.from('questions').select('*').neq('topic', 'Comprehension').is('passage_id', null).limit(20)
     fallback?.forEach(q => {
-      if (selectedQuestions.length < 20 && !usedIds.has(q.id)) {
+      if (selectedQuestions.length < 20 && !usedIds.has(q.id) && isValidQuestion(q)) {
         selectedQuestions.push(q)
         usedIds.add(q.id)
       }
