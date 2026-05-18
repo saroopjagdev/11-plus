@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import { signup } from '@/app/actions/auth'
-import { CheckCircle2, ShieldCheck, Target, TrendingUp } from 'lucide-react'
+import { CheckCircle2, ShieldCheck, Target, TrendingUp, Sparkles } from 'lucide-react'
 
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; ref?: string }>
+  searchParams: Promise<{ error?: string; ref?: string; email?: string; guest_diag?: string }>
 }) {
-  const { error, ref } = await searchParams;
+  const { error, ref, email, guest_diag } = await searchParams;
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Left Sidebar - Value Proposition */}
@@ -82,6 +82,16 @@ export default async function SignupPage({
             <p className="mt-2 text-sm text-slate-500">Start your journey to 11+ success today.</p>
           </div>
           
+          {guest_diag && (
+            <div className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-700 ring-1 ring-indigo-100 flex items-start gap-3 mb-6">
+              <Sparkles className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5 animate-pulse" />
+              <div>
+                <p className="font-bold">Baseline Results Found!</p>
+                <p className="text-indigo-600/80 text-xs mt-1">Create your parent account to claim your score and view your custom learning roadmap.</p>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 ring-1 ring-red-100 flex items-center gap-3">
               <div className="h-2 w-2 bg-red-600 rounded-full animate-pulse" />
@@ -102,6 +112,7 @@ export default async function SignupPage({
                   type="email"
                   autoComplete="email"
                   required
+                  defaultValue={email || ''}
                   className="block w-full rounded-xl border-0 py-3.5 px-4 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition-all duration-200"
                   placeholder="parent@example.com"
                 />

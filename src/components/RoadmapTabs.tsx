@@ -70,7 +70,7 @@ export function RoadmapTabs({ mastery, curriculum, threshold, minQuestions, isPr
                         return {
                           label: l.topic,
                           href: `/practice/topic/${l.topic}`,
-                          locked: !!l.prerequisite && !isMastered && !(mastery.find(m => m.topic === l.topic)),
+                          locked: !!l.prerequisite && !isMastered,
                           mastered: !!(mastery.find(m => m.topic === l.topic && m.accuracy >= threshold)),
                           prerequisite: l.prerequisite
                         }

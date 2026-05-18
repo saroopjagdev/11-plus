@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { QuestionCard } from '@/components/QuestionCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { submitDiagnostic } from '@/app/actions/diagnostic'
-import { Trophy, BarChart2, ArrowRight, Loader2, Target, Brain, Play } from 'lucide-react'
+import { Trophy, BarChart2, ArrowRight, Loader2, Target, Brain, Play, Lock } from 'lucide-react'
 import { CelebrationModal } from '@/components/CelebrationModal'
 import { cn } from '@/lib/utils'
 
@@ -31,6 +31,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [results, setResults] = useState<{ score: number; breakdown: any[]; aiSummary?: string } | null>(null)
   const [levelUpData, setLevelUpData] = useState<{ level: number } | null>(null)
+  const [guestEmail, setGuestEmail] = useState('')
 
   const currentQuestion = questions[currentIndex]
   const progress = ((currentIndex + 1) / questions.length) * 100
@@ -223,10 +224,12 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                         <p className="text-lg font-bold text-slate-900 mb-2">Unlock Your Full Report</p>
                         <p className="text-sm text-slate-500 mb-6">Enter your email to save your results and receive a detailed personalized learning plan.</p>
                         
-                        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href = '/signup'; }}>
+                        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href = `/signup?email=${encodeURIComponent(guestEmail)}&guest_diag=true`; }}>
                            <input 
                               type="email" 
                               required 
+                              value={guestEmail}
+                              onChange={(e) => setGuestEmail(e.target.value)}
                               placeholder="parent@email.com"
                               className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-sm"
                            />
@@ -269,7 +272,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <Loader2 className="h-12 w-12 text-indigo-600 animate-spin mb-6" />
         <h2 className="text-2xl font-bold text-slate-800">Generating your results...</h2>
-        <p className="text-slate-500 mt-2">Our AI is analyzing your performance per topic.</p>
+        <p className="text-slate-500 mt-2">Analyzing your performance per topic.</p>
       </div>
     )
   }

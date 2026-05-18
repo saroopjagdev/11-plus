@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Sparkles, Target, Zap, ShieldCheck, Star, Check, HelpCircle, BookOpen, Clock, Trophy } from 'lucide-react'
+import { OnboardingPlanner } from '@/components/OnboardingPlanner'
 
 export default function LandingPage() {
   return (
@@ -63,68 +64,9 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="relative perspective-1000">
-          <div className="absolute -inset-10 bg-gradient-to-tr from-indigo-200 to-violet-200 rounded-[4rem] blur-3xl opacity-30 animate-pulse" />
-          <div className="relative bg-white p-2 rounded-[3rem] border border-slate-200 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.2)] overflow-hidden">
-            <div className="bg-slate-50 p-8 rounded-[2.5rem]">
-              <div className="flex items-center justify-between mb-12">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                    <Trophy className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Progress</div>
-                    <div className="text-xl font-black text-slate-900">Level 14</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <div className="h-2 w-12 bg-indigo-500 rounded-full" />
-                  <div className="h-2 w-8 bg-slate-200 rounded-full" />
-                </div>
-              </div>
-
-              <div className="grid gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-bold text-slate-800 text-sm">Arithmetic Mastery</span>
-                    <span className="text-emerald-500 font-black text-sm">85%</span>
-                  </div>
-                  <div className="h-2.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                    <div className="h-full w-[85%] bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full" />
-                  </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 opacity-60">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-bold text-slate-800 text-sm">Vocabulary Skills</span>
-                    <span className="text-indigo-500 font-black text-sm">42%</span>
-                  </div>
-                  <div className="h-2.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                    <div className="h-full w-[42%] bg-gradient-to-r from-indigo-400 to-indigo-500 rounded-full" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-12 p-6 bg-indigo-900 rounded-3xl text-white relative overflow-hidden">
-                <Zap className="absolute top-4 right-4 h-8 w-8 text-indigo-400/30" />
-                <div className="relative z-10">
-                  <div className="text-xs font-bold text-indigo-300 uppercase mb-2">Next Mission</div>
-                  <div className="text-lg font-black mb-4 leading-tight">Master Percentages to reach Level 15</div>
-                  <button className="w-full py-3 bg-white text-indigo-900 rounded-xl font-bold text-sm shadow-xl">Resume Practice</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Floating badge */}
-          <div className="absolute -bottom-6 -right-6 lg:-bottom-10 lg:-right-10 bg-white p-6 rounded-3xl shadow-[0_20px_50px_rgba(79,70,229,0.3)] border border-indigo-50 max-w-[220px] animate-bounce-slow z-20">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-8 w-8 bg-amber-100 rounded-full flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-amber-600 fill-current" />
-              </div>
-              <span className="text-sm font-black text-slate-900 tracking-tight">Smart Guidance</span>
-            </div>
-            <p className="text-xs leading-relaxed text-slate-600 font-semibold italic">"Think of fractions like slices of a pizza..."</p>
-          </div>
+        <div className="relative">
+          <div className="absolute -inset-10 bg-indigo-100 rounded-full blur-[120px] opacity-35 animate-pulse pointer-events-none" />
+          <OnboardingPlanner />
         </div>
       </section>
 
