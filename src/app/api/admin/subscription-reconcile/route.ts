@@ -1,6 +1,8 @@
 import { syncSubscriptionEntitlement } from '@/lib/subscription-server'
 import { NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+
 function getTokenCandidates(request: Request) {
   const url = new URL(request.url)
   const authHeader = request.headers.get('authorization')
@@ -75,21 +77,23 @@ export async function POST(request: Request) {
     )
   }
 
-  const body = await request.json()
-  const userId = typeof body.userId === 'string' ? body.userId : null
-  const stripeCustomerId =
-    typeof body.stripeCustomerId === 'string' ? body.stripeCustomerId : null
-  const stripeSubscriptionId =
-    typeof body.stripeSubscriptionId === 'string' ? body.stripeSubscriptionId : null
-
-  if (!userId && !stripeCustomerId && !stripeSubscriptionId) {
-    return NextResponse.json(
-      { error: 'Provide userId, stripeCustomerId, or stripeSubscriptionId' },
-      { status: 400 }
-    )
-  }
-
   try {
+    const body = await request.json()
+    const userId = typeof body.userId === 'string' ? body.userId : null
+    const stripeCustomerId =
+      typeof body.stripeCustomerId === 'string' ? body.stripeCustomerId : null
+    const stripeSubscriptionId =
+      typeof body.stripeSubscriptionId === 'string'
+        ? body.stripeSubscriptionId
+        : null
+
+    if (!userId && !stripeCustomerId && !stripeSubscriptionId) {
+      return NextResponse.json(
+        { error: 'Provide userId, stripeCustomerId, or stripeSubscriptionId' },
+        { status: 400 }
+      )
+    }
+
     const result = await syncSubscriptionEntitlement({
       source: 'manual_repair',
       eventType: 'manual_repair',
@@ -101,6 +105,14 @@ export async function POST(request: Request) {
     return NextResponse.json(result)
   } catch (error: unknown) {
     console.error('Subscription reconciliation error:', error)
+
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        { error: 'Invalid JSON body', reason: 'invalid_json' },
+        { status: 400 }
+      )
+    }
+
     const message =
       error instanceof Error ? error.message : 'Failed to reconcile subscription'
     return NextResponse.json(
