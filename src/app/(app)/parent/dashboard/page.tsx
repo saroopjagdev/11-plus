@@ -11,6 +11,14 @@ import { TrendingUp, AlertTriangle, Clock, ChevronRight, LayoutDashboard, Sparkl
 import Link from 'next/link'
 import { ParentCharts } from '@/components/ParentCharts'
 
+interface ParentDashboardSession {
+  id: string
+  type: string | null
+  completed_at: string | null
+  started_at?: string | null
+  score: number | null
+}
+
 export default async function ParentDashboardPage() {
   const supabase = await createClient()
 
@@ -41,18 +49,33 @@ export default async function ParentDashboardPage() {
   if (!child) redirect('/dashboard/add-student')
 
   // 3. Get/Generate Weekly Report
-  let report = await getWeeklyReport(child.id)
+  let report: { ai_summary: string } | null = null
 
-  if (!report) {
-    // Attempt to generate if it's the first visit of the week
-    const genResult = await generateWeeklyReport(child.id)
-    if (genResult.success) {
-      report = { ai_summary: genResult.aiSummary }
+  try {
+    report = await getWeeklyReport(child.id)
+
+    if (!report) {
+      // Attempt to generate if it's the first visit of the week
+      const genResult = await generateWeeklyReport(child.id)
+      if (genResult.success && genResult.aiSummary) {
+        report = { ai_summary: genResult.aiSummary }
+      }
     }
+  } catch (error) {
+    console.error('Parent dashboard report load failed:', error)
   }
 
   // 4. Get Dashboard Stats
-  const stats = await getParentDashboardData(child.id)
+  let stats: { subjectStats: { subject: string; progress: number }[]; recentSessions: ParentDashboardSession[] } = {
+    subjectStats: [],
+    recentSessions: [],
+  }
+
+  try {
+    stats = await getParentDashboardData(child.id)
+  } catch (error) {
+    console.error('Parent dashboard stats load failed:', error)
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
@@ -129,17 +152,26 @@ export default async function ParentDashboardPage() {
 
               <div className="space-y-4">
                 {stats.recentSessions.length > 0 ? stats.recentSessions.map((session) => (
+                  (() => {
+                    const sessionDate = session.completed_at || session.started_at
+                    const formattedDate = sessionDate
+                      ? new Date(sessionDate).toLocaleDateString()
+                      : 'Date unavailable'
+
+                    return (
                   <div key={session.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-100 transition-colors">
                     <div>
                       <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{session.type}</p>
                       <p className="text-[10px] font-bold text-slate-400 mt-0.5">
-                        {new Date(session.completed_at || session.started_at).toLocaleDateString()}
+                        {formattedDate}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-black text-indigo-600">Score: {session.score}</p>
                     </div>
                   </div>
+                    )
+                  })()
                 )) : (
                   <p className="text-sm font-bold text-slate-400 italic py-4">No recent activity found.</p>
                 )}
