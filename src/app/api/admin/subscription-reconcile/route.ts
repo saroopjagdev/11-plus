@@ -1,21 +1,78 @@
 import { syncSubscriptionEntitlement } from '@/lib/subscription-server'
 import { NextResponse } from 'next/server'
 
-function isAuthorized(request: Request) {
+function getTokenCandidates(request: Request) {
+  const url = new URL(request.url)
   const authHeader = request.headers.get('authorization')
+  const bearerToken = authHeader?.startsWith('Bearer ')
+    ? authHeader.slice('Bearer '.length)
+    : null
+  const headerToken = request.headers.get('x-repair-secret')
+  const queryToken = url.searchParams.get('token')
+
+  return {
+    authHeader,
+    bearerToken,
+    headerToken,
+    queryToken,
+  }
+}
+
+function isAuthorized(request: Request) {
   const secret = process.env.SUBSCRIPTION_REPAIR_SECRET
+  const tokens = getTokenCandidates(request)
 
   if (!secret) {
     console.error('SUBSCRIPTION_REPAIR_SECRET is not configured')
-    return false
+    return {
+      authorized: false,
+      reason: 'secret_not_configured',
+      debug: {
+        secretConfigured: false,
+        authHeaderPresent: Boolean(tokens.authHeader),
+        bearerTokenPresent: Boolean(tokens.bearerToken),
+        headerTokenPresent: Boolean(tokens.headerToken),
+        queryTokenPresent: Boolean(tokens.queryToken),
+      },
+    }
   }
 
-  return authHeader === `Bearer ${secret}`
+  const providedToken =
+    tokens.bearerToken ?? tokens.headerToken ?? tokens.queryToken ?? null
+
+  if (providedToken !== secret) {
+    return {
+      authorized: false,
+      reason: 'token_mismatch',
+      debug: {
+        secretConfigured: true,
+        secretLength: secret.length,
+        authHeaderPresent: Boolean(tokens.authHeader),
+        bearerTokenPresent: Boolean(tokens.bearerToken),
+        headerTokenPresent: Boolean(tokens.headerToken),
+        queryTokenPresent: Boolean(tokens.queryToken),
+        providedTokenLength: providedToken?.length ?? 0,
+      },
+    }
+  }
+
+  return {
+    authorized: true,
+    reason: 'authorized',
+    debug: {
+      secretConfigured: true,
+    },
+  }
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = isAuthorized(request)
+
+  if (!auth.authorized) {
+    return NextResponse.json(
+      { error: 'Unauthorized', reason: auth.reason, debug: auth.debug },
+      { status: 401 }
+    )
   }
 
   const body = await request.json()
