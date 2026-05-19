@@ -12,7 +12,7 @@ import { RoadmapTabs } from '@/components/RoadmapTabs'
 import { DailyMission } from '@/components/DailyMission'
 import { DashboardOnboardingTrigger } from '@/components/onboarding/DashboardOnboardingTrigger'
 import { getStudentRecommendations } from '@/lib/recommendations'
-import { Star, Clock } from 'lucide-react'
+import { Star, Clock, ClipboardCheck, ChevronRight } from 'lucide-react'
 import { CURRICULUM_LADDER, MASTERY_THRESHOLD, MIN_QUESTIONS_FOR_MASTERY } from '@/lib/constants/curriculum'
 import {
   getMasteryStatusLabel,
@@ -55,6 +55,7 @@ export default async function DashboardPage({
     .select('*')
     .eq('id', user.id)
     .single()
+  const profileHasAccess = hasProAccess(profile)
 
   const { data: children } = await supabase
     .from('children')
@@ -147,7 +148,7 @@ export default async function DashboardPage({
               curriculum={CURRICULUM_LADDER}
               threshold={MASTERY_THRESHOLD}
               minQuestions={MIN_QUESTIONS_FOR_MASTERY}
-              isPro={hasProAccess(profile)}
+              isPro={profileHasAccess}
             />
 
             {/* Topic Mastery Section */}
@@ -209,6 +210,28 @@ export default async function DashboardPage({
              )}
 
              <DashboardTips />
+
+             <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm relative overflow-hidden">
+                <div className="relative z-10">
+                  <div className="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center mb-5">
+                    <ClipboardCheck className="h-6 w-6 text-indigo-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">Mock Exam Center</h3>
+                  <p className="text-sm text-slate-500 mb-6">
+                    {profileHasAccess
+                      ? 'Build exam stamina with half and full timed mocks whenever your child is ready for a realistic simulation.'
+                      : 'Timed mocks are one of the biggest score boosters. Upgrade to unlock full exam simulations and performance review.'}
+                  </p>
+                  <Link
+                    href={profileHasAccess ? '/practice/mock/Maths' : '/pricing'}
+                    className="inline-flex items-center gap-2 text-indigo-700 font-black text-sm uppercase tracking-widest hover:gap-3 transition-all"
+                  >
+                    {profileHasAccess ? 'Start a Mock' : 'Unlock Mocks'}
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+                <div className="absolute -right-10 -bottom-10 h-32 w-32 bg-indigo-500/10 rounded-full blur-3xl" />
+             </section>
 
              <section className="space-y-4">
                 {children && children[0] ? (

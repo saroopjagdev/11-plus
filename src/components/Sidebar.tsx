@@ -23,7 +23,8 @@ import {
   GraduationCap,
   Calendar,
   Trophy,
-  Gift
+  Gift,
+  ClipboardCheck
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -69,6 +70,7 @@ export function Sidebar({
     ...(role === 'parent' ? [{ label: 'Parent View', href: '/parent/dashboard', icon: Sparkles }] : []),
     { label: 'Study Plan', href: '/study-plan', icon: Calendar },
     { label: 'Practice Hubs', href: '/dashboard#hubs', icon: BookOpen },
+    { label: 'Mocks', href: '/practice/mock/Maths', icon: ClipboardCheck },
     { label: 'Topic Library', href: '/library', icon: GraduationCap },
     { label: 'Performance', href: '/analytics', icon: BarChart3 },
     { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
