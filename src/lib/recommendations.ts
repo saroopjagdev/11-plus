@@ -1,4 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
+import { CURRICULUM_LADDER } from '@/lib/constants/curriculum'
+import { isTopicMastered, isTopicUnlocked } from '@/lib/mastery'
 
 export interface Recommendation {
   id: string
@@ -22,6 +24,7 @@ export async function getStudentRecommendations(supabase: SupabaseClient, childI
 
   const recommendations: Recommendation[] = []
   const subjects = ['Maths', 'English', 'Verbal Reasoning']
+  const unlockedMastery = (mastery || []).filter((item) => isTopicUnlocked(item.topic, mastery || [], CURRICULUM_LADDER))
 
   // FALLBACK: If no data, give default subjects
   if (!mastery || mastery.length === 0) {
@@ -54,7 +57,7 @@ export async function getStudentRecommendations(supabase: SupabaseClient, childI
   }
 
   // 1. FOCUS (Weakest overall)
-  const focus = mastery.find(m => m.accuracy < 85) || mastery[0]
+  const focus = unlockedMastery.find(m => !isTopicMastered(m)) || unlockedMastery[0] || mastery[0]
   recommendations.push({
     id: focus.id,
     subject: focus.subject,
@@ -70,9 +73,9 @@ export async function getStudentRecommendations(supabase: SupabaseClient, childI
   // 2. WARMUP (A different subject, preferably strong)
   const remainingSubjects = subjects.filter(s => s !== focus.subject)
   const warmupSubject = remainingSubjects[0]
-  const warmup = mastery.find(m => m.subject === warmupSubject && m.accuracy >= 70) 
-    || mastery.find(m => m.subject === warmupSubject)
-    || { subject: warmupSubject, topic: warmupSubject === 'Maths' ? 'Arithmetic' : warmupSubject === 'English' ? 'Vocabulary' : 'Coding', accuracy: 0, id: 'fallback-w' }
+  const warmup = unlockedMastery.find(m => m.subject === warmupSubject && isTopicMastered(m))
+    || unlockedMastery.find(m => m.subject === warmupSubject)
+    || { subject: warmupSubject, topic: warmupSubject === 'Maths' ? 'Arithmetic' : warmupSubject === 'English' ? 'Vocabulary' : 'Synonyms', accuracy: 0, id: 'fallback-w' }
 
   recommendations.push({
     id: warmup.id,
@@ -88,9 +91,9 @@ export async function getStudentRecommendations(supabase: SupabaseClient, childI
 
   // 3. CHALLENGE (The 3rd subject, push for mastery)
   const lastSubject = remainingSubjects[1]
-  const challenge = mastery.find(m => m.subject === lastSubject && m.accuracy >= 85)
-    || mastery.find(m => m.subject === lastSubject)
-    || { subject: lastSubject, topic: lastSubject === 'Maths' ? 'Fractions' : lastSubject === 'English' ? 'Comprehension' : 'Synonyms', accuracy: 0, id: 'fallback-c' }
+  const challenge = unlockedMastery.find(m => m.subject === lastSubject && !isTopicMastered(m))
+    || unlockedMastery.find(m => m.subject === lastSubject)
+    || { subject: lastSubject, topic: lastSubject === 'Maths' ? 'Arithmetic' : lastSubject === 'English' ? 'Vocabulary' : 'Synonyms', accuracy: 0, id: 'fallback-c' }
 
   recommendations.push({
     id: challenge.id,

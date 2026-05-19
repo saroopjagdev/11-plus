@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AnalyticsCharts } from '@/components/analytics/AnalyticsCharts'
 import { BarChart3, TrendingUp, Target, Award } from 'lucide-react'
+import { getMasteryStatusLabel, getMasteryTier } from '@/lib/mastery'
 
 export default async function AnalyticsPage() {
   const supabase = await createClient()
@@ -81,8 +82,8 @@ export default async function AnalyticsPage() {
     'Verbal Reasoning': { total: 0, count: 0 }
   }
 
-  attempts?.forEach((a: any) => {
-    const subject = a.questions?.subject
+  attempts?.forEach((a: { time_taken_seconds: number | null; questions?: { subject?: string | null }[] | null }) => {
+    const subject = a.questions?.[0]?.subject
     if (subject && speedTotals[subject]) {
       speedTotals[subject].total += a.time_taken_seconds || 0
       speedTotals[subject].count += 1
@@ -94,6 +95,10 @@ export default async function AnalyticsPage() {
     avgTime: speedTotals[s].count > 0 ? Math.round(speedTotals[s].total / speedTotals[s].count) : 0,
     targetTime: 30 // 11+ standard is ~30s
   }))
+  const strongestTier =
+    [...(mastery || [])]
+      .sort((left, right) => (getMasteryTier(right)?.level || 0) - (getMasteryTier(left)?.level || 0))[0] || null
+  const masteryHeadline = strongestTier ? getMasteryStatusLabel(strongestTier) : 'Not started'
 
   return (
     <div className="p-8 lg:p-12 max-w-6xl mx-auto">
@@ -106,7 +111,7 @@ export default async function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
         <StatsCard 
           label="Total Questions" 
-          value={mastery?.reduce((acc, m) => acc + (m as any).questions_answered, 0) || 0} 
+          value={mastery?.reduce((acc, m) => acc + (m.questions_answered || 0), 0) || 0} 
           icon={<Target className="h-5 w-5 text-indigo-600" />} 
           color="bg-indigo-50"
         />
@@ -124,7 +129,7 @@ export default async function AnalyticsPage() {
         />
         <StatsCard 
           label="Level" 
-          value="Bronze" 
+          value={masteryHeadline}
           icon={<Award className="h-5 w-5 text-amber-600" />} 
           color="bg-amber-50"
         />

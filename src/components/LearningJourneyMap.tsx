@@ -4,9 +4,10 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Lock, Star, ChevronRight, AlertCircle, Play } from 'lucide-react'
+import { Lock, Star, AlertCircle, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PrerequisiteWarningModal } from './PrerequisiteWarningModal'
+import { getRecommendedPrerequisiteHref } from '@/lib/mastery'
 
 interface HubItem {
   label: string
@@ -24,9 +25,10 @@ interface LearningJourneyMapProps {
   isPro: boolean
 }
 
-export function LearningJourneyMap({ subject, items, color, isPro }: LearningJourneyMapProps) {
+export function LearningJourneyMap({ subject: _subject, items, color, isPro }: LearningJourneyMapProps) {
   const router = useRouter()
   const [warningTarget, setWarningTarget] = useState<HubItem | null>(null)
+  void _subject
 
   const themeColors = {
     indigo: {
@@ -59,17 +61,6 @@ export function LearningJourneyMap({ subject, items, color, isPro }: LearningJou
       e.preventDefault()
       setWarningTarget(item)
     }
-  }
-
-  // To create a winding path, we define offsets for the nodes
-  // Sequence: 0 (center), 1 (right), 0 (center), -1 (left)
-  const getOffset = (index: number) => {
-    const cycle = index % 4
-    if (cycle === 0) return 0
-    if (cycle === 1) return 1
-    if (cycle === 2) return 0
-    if (cycle === 3) return -1
-    return 0
   }
 
   return (
@@ -182,6 +173,12 @@ export function LearningJourneyMap({ subject, items, color, isPro }: LearningJou
         onConfirm={() => {
           if (warningTarget) {
             router.push(warningTarget.href)
+            setWarningTarget(null)
+          }
+        }}
+        onGoToPrerequisite={() => {
+          if (warningTarget) {
+            router.push(getRecommendedPrerequisiteHref(warningTarget.label))
             setWarningTarget(null)
           }
         }}

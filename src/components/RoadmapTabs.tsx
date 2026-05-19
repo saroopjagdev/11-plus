@@ -5,10 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Target, BookOpen, Brain } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LearningJourneyMap } from './LearningJourneyMap'
+import {
+  getTopicRecord,
+  isTopicMastered,
+  isTopicUnlocked,
+} from '@/lib/mastery'
 
 interface RoadmapTabsProps {
-  mastery: any[]
-  curriculum: any[]
+  mastery: { topic: string; accuracy?: number | null; questions_answered?: number | null; mastery_level?: number | null }[]
+  curriculum: { topic: string; subject: 'Maths' | 'English' | 'Verbal Reasoning'; prerequisite?: string }[]
   threshold: number
   minQuestions: number
   isPro: boolean
@@ -24,6 +29,8 @@ export function RoadmapTabs({ mastery, curriculum, threshold, minQuestions, isPr
   ]
 
   const activeTheme = activeTab === 'Maths' ? 'indigo' : activeTab === 'English' ? 'violet' : 'amber'
+  void threshold
+  void minQuestions
 
   return (
     <div className="space-y-8">
@@ -32,7 +39,7 @@ export function RoadmapTabs({ mastery, curriculum, threshold, minQuestions, isPr
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as 'Maths' | 'English' | 'Verbal Reasoning')}
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
               activeTab === tab.id 
@@ -58,20 +65,24 @@ export function RoadmapTabs({ mastery, curriculum, threshold, minQuestions, isPr
           >
             <LearningJourneyMap 
               subject={activeTab}
-              color={activeTheme as any}
+              color={activeTheme as 'indigo' | 'violet' | 'amber'}
               items={activeTab === 'Maths' 
                 ? [
-                    { label: 'Arithmetic', href: '/practice/topic/Arithmetic', locked: false, mastered: true },
+                    {
+                      label: 'Arithmetic',
+                      href: '/practice/topic/Arithmetic',
+                      locked: false,
+                      mastered: isTopicMastered(getTopicRecord(mastery, 'Arithmetic')),
+                    },
                     ...curriculum
                       .filter(l => l.subject === 'Maths' && l.topic !== 'Arithmetic')
                       .map(l => {
-                        const prereq = mastery.find(m => m.topic === l.prerequisite)
-                        const isMastered = prereq && prereq.accuracy >= threshold && prereq.questions_answered >= minQuestions
+                        const topicRecord = getTopicRecord(mastery, l.topic)
                         return {
                           label: l.topic,
                           href: `/practice/topic/${l.topic}`,
-                          locked: !!l.prerequisite && !isMastered,
-                          mastered: !!(mastery.find(m => m.topic === l.topic && m.accuracy >= threshold)),
+                          locked: !isTopicUnlocked(l.topic, mastery, curriculum),
+                          mastered: isTopicMastered(topicRecord),
                           prerequisite: l.prerequisite
                         }
                       })
@@ -79,13 +90,12 @@ export function RoadmapTabs({ mastery, curriculum, threshold, minQuestions, isPr
                 : curriculum
                     .filter(l => l.subject === activeTab)
                     .map(l => {
-                      const prereq = l.prerequisite ? mastery.find(m => m.topic === l.prerequisite) : null
-                      const isMastered = !l.prerequisite || (prereq && prereq.accuracy >= threshold && prereq.questions_answered >= minQuestions)
+                      const topicRecord = getTopicRecord(mastery, l.topic)
                       return {
                         label: l.topic,
                         href: `/practice/topic/${l.topic}`,
-                        locked: !!l.prerequisite && !isMastered,
-                        mastered: !!(mastery.find(m => m.topic === l.topic && m.accuracy >= threshold)),
+                        locked: !isTopicUnlocked(l.topic, mastery, curriculum),
+                        mastered: isTopicMastered(topicRecord),
                         prerequisite: l.prerequisite
                       }
                     })

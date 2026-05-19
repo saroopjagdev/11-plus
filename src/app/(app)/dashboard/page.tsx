@@ -12,9 +12,13 @@ import { RoadmapTabs } from '@/components/RoadmapTabs'
 import { DailyMission } from '@/components/DailyMission'
 import { DashboardOnboardingTrigger } from '@/components/onboarding/DashboardOnboardingTrigger'
 import { getStudentRecommendations } from '@/lib/recommendations'
-import { Zap, Target, Star, ArrowUpRight, BookOpen, Brain, BarChart3, Lock, ChevronRight, Clock } from 'lucide-react'
+import { Star, Clock } from 'lucide-react'
 import { CURRICULUM_LADDER, MASTERY_THRESHOLD, MIN_QUESTIONS_FOR_MASTERY } from '@/lib/constants/curriculum'
-import { cn } from '@/lib/utils'
+import {
+  getMasteryStatusLabel,
+  getMasteryTier,
+  getProgressToNextTier,
+} from '@/lib/mastery'
 
 
 
@@ -159,8 +163,11 @@ export default async function DashboardPage({
                     <MasteryBar 
                       key={item.id} 
                       label={item.topic} 
-                      progress={item.accuracy} 
-                      color={item.accuracy >= 70 ? 'bg-emerald-500' : 'bg-indigo-500'} 
+                      progress={getProgressToNextTier(item)}
+                      color={getMasteryTier(item) ? 'bg-emerald-500' : 'bg-indigo-500'}
+                      status={getMasteryStatusLabel(item)}
+                      accuracy={item.accuracy || 0}
+                      evidence={`${item.questions_answered || 0} questions answered`}
                     />
                   ))}
                 </div>
@@ -222,14 +229,5 @@ export default async function DashboardPage({
         </div>
       </main>
     </div>
-  )
-}
-
-
-function ArrowRight({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-    </svg>
   )
 }

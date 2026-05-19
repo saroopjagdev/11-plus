@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Lock, ChevronRight, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PrerequisiteWarningModal } from './PrerequisiteWarningModal'
+import { getRecommendedPrerequisiteHref } from '@/lib/mastery'
 
 interface HubItem {
   label: string
@@ -89,6 +90,12 @@ export function DashboardHubCard({ title, color, icon, items, isPro }: Dashboard
         onConfirm={() => {
           if (warningTarget) {
             router.push(warningTarget.href)
+            setWarningTarget(null)
+          }
+        }}
+        onGoToPrerequisite={() => {
+          if (warningTarget) {
+            router.push(getRecommendedPrerequisiteHref(warningTarget.label))
             setWarningTarget(null)
           }
         }}

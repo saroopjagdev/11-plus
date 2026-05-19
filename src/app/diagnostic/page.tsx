@@ -1,9 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import { DiagnosticSession } from '@/components/DiagnosticSession'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { CURRICULUM_LADDER } from '@/lib/constants/curriculum'
+import { shuffleArray } from '@/lib/random'
+
+interface DiagnosticQuestion {
+  id: string
+  question_text: string
+  options: string[]
+  correct_answer: string
+  subject: string
+  topic: string
+  passage_id: string | null
+}
 
 export default async function DiagnosticPage() {
   const supabase = await createClient()
@@ -28,10 +38,10 @@ export default async function DiagnosticPage() {
   // Shuffle topics to ensure different questions each time, excluding Comprehension
   const topics = CURRICULUM_LADDER
     .filter(t => t.topic !== 'Comprehension')
-    .sort(() => Math.random() - 0.5)
-  const easyTopics = topics.slice(0, 4).map(t => t.topic)
-  const mediumTopics = topics.slice(4, 10).map(t => t.topic)
-  const hardTopics = topics.slice(10, 16).map(t => t.topic)
+  const shuffledTopics = shuffleArray(topics)
+  const easyTopics = shuffledTopics.slice(0, 4).map(t => t.topic)
+  const mediumTopics = shuffledTopics.slice(4, 10).map(t => t.topic)
+  const hardTopics = shuffledTopics.slice(10, 16).map(t => t.topic)
 
   // Fetch pools for each difficulty/topic group, ensuring no Comprehension or passage-tied questions
   const [easyPool, mediumPool, hardPool, extraHardPool] = await Promise.all([
@@ -41,15 +51,19 @@ export default async function DiagnosticPage() {
     supabase.from('questions').select('*').eq('difficulty', 'Hard').neq('topic', 'Comprehension').is('passage_id', null).limit(20) // Extra pool for variety and filling gaps
   ])
 
-  const selectedQuestions: any[] = []
+  const selectedQuestions: DiagnosticQuestion[] = []
   const usedIds = new Set<string>()
+  const easyData = shuffleArray(easyPool.data || [])
+  const mediumData = shuffleArray(mediumPool.data || [])
+  const hardData = shuffleArray(hardPool.data || [])
+  const extraHardData = shuffleArray(extraHardPool.data || [])
 
   // Helper validation to ensure no passage-tied or comprehension questions slip through
-  const isValidQuestion = (q: any) => q && q.topic !== 'Comprehension' && !q.passage_id
+  const isValidQuestion = (q: DiagnosticQuestion | null | undefined) => q && q.topic !== 'Comprehension' && !q.passage_id
 
   // 1. Pick one Easy per easyTopic
   easyTopics.forEach(topic => {
-    const q = easyPool.data?.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
+    const q = easyData.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
     if (q) {
       selectedQuestions.push(q)
       usedIds.add(q.id)
@@ -58,7 +72,7 @@ export default async function DiagnosticPage() {
 
   // 2. Pick one Medium per mediumTopic
   mediumTopics.forEach(topic => {
-    const q = mediumPool.data?.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
+    const q = mediumData.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
     if (q) {
       selectedQuestions.push(q)
       usedIds.add(q.id)
@@ -67,7 +81,7 @@ export default async function DiagnosticPage() {
 
   // 3. Pick one Hard per hardTopic
   hardTopics.forEach(topic => {
-    const q = hardPool.data?.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
+    const q = hardData.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
     if (q) {
       selectedQuestions.push(q)
       usedIds.add(q.id)
@@ -75,7 +89,7 @@ export default async function DiagnosticPage() {
   })
 
   // 4. Fill to 20 questions with Hard questions (prioritize topic variety)
-  const remainingHard = (extraHardPool.data || []).filter(q => !usedIds.has(q.id) && isValidQuestion(q))
+  const remainingHard = extraHardData.filter(q => !usedIds.has(q.id) && isValidQuestion(q))
   while (selectedQuestions.length < 20 && remainingHard.length > 0) {
     const q = remainingHard.shift()
     if (q) {
@@ -87,7 +101,7 @@ export default async function DiagnosticPage() {
   // Final fallback: if still not 20, just get any random ones (shouldn't happen with decent bank)
   if (selectedQuestions.length < 20) {
     const { data: fallback } = await supabase.from('questions').select('*').neq('topic', 'Comprehension').is('passage_id', null).limit(20)
-    fallback?.forEach(q => {
+    shuffleArray(fallback || []).forEach(q => {
       if (selectedQuestions.length < 20 && !usedIds.has(q.id) && isValidQuestion(q)) {
         selectedQuestions.push(q)
         usedIds.add(q.id)
@@ -110,7 +124,7 @@ export default async function DiagnosticPage() {
   }
 
   // Shuffle for a fresh experience
-  const shuffledQuestions = [...allQuestions].sort(() => Math.random() - 0.5)
+  const shuffledQuestions = shuffleArray(allQuestions)
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">

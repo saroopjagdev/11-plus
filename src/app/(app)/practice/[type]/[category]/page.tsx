@@ -1,11 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { hasProAccess } from '@/lib/entitlements'
+import {
+} from '@/lib/mastery'
 import { PracticeSession } from '@/components/PracticeSession'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Lock, Clock, Target, Play } from 'lucide-react'
 import { MockSimulator } from '@/components/MockSimulator'
 import { cn } from '@/lib/utils'
+import { shuffleArray } from '@/lib/random'
 
 interface PageProps {
   params: Promise<{
@@ -45,7 +48,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
               <Lock className="h-8 w-8 text-indigo-600" />
            </div>
            <h2 className="text-2xl font-black text-slate-800 mb-4">Precision Mocks are Pro Only</h2>
-           <p className="text-slate-500 mb-8">Timed, 40-question mock exams are available for our premium members. Boost your child's exam stamina today!</p>
+           <p className="text-slate-500 mb-8">Timed, 40-question mock exams are available for our premium members. Boost your child&apos;s exam stamina today!</p>
            <Link href="/pricing" className="block w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all">
               Upgrade to Pro
            </Link>
@@ -77,7 +80,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
     } else {
       const { data: topicMastery } = await supabase
         .from('topic_mastery')
-        .select('accuracy')
+        .select('accuracy, questions_answered, mastery_level')
         .eq('child_id', childId)
         .ilike('topic', decodedCategory)
         .maybeSingle()
@@ -104,7 +107,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
 
             <header className="mb-10">
               <h2 className="text-4xl font-black text-slate-900 mb-2">{decodedCategory}</h2>
-              <p className="text-slate-500 font-medium italic">"Every expert was once a beginner."</p>
+              <p className="text-slate-500 font-medium italic">&ldquo;Every expert was once a beginner.&rdquo;</p>
             </header>
 
             {topicMastery && (
@@ -116,6 +119,9 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
                 <div className="h-3 w-full bg-white rounded-full overflow-hidden border border-slate-100">
                   <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${topicMastery.accuracy}%` }} />
                 </div>
+                <p className="mt-3 text-xs font-bold text-slate-500">
+                  {topicMastery.questions_answered || 0} questions logged so far
+                </p>
               </div>
             )}
 
@@ -255,7 +261,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
   }
 
   // 4. Shuffle (client-side shuffle is fine for 10-40 questions)
-  const shuffled = [...questions].sort(() => Math.random() - 0.5)
+  const shuffled = shuffleArray(questions)
 
   return (
     <div className="h-[100dvh] bg-slate-50 overflow-hidden">

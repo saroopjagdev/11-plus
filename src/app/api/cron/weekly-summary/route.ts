@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
+import { isTopicMastered } from '@/lib/mastery'
 
 export async function GET(request: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY || 'no_key_for_build')
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
       if (recentSessions?.length === 0 && recentMastery?.length === 0) continue
 
       const xpGained = (recentSessions?.reduce((acc, s) => acc + (s.score * 10), 0) || 0)
-      const topicsMastered = recentMastery?.filter(m => m.accuracy >= 85).length || 0
+      const topicsMastered = recentMastery?.filter(m => isTopicMastered(m)).length || 0
       const averageAccuracy = recentMastery?.length 
         ? Math.round(recentMastery.reduce((acc, m) => acc + m.accuracy, 0) / recentMastery.length)
         : 0

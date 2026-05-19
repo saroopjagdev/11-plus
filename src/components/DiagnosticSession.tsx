@@ -17,6 +17,13 @@ interface Question {
   topic: string
 }
 
+interface DiagnosticBreakdownItem {
+  topic: string
+  subject: string
+  accuracy: number
+  questions_answered?: number
+}
+
 interface DiagnosticSessionProps {
   questions: Question[]
   childId: string | null
@@ -29,7 +36,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
   const [showFeedback, setShowFeedback] = useState(false)
   const [attempts, setAttempts] = useState<{ questionId: string; isCorrect: boolean; topic: string; subject: string }[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [results, setResults] = useState<{ score: number; breakdown: any[]; aiSummary?: string } | null>(null)
+  const [results, setResults] = useState<{ score: number; breakdown: DiagnosticBreakdownItem[]; aiSummary?: string } | null>(null)
   const [levelUpData, setLevelUpData] = useState<{ level: number } | null>(null)
   const [guestEmail, setGuestEmail] = useState('')
 
@@ -138,114 +145,119 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
               </div>
             </div>
 
-            {results.aiSummary && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-indigo-600 text-white rounded-3xl p-8 mb-10 relative overflow-hidden shadow-xl shadow-indigo-100"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                  <Target className="h-20 w-20" />
-                </div>
-                <h4 className="text-sm font-black uppercase tracking-widest mb-4 text-indigo-200">Adaptive Tutor Review</h4>
-                <p className="text-lg font-medium leading-relaxed italic relative z-10">
-                  "{results.aiSummary}"
-                </p>
-              </motion.div>
-            )}
-
-            <div className="space-y-6 mb-12">
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <BarChart2 className="h-5 w-5 text-indigo-500" />
-                Topic Breakdown
-              </h3>
-              <div className="grid gap-4">
-                {results.breakdown.map((item, idx) => (
-                  <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-bold text-slate-700">{item.topic}</span>
-                      <span className={item.accuracy >= 70 ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>
-                        {item.accuracy}%
-                      </span>
+            <div className="relative">
+              <div className={cn("space-y-10", !childId && "blur-lg select-none pointer-events-none opacity-25")}>
+                {results.aiSummary && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-indigo-600 text-white rounded-3xl p-8 relative overflow-hidden shadow-xl shadow-indigo-100"
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Target className="h-20 w-20" />
                     </div>
-                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${item.accuracy}%` }}
-                        className={`h-full ${item.accuracy >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recommended Path - Conversion Section */}
-            <section className="border-t-2 border-dashed border-slate-100 pt-10 mt-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-indigo-100 p-2 rounded-xl">
-                  <Play className="h-5 w-5 text-indigo-600 fill-current" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900">Recommended Next Steps</h3>
-              </div>
-
-              <div className="relative group">
-                {/* Blurred Mock Content for Guests */}
-                <div className={cn("space-y-4", !childId && "blur-sm pointer-events-none select-none opacity-50")}>
-                  <div className="p-5 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
-                        <Target className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800">Advanced Fractions Drill</p>
-                        <p className="text-xs text-slate-500">Focus on your weakest area identified by our tutor</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-slate-300" />
-                  </div>
-                  <div className="p-5 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
-                        <Brain className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800">Reading Comprehension Mock</p>
-                        <p className="text-xs text-slate-500">Timed exercise to boost exam speed</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-slate-300" />
-                  </div>
-                </div>
-
-                {!childId && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/40 rounded-3xl backdrop-blur-[2px]">
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border-2 border-indigo-100 text-center max-w-sm">
-                      <p className="text-lg font-bold text-slate-900 mb-2">Unlock Your Full Report</p>
-                      <p className="text-sm text-slate-500 mb-6">Enter your email to save your results and receive a detailed personalized learning plan.</p>
-
-                      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href = `/signup?email=${encodeURIComponent(guestEmail)}&guest_diag=true`; }}>
-                        <input
-                          type="email"
-                          required
-                          value={guestEmail}
-                          onChange={(e) => setGuestEmail(e.target.value)}
-                          placeholder="parent@email.com"
-                          className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-sm text-slate-900 placeholder:text-slate-400"
-                        />
-                        <button
-                          type="submit"
-                          className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100"
-                        >
-                          Get My Full Analysis
-                        </button>
-                      </form>
-                      <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-widest">No Credit Card Required</p>
-                    </div>
-                  </div>
+                    <h4 className="text-sm font-black uppercase tracking-widest mb-4 text-indigo-200">Adaptive Tutor Review</h4>
+                    <p className="text-lg font-medium leading-relaxed italic relative z-10">
+                      &ldquo;{results.aiSummary}&rdquo;
+                    </p>
+                  </motion.div>
                 )}
+
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <BarChart2 className="h-5 w-5 text-indigo-500" />
+                    Topic Breakdown
+                  </h3>
+                  <div className="grid gap-4">
+                    {results.breakdown.map((item, idx) => (
+                      <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-bold text-slate-700">{item.topic}</span>
+                          <span className={item.accuracy >= 70 ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>
+                            {item.accuracy}%
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.accuracy}%` }}
+                            className={`h-full ${item.accuracy >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <section className="border-t-2 border-dashed border-slate-100 pt-10">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-indigo-100 p-2 rounded-xl">
+                      <Play className="h-5 w-5 text-indigo-600 fill-current" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900">Recommended Next Steps</h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-5 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                          <Target className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800">Advanced Fractions Drill</p>
+                          <p className="text-xs text-slate-500">Focus on your weakest area identified by the review</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-slate-300" />
+                    </div>
+                    <div className="p-5 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                          <Brain className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800">Reading Comprehension Mock</p>
+                          <p className="text-xs text-slate-500">Timed exercise to boost exam speed</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-slate-300" />
+                    </div>
+                  </div>
+                </section>
               </div>
-            </section>
+
+              {!childId && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-[2rem]">
+                  <div className="max-w-md rounded-[2.5rem] border-2 border-indigo-100 bg-white/95 p-8 text-center shadow-2xl backdrop-blur-md">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                      <Lock className="h-7 w-7" />
+                    </div>
+                    <p className="text-lg font-bold text-slate-900 mb-2">Unlock Your Full Analysis</p>
+                    <p className="text-sm text-slate-500 mb-6">
+                      Save this score, reveal the full tutor review, and get a personalized learning plan for the next steps.
+                    </p>
+
+                    <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href = `/signup?email=${encodeURIComponent(guestEmail)}&guest_diag=true`; }}>
+                      <input
+                        type="email"
+                        required
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        placeholder="parent@email.com"
+                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-sm text-slate-900 placeholder:text-slate-400"
+                      />
+                      <button
+                        type="submit"
+                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100"
+                      >
+                        Reveal My Full Report
+                      </button>
+                    </form>
+                    <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-widest">No Credit Card Required</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {childId && (
               <div className="space-y-4 mt-10">
@@ -355,7 +367,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                 <div className="w-full max-w-sm flex flex-col gap-3">
                   <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-3 text-indigo-700 shadow-sm">
                     <Brain className="h-5 w-5 shrink-0" />
-                    <p className="text-sm font-bold">Diagnostic mode doesn&apos;t allow redo&apos;s. Next challenge!</p>
+                    <p className="text-sm font-bold">Diagnostic mode doesn&apos;t allow redos. Next challenge!</p>
                   </div>
                   <button
                     onClick={handleNext}
@@ -380,4 +392,3 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
     </>
   )
 }
-

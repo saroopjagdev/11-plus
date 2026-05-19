@@ -1,13 +1,14 @@
 'use client'
 
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { AlertCircle, ChevronRight, Play, ArrowLeft } from 'lucide-react'
+import React from 'react'
+import { motion } from 'framer-motion'
+import { AlertCircle, Play, ArrowLeft } from 'lucide-react'
 
 interface PrerequisiteWarningModalProps {
   isOpen: boolean
   onClose: () => void
   onConfirm: () => void
+  onGoToPrerequisite: () => void
   topic: string
   prerequisite: string | null
 }
@@ -15,7 +16,8 @@ interface PrerequisiteWarningModalProps {
 export function PrerequisiteWarningModal({ 
   isOpen, 
   onClose, 
-  onConfirm, 
+  onConfirm,
+  onGoToPrerequisite, 
   topic, 
   prerequisite 
 }: PrerequisiteWarningModalProps) {
@@ -36,7 +38,7 @@ export function PrerequisiteWarningModal({
           <div className="space-y-2">
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Wait a second!</h3>
             <p className="text-slate-500 font-medium leading-relaxed">
-              We recommend mastering <span className="text-indigo-600 font-bold">{prerequisite}</span> before diving into <span className="font-bold text-slate-700">{topic}</span>.
+              Master <span className="text-indigo-600 font-bold">{prerequisite}</span> first to unlock <span className="font-bold text-slate-700">{topic}</span>. Bronze mastery needs at least 20 questions with strong accuracy.
             </p>
           </div>
 
@@ -49,11 +51,18 @@ export function PrerequisiteWarningModal({
               <Play className="h-4 w-4 fill-current group-hover:translate-x-1 transition-transform" />
             </button>
             <button
+              onClick={onGoToPrerequisite}
+              className="w-full py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2 group"
+            >
+              Go to {prerequisite}
+              <Play className="h-4 w-4 fill-current group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
               onClick={onClose}
               className="w-full py-3 text-slate-400 font-bold text-sm hover:text-slate-600 transition-all flex items-center justify-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Go back to {prerequisite}
+              Stay Here
             </button>
           </div>
         </div>
