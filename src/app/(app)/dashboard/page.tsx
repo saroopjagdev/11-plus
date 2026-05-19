@@ -223,7 +223,7 @@ export default async function DashboardPage({
                       : 'Timed mocks are one of the biggest score boosters. Upgrade to unlock full exam simulations and performance review.'}
                   </p>
                   <Link
-                    href={profileHasAccess ? '/practice/mock/Maths' : '/pricing'}
+                    href={profileHasAccess ? '/practice/mock/Mixed' : '/pricing'}
                     className="inline-flex items-center gap-2 text-indigo-700 font-black text-sm uppercase tracking-widest hover:gap-3 transition-all"
                   >
                     {profileHasAccess ? 'Start a Mock' : 'Unlock Mocks'}

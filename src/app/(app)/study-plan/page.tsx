@@ -23,7 +23,7 @@ export default async function StudyPlanPage() {
     { name: 'Tuesday', focus: 'English', task: 'Inference Skills', href: '/practice/topic/Inference' },
     { name: 'Wednesday', focus: 'Reasoning', task: 'Logic Patterns', href: '/practice/topic/Logic' },
     { name: 'Thursday', focus: 'Mathematics', task: 'Geometry Basics', href: '/practice/topic/Geometry' },
-    { name: 'Friday', focus: 'Mixed', task: 'Full Mock Exam', href: '/practice/mock/Maths' },
+    { name: 'Friday', focus: 'Mixed', task: 'Full Mock Exam', href: '/practice/mock/Mixed' },
     { name: 'Saturday', focus: 'Review', task: 'Weak Point Focus', href: '/practice/drill/Mixed' },
     { name: 'Sunday', focus: 'Rest', task: 'Mindset & Prep', href: '/library' },
   ]

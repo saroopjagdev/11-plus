@@ -18,6 +18,72 @@ interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
+type MockQuestion = {
+  id: string
+  question_text: string
+  options: string[]
+  correct_answer: string
+  subject: string
+  topic: string
+  type?: string
+  difficulty?: 'Easy' | 'Medium' | 'Hard'
+  passage?: {
+    title: string
+    content: string
+  }
+}
+
+const MOCK_SUBJECT_OPTIONS = ['Maths', 'English', 'Verbal Reasoning', 'Mixed'] as const
+
+function getMockDifficultyTargets(limit: number) {
+  const easy = Math.max(1, Math.round(limit * 0.3))
+  const medium = Math.max(1, Math.round(limit * 0.35))
+  const hard = Math.max(1, limit - easy - medium)
+
+  return { easy, medium, hard }
+}
+
+function takeBalancedQuestions(
+  easyQuestions: MockQuestion[],
+  mediumQuestions: MockQuestion[],
+  hardQuestions: MockQuestion[],
+  limit: number
+) {
+  const shuffledEasy = shuffleArray(easyQuestions)
+  const shuffledMedium = shuffleArray(mediumQuestions)
+  const shuffledHard = shuffleArray(hardQuestions)
+  const targets = getMockDifficultyTargets(limit)
+  const selected: MockQuestion[] = []
+  const usedIds = new Set<string>()
+
+  const takeFromPool = (pool: MockQuestion[], count: number) => {
+    for (const question of pool) {
+      if (selected.length >= limit) break
+      if (count <= 0) break
+      if (usedIds.has(question.id)) continue
+      selected.push(question)
+      usedIds.add(question.id)
+      count -= 1
+    }
+  }
+
+  takeFromPool(shuffledEasy, targets.easy)
+  takeFromPool(shuffledMedium, targets.medium)
+  takeFromPool(shuffledHard, targets.hard)
+
+  const remaining = shuffleArray([...shuffledEasy, ...shuffledMedium, ...shuffledHard]).filter(
+    (question) => !usedIds.has(question.id)
+  )
+
+  for (const question of remaining) {
+    if (selected.length >= limit) break
+    selected.push(question)
+    usedIds.add(question.id)
+  }
+
+  return shuffleArray(selected)
+}
+
 export default async function PracticeSessionPage({ params, searchParams }: PageProps) {
   const { type, category } = await params
   const sParams = await searchParams
@@ -213,8 +279,31 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
              <div className="h-16 w-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Target className="h-8 w-8 text-indigo-600" />
              </div>
-             <h2 className="text-3xl font-black text-slate-900 mb-2">{decodedCategory} Mock Exam</h2>
-             <p className="text-slate-500 mb-8">Choose your simulation length. Mocks are strictly timed and provide no immediate feedback.</p>
+             <h2 className="text-3xl font-black text-slate-900 mb-2">Mock Exam Setup</h2>
+             <p className="text-slate-500 mb-8">Choose a subject or go mixed, then start a timed paper with a balanced spread of Easy, Medium, and Hard questions.</p>
+
+             <div className="mb-8 text-left">
+               <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 block px-2">Subject</label>
+               <div className="grid grid-cols-2 gap-3">
+                 {MOCK_SUBJECT_OPTIONS.map((subjectOption) => (
+                   <Link
+                     key={subjectOption}
+                     href={`/practice/mock/${encodeURIComponent(subjectOption)}`}
+                     className={cn(
+                       "p-4 rounded-2xl border-2 transition-all",
+                       decodedCategory === subjectOption
+                         ? "border-indigo-600 bg-indigo-50"
+                         : "border-slate-100 bg-white hover:border-indigo-200"
+                     )}
+                   >
+                     <p className="font-black text-slate-900">{subjectOption}</p>
+                     <p className="text-[10px] text-slate-500 font-bold uppercase">
+                       {subjectOption === 'Mixed' ? 'All subjects' : 'Single subject'}
+                     </p>
+                   </Link>
+                 ))}
+               </div>
+             </div>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                <Link href={`?length=20`} className="p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 hover:border-indigo-600 hover:bg-indigo-50 transition-colors group text-left">
@@ -242,26 +331,72 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
     }
     
     limit = parseInt(requestedLength as string) || 40
-    query = query.ilike('subject', decodedCategory)
   }
 
   // Handle difficulty filter if present in URL
   const diffParam = sParams.difficulty
-  if (diffParam && typeof diffParam === 'string' && diffParam !== 'Mixed') {
+  if (type !== 'mock' && diffParam && typeof diffParam === 'string' && diffParam !== 'Mixed') {
     query = query.eq('difficulty', diffParam)
   }
 
-  const { data: questions, error } = await query.limit(limit)
-  console.log('Questions found:', questions?.length || 0)
-  if (error) console.error('Query Error:', error)
+  let shuffled: MockQuestion[] = []
 
-  if (error || !questions || questions.length === 0) {
-    console.log('Redirecting to dashboard due to 0 questions found for:', decodedCategory)
-    redirect('/dashboard?error=no_questions')
+  if (type === 'mock') {
+    const poolSize = Math.max(limit * 2, 30)
+    const subjectFilter = decodedCategory !== 'Mixed' ? decodedCategory : null
+    const selectClause = '*, passage:passages(*)'
+
+    const buildDifficultyQuery = (difficultyName: 'Easy' | 'Medium' | 'Hard') => {
+      let difficultyQuery = supabase
+        .from('questions')
+        .select(selectClause)
+        .eq('difficulty', difficultyName)
+        .limit(poolSize)
+
+      if (subjectFilter) {
+        difficultyQuery = difficultyQuery.ilike('subject', subjectFilter)
+      }
+
+      return difficultyQuery
+    }
+
+    const [easyPool, mediumPool, hardPool] = await Promise.all([
+      buildDifficultyQuery('Easy'),
+      buildDifficultyQuery('Medium'),
+      buildDifficultyQuery('Hard'),
+    ])
+
+    const mockError = easyPool.error || mediumPool.error || hardPool.error
+    if (mockError) {
+      console.error('Mock query error:', mockError)
+      redirect('/dashboard?error=no_questions')
+    }
+
+    const balancedQuestions = takeBalancedQuestions(
+      (easyPool.data || []) as MockQuestion[],
+      (mediumPool.data || []) as MockQuestion[],
+      (hardPool.data || []) as MockQuestion[],
+      limit
+    )
+
+    if (balancedQuestions.length === 0) {
+      console.log('Redirecting to dashboard due to 0 mock questions found for:', decodedCategory)
+      redirect('/dashboard?error=no_questions')
+    }
+
+    shuffled = balancedQuestions
+  } else {
+    const { data: questions, error } = await query.limit(limit)
+    console.log('Questions found:', questions?.length || 0)
+    if (error) console.error('Query Error:', error)
+
+    if (error || !questions || questions.length === 0) {
+      console.log('Redirecting to dashboard due to 0 questions found for:', decodedCategory)
+      redirect('/dashboard?error=no_questions')
+    }
+
+    shuffled = shuffleArray(questions as MockQuestion[])
   }
-
-  // 4. Shuffle (client-side shuffle is fine for 10-40 questions)
-  const shuffled = shuffleArray(questions)
 
   return (
     <div className="h-[100dvh] bg-slate-50 overflow-hidden">

@@ -81,7 +81,7 @@ export default function HandbookPage() {
           <Sparkles className="h-12 w-12 mx-auto mb-6 text-indigo-300" />
           <h3 className="text-3xl font-black mb-4">Ready to put this into practice?</h3>
           <p className="text-indigo-100 mb-8 max-w-md mx-auto">Start a timed mock exam to build your stamina and test your new strategies.</p>
-          <Link href="/practice/mock/Maths" className="inline-flex items-center gap-2 px-10 py-5 bg-white text-indigo-600 rounded-2xl font-black hover:bg-indigo-50 transition-all shadow-xl">
+          <Link href="/practice/mock/Mixed" className="inline-flex items-center gap-2 px-10 py-5 bg-white text-indigo-600 rounded-2xl font-black hover:bg-indigo-50 transition-all shadow-xl">
             Start Mock Exam
             <Zap className="h-5 w-5 fill-current" />
           </Link>

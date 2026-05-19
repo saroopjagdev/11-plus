@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Zap, Target, Sparkles, CheckCircle2, ChevronRight, Star, Lock } from 'lucide-react'
+import { Zap, Target, Sparkles, CheckCircle2, ChevronRight, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -69,7 +69,7 @@ export function DailyMission({ recommendations, childName, isComplete, completed
                   </div>
                   <h3 className="text-2xl font-black mb-2">Simulate an Exam</h3>
                   <p className="text-slate-400 text-sm mb-8 max-w-sm">Missions are done, but exam stamina is built in mocks. Try a 40-question timed simulation in your weakest subject.</p>
-                  <Link href="/practice/mock/Maths" className="inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-900 rounded-2xl font-bold text-sm hover:bg-indigo-50 transition-all shadow-xl shadow-white/5">
+                  <Link href="/practice/mock/Mixed" className="inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-900 rounded-2xl font-bold text-sm hover:bg-indigo-50 transition-all shadow-xl shadow-white/5">
                      Start Full Mock Exam
                      <ChevronRight className="h-4 w-4" />
                   </Link>

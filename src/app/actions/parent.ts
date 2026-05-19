@@ -2,8 +2,18 @@
 
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
+import { getProgressToNextTier } from '@/lib/mastery'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+interface MistakeAttempt {
+  selected_answer: string | null
+  questions?: {
+    question_text?: string | null
+    topic?: string | null
+    subject?: string | null
+  } | null
+}
 
 export async function getWeeklyReport(childId: string) {
   const supabase = await createClient()
@@ -38,24 +48,24 @@ export async function getParentDashboardData(childId: string) {
   // 1. Get Subject Accuracy
   const { data: mastery, error: masteryError } = await supabase
     .from('topic_mastery')
-    .select('subject, accuracy, questions_answered')
+    .select('subject, accuracy, questions_answered, mastery_level')
     .eq('child_id', childId)
 
   if (masteryError) throw new Error(masteryError.message)
 
   // Aggregate by subject
-  const subjectStats: Record<string, { totalAccuracy: number, count: number }> = {}
+  const subjectStats: Record<string, { totalProgress: number, count: number }> = {}
   mastery.forEach(m => {
     if (!subjectStats[m.subject]) {
-      subjectStats[m.subject] = { totalAccuracy: 0, count: 0 }
+      subjectStats[m.subject] = { totalProgress: 0, count: 0 }
     }
-    subjectStats[m.subject].totalAccuracy += Number(m.accuracy)
+    subjectStats[m.subject].totalProgress += getProgressToNextTier(m)
     subjectStats[m.subject].count += 1
   })
 
   const aggregatedStats = Object.entries(subjectStats).map(([subject, stats]) => ({
     subject,
-    accuracy: Math.round(stats.totalAccuracy / stats.count)
+    progress: Math.round(stats.totalProgress / stats.count)
   }))
 
   // 2. Get Recent Activity
@@ -102,7 +112,7 @@ export async function generateWeeklyReport(childId: string) {
   }
 
   // 2. Format for AI
-  const errorData = attempts.map((a: any) => ({
+  const errorData = attempts.map((a: MistakeAttempt) => ({
     topic: a.questions?.topic,
     subject: a.questions?.subject,
     question: a.questions?.question_text,

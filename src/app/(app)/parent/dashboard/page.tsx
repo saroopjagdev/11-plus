@@ -7,8 +7,7 @@ import {
 } from '@/lib/entitlements'
 import { redirect } from 'next/navigation'
 import { getWeeklyReport, getParentDashboardData, generateWeeklyReport } from '@/app/actions/parent'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { BookOpen, Brain, Target, TrendingUp, AlertTriangle, Clock, ChevronRight, LayoutDashboard, Sparkles } from 'lucide-react'
+import { TrendingUp, AlertTriangle, Clock, ChevronRight, LayoutDashboard, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { ParentCharts } from '@/components/ParentCharts'
 
@@ -61,7 +60,7 @@ export default async function ParentDashboardPage() {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black text-slate-900 mb-2">Parent Dashboard</h1>
-            <p className="text-slate-500 font-medium">Monitoring {child.name}'s 11+ progress</p>
+            <p className="text-slate-500 font-medium">Monitoring {child.name}&apos;s 11+ progress</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100">
@@ -84,7 +83,7 @@ export default async function ParentDashboardPage() {
                 <div className="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-indigo-600" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900">Subject Mastery</h2>
+                <h2 className="text-2xl font-black text-slate-900">Subject Progress</h2>
               </div>
 
               <ParentCharts subjectData={stats.subjectStats} />
@@ -98,7 +97,7 @@ export default async function ParentDashboardPage() {
                     <div className="h-12 w-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center">
                       <Sparkles className="h-6 w-6 text-indigo-400" />
                     </div>
-                    <h2 className="text-2xl font-black italic tracking-tight">Weekly "Exam Trap" Report</h2>
+                    <h2 className="text-2xl font-black italic tracking-tight">Weekly &ldquo;Exam Trap&rdquo; Report</h2>
                   </div>
                 </div>
 
@@ -111,7 +110,7 @@ export default async function ParentDashboardPage() {
                 ) : (
                   <div className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center">
                     <AlertTriangle className="h-12 w-12 text-amber-400 mx-auto mb-4 opacity-50" />
-                    <p className="text-slate-400 font-bold italic">Not enough data to generate this week's analysis yet.</p>
+                    <p className="text-slate-400 font-bold italic">Not enough data to generate this week&apos;s analysis yet.</p>
                     <p className="text-slate-500 text-sm mt-2 font-medium">Reports update every Monday based on recent practice sessions.</p>
                   </div>
                 )}
@@ -129,7 +128,7 @@ export default async function ParentDashboardPage() {
               </h3>
 
               <div className="space-y-4">
-                {stats.recentSessions.length > 0 ? stats.recentSessions.map((session, i) => (
+                {stats.recentSessions.length > 0 ? stats.recentSessions.map((session) => (
                   <div key={session.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-100 transition-colors">
                     <div>
                       <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{session.type}</p>

@@ -4,7 +4,7 @@ import React from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 interface ParentChartsProps {
-  subjectData: { subject: string; accuracy: number }[]
+  subjectData: { subject: string; progress: number }[]
 }
 
 export function ParentCharts({ subjectData }: ParentChartsProps) {
@@ -44,9 +44,10 @@ export function ParentCharts({ subjectData }: ParentChartsProps) {
               padding: '16px',
               fontWeight: 'bold'
             }}
+            formatter={(value) => [`${value ?? 0}%`, 'Progress to next milestone']}
           />
           <Bar 
-            dataKey="accuracy" 
+            dataKey="progress" 
             radius={[12, 12, 12, 12]} 
             barSize={60}
           >
