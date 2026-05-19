@@ -3,6 +3,11 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import {
+  canManageBilling,
+  getSubscriptionPlanLabel,
+  hasProAccess,
+} from '@/lib/entitlements'
 import { getLevelProgress } from '@/lib/gamification'
 import { AVATAR_COLLECTION } from '@/lib/constants/avatars'
 import {
@@ -24,6 +29,7 @@ import {
 interface SidebarProps {
   userEmail?: string
   subscriptionStatus?: string
+  stripeCustomerId?: string | null
   childName?: string
   xp?: number
   level?: number
@@ -31,9 +37,17 @@ interface SidebarProps {
   role?: string
 }
 
+interface NavItem {
+  label: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  isAction?: boolean
+}
+
 export function Sidebar({
   userEmail,
   subscriptionStatus,
+  stripeCustomerId,
   childName,
   xp,
   level,
@@ -42,8 +56,15 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const profile = {
+    subscription_status: subscriptionStatus,
+    stripe_customer_id: stripeCustomerId,
+  }
+  const isPro = hasProAccess(profile)
+  const canOpenBilling = canManageBilling(profile)
+  const planLabel = getSubscriptionPlanLabel(profile)
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     ...(role === 'parent' ? [{ label: 'Parent View', href: '/parent/dashboard', icon: Sparkles }] : []),
     { label: 'Study Plan', href: '/study-plan', icon: Calendar },
@@ -52,11 +73,14 @@ export function Sidebar({
     { label: 'Performance', href: '/analytics', icon: BarChart3 },
     { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
     { label: 'Refer a Friend', href: '/referrals', icon: Gift },
-    { label: subscriptionStatus === 'pro' ? 'Billing' : 'Subscription', href: subscriptionStatus === 'pro' ? '/api/portal' : '/pricing', icon: CreditCard, isAction: subscriptionStatus === 'pro' },
+    {
+      label: canOpenBilling ? 'Billing' : 'Subscription',
+      href: canOpenBilling ? '/api/portal' : '/pricing',
+      icon: CreditCard,
+      isAction: canOpenBilling,
+    },
     { label: 'Settings', href: '/settings', icon: Settings },
   ]
-
-  const isPro = subscriptionStatus === 'pro'
 
   return (
     <>
@@ -93,7 +117,7 @@ export function Sidebar({
 
           {/* Nav Links */}
           <nav className="flex-1 space-y-1 overflow-hidden">
-            {navItems.map((item: any) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.href
               
               if (item.isAction) {
@@ -190,7 +214,7 @@ export function Sidebar({
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-slate-900 truncate text-xs">{userEmail?.split('@')[0]}</p>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                      {isPro ? 'Pro Member' : 'Free Account'}
+                      {planLabel}
                     </p>
                   </div>
                 </div>

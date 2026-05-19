@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { hasProAccess } from '@/lib/entitlements'
 import { redirect } from 'next/navigation'
 import { Gift, Copy, Share2, Users, CheckCircle2, Sparkles, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
@@ -42,7 +43,7 @@ export default async function ReferralsPage() {
   const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL || ''}/signup?ref=${profile?.referral_code || ''}`
   const count = profile?.referral_count || 0
   const pending = profile?.pending_referral_credits || 0
-  const isFree = profile?.subscription_status !== 'pro'
+  const isFree = !hasProAccess(profile)
   const maxReferrals = 5
 
   return (

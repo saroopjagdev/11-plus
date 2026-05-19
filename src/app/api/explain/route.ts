@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { hasProAccess } from '@/lib/entitlements'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
@@ -15,6 +16,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_status')
+    .eq('id', user.id)
+    .single()
+
+  if (!hasProAccess(profile)) {
+    return NextResponse.json(
+      {
+        error: 'Pro subscription required',
+        message: 'Upgrade to Pro or start your free trial to unlock unlimited AI tutor explanations.',
+      },
+      { status: 403 }
+    )
+  }
+
   const { questionId } = await request.json()
   if (!questionId) {
     return NextResponse.json({ error: 'Question ID required' }, { status: 400 })
@@ -22,7 +39,7 @@ export async function POST(request: Request) {
 
   try {
     // 2. Check if explanation exists in DB
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existing } = await supabase
       .from('explanations')
       .select('*')
       .eq('question_id', questionId)
@@ -84,11 +101,12 @@ export async function POST(request: Request) {
     })
     
     return NextResponse.json({ explanation: explanationContent, cached: false })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('AI Explanation Error:', error)
+    const openAiError = error as { status?: number; code?: string }
     
     // Check for OpenAI quota specifically
-    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+    if (openAiError?.status === 429 || openAiError?.code === 'insufficient_quota') {
       return NextResponse.json({ 
         error: 'AI Credits Exceeded', 
         message: 'The daily AI limit for this trial has been reached. Please upgrade to Pro for unlimited tutor help.' 

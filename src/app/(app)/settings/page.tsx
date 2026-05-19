@@ -1,4 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+import {
+  canManageBilling,
+  getSubscriptionPlanLabel,
+  hasProAccess,
+  normalizeAppSubscriptionStatus,
+} from '@/lib/entitlements'
 import { redirect } from 'next/navigation'
 import { Settings, User, CreditCard, Bell, Shield, LogOut } from 'lucide-react'
 import Link from 'next/link'
@@ -15,6 +21,11 @@ export default async function SettingsPage() {
     .select('*')
     .eq('id', user.id)
     .single()
+
+  const normalizedStatus = normalizeAppSubscriptionStatus(profile?.subscription_status)
+  const planLabel = getSubscriptionPlanLabel(profile)
+  const showBilling = canManageBilling(profile)
+  const isPaidAccess = hasProAccess(profile)
 
   return (
     <div className="p-8 lg:p-12 max-w-4xl mx-auto">
@@ -65,15 +76,15 @@ export default async function SettingsPage() {
                   <div>
                      <h2 className="text-xl font-black text-slate-900">Subscription Plan</h2>
                      <div className="flex items-center gap-2">
-                        <span className="text-indigo-600 font-bold uppercase text-sm">{profile?.subscription_status || 'Free'}</span>
-                        {profile?.subscription_status === 'pro' && !profile?.stripe_customer_id && (
-                           <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-wider">Free Trial</span>
+                        <span className="text-indigo-600 font-bold uppercase text-sm">{planLabel}</span>
+                        {normalizedStatus === 'trialing' && (
+                          <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-wider">7-Day Trial</span>
                         )}
                      </div>
                   </div>
                </div>
                
-               {profile?.subscription_status === 'pro' ? (
+               {showBilling ? (
                   <form action="/api/portal" method="POST">
                     <button type="submit" className="px-6 py-3 bg-white border-2 border-slate-100 text-slate-900 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center gap-2">
                        Manage Billing
@@ -82,7 +93,7 @@ export default async function SettingsPage() {
                   </form>
                ) : (
                   <Link href="/pricing" className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all">
-                     Upgrade to Pro
+                     {isPaidAccess ? 'View Plan' : 'Upgrade to Pro'}
                   </Link>
                )}
             </div>

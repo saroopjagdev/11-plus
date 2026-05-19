@@ -1,4 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+import {
+  canManageBilling,
+  getSubscriptionCallout,
+  getSubscriptionPlanLabel,
+  hasProAccess,
+} from '@/lib/entitlements'
 import { redirect } from 'next/navigation'
 import { getWeeklyReport, getParentDashboardData, generateWeeklyReport } from '@/app/actions/parent'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
@@ -15,11 +21,15 @@ export default async function ParentDashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, subscription_status, stripe_customer_id')
     .eq('id', user.id)
     .single()
 
   if (profile?.role !== 'parent') redirect('/dashboard')
+  const profileHasAccess = hasProAccess(profile)
+  const showBilling = canManageBilling(profile)
+  const planLabel = getSubscriptionPlanLabel(profile)
+  const planCallout = getSubscriptionCallout(profile)
 
   // 2. Fetch Child
   const { data: children } = await supabase
@@ -139,10 +149,13 @@ export default async function ParentDashboardPage() {
 
             <section className="bg-indigo-50 p-8 rounded-[3rem] border border-indigo-100 relative group overflow-hidden">
               <div className="relative z-10">
-                <h3 className="text-xl font-black text-indigo-900 mb-2">Pro Subscription</h3>
-                <p className="text-indigo-600/80 text-sm font-medium mb-6">You are currently on the Premium plan with full access to Mocks and AI analysis.</p>
-                <Link href="/settings" className="inline-flex items-center gap-2 text-indigo-700 font-black text-sm uppercase tracking-widest hover:gap-3 transition-all">
-                  Manage Plan <ChevronRight className="h-4 w-4" />
+                <h3 className="text-xl font-black text-indigo-900 mb-2">{planLabel}</h3>
+                <p className="text-indigo-600/80 text-sm font-medium mb-6">{planCallout}</p>
+                <Link
+                  href={showBilling ? '/settings' : '/pricing'}
+                  className="inline-flex items-center gap-2 text-indigo-700 font-black text-sm uppercase tracking-widest hover:gap-3 transition-all"
+                >
+                  {profileHasAccess ? 'Manage Plan' : 'Upgrade Now'} <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
               <LayoutDashboard className="absolute -right-4 -bottom-4 h-24 w-24 text-indigo-600/5 rotate-12" />

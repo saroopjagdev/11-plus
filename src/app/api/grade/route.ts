@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { hasProAccess } from '@/lib/entitlements'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
@@ -13,6 +14,22 @@ export async function POST(request: Request) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_status')
+    .eq('id', user.id)
+    .single()
+
+  if (!hasProAccess(profile)) {
+    return NextResponse.json(
+      {
+        error: 'Pro subscription required',
+        message: 'Upgrade to Pro or start your free trial to unlock AI grading.',
+      },
+      { status: 403 }
+    )
   }
 
   const { questionText, studentAnswer, rubric } = await request.json()
@@ -56,7 +73,7 @@ export async function POST(request: Request) {
     const result = JSON.parse(completion.choices[0].message.content || '{}')
 
     return NextResponse.json(result)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('AI Grading Error:', error)
     return NextResponse.json({ error: 'Failed to grade answer' }, { status: 500 })
   }

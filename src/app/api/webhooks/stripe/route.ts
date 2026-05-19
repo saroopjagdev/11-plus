@@ -1,11 +1,10 @@
 import { stripe } from '@/lib/stripe'
+import { syncSubscriptionEntitlement } from '@/lib/subscription-server'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-// Use the service role client for webhook operations.
-// The normal server client relies on cookies (which webhooks don't have).
 function createServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,21 +25,27 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     )
-  } catch (error: any) {
-    console.error(`Webhook Error: ${error.message}`)
-    return NextResponse.json({ error: `Webhook Error: ${error.message}` }, { status: 400 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Invalid webhook signature'
+    console.error(`Webhook Error: ${message}`)
+    return NextResponse.json(
+      { error: `Webhook Error: ${message}` },
+      { status: 400 }
+    )
   }
 
   const supabase = createServiceClient()
 
-  // Handle successful checkout — upgrade user to Pro
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.userId
     const stripeCustomerId = session.customer as string
+    const stripeSubscriptionId =
+      typeof session.subscription === 'string'
+        ? session.subscription
+        : session.subscription?.id
 
     if (userId) {
-      // 1. Check for any pending referral credits
       const { data: profile } = await supabase
         .from('profiles')
         .select('pending_referral_credits')
@@ -49,16 +54,14 @@ export async function POST(req: Request) {
 
       if (profile?.pending_referral_credits && profile.pending_referral_credits > 0) {
         try {
-          // Calculate total banked credit (£19.99 * credits)
           const totalCredit = profile.pending_referral_credits * 1999
-          
+
           await stripe.customers.createBalanceTransaction(stripeCustomerId, {
             amount: -totalCredit,
             currency: 'gbp',
             description: `Banked Referral Credits: ${profile.pending_referral_credits} months applied`,
           })
 
-          // Reset pending credits in DB
           await supabase
             .from('profiles')
             .update({ pending_referral_credits: 0 })
@@ -70,81 +73,69 @@ export async function POST(req: Request) {
         }
       }
 
-      // 2. Standard upgrade to Pro
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          subscription_status: 'pro',
-          stripe_customer_id: stripeCustomerId 
-        })
-        .eq('id', userId)
-
-      if (error) {
-        console.error('Error updating user subscription status:', error)
-      }
+      await syncSubscriptionEntitlement({
+        source: 'webhook',
+        eventType: event.type,
+        userId,
+        stripeCustomerId,
+        stripeSubscriptionId,
+      })
+    } else {
+      console.error('Missing metadata.userId on checkout.session.completed', {
+        stripeCustomerId,
+        stripeSubscriptionId,
+      })
     }
   }
 
-  // Handle subscription cancellation — downgrade user to Free
-  if (event.type === 'customer.subscription.deleted') {
+  if (
+    event.type === 'customer.subscription.created' ||
+    event.type === 'customer.subscription.updated' ||
+    event.type === 'customer.subscription.deleted'
+  ) {
     const subscription = event.data.object as Stripe.Subscription
     const stripeCustomerId = subscription.customer as string
 
-    if (stripeCustomerId) {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ subscription_status: 'free' })
-        .eq('stripe_customer_id', stripeCustomerId)
-
-      if (error) {
-        console.error('Error downgrading user subscription:', error)
-      }
-    }
+    await syncSubscriptionEntitlement({
+      source: 'webhook',
+      eventType: event.type,
+      stripeCustomerId,
+      stripeSubscriptionId: subscription.id,
+    })
   }
 
-  // Handle successful payments — issue referral rewards
   if (event.type === 'invoice.payment_succeeded') {
     const invoice = event.data.object as Stripe.Invoice
     const stripeCustomerId = invoice.customer as string
 
-    // Only process if it's a subscription payment (not a one-off)
-    if ((invoice as any).subscription && stripeCustomerId) {
-      // 1. Find the referee's profile
+    if ((invoice as Stripe.Invoice & { subscription?: string | null }).subscription && stripeCustomerId) {
       const { data: referee } = await supabase
         .from('profiles')
         .select('id, referred_by, referral_rewarded')
         .eq('stripe_customer_id', stripeCustomerId)
         .single()
 
-      // 2. If they were referred and haven't been rewarded yet
       if (referee?.referred_by && !referee.referral_rewarded) {
-        // 3. Find the referrer
         const { data: referrer } = await supabase
           .from('profiles')
           .select('id, stripe_customer_id, referral_count, pending_referral_credits')
           .eq('id', referee.referred_by)
           .single()
 
-        // 4. Apply reward if referrer is under the cap (5)
         if (referrer && (referrer.referral_count || 0) < 5) {
           try {
-            // IF REFERRER HAS STRIPE ID: Apply credit immediately
             if (referrer.stripe_customer_id) {
               await stripe.customers.createBalanceTransaction(referrer.stripe_customer_id, {
                 amount: -1999,
                 currency: 'gbp',
                 description: 'Referral Reward: 1 Free Month',
               })
-              
-              // Use atomic increment RPC to prevent race conditions
+
               await supabase.rpc('increment_referral_count', { user_id: referrer.id })
-            } 
-            // IF REFERRER IS FREE: Bank the credit for later
-            else {
+            } else {
               await supabase.rpc('bank_referral_credit', { user_id: referrer.id })
             }
 
-            // Mark referee as rewarded
             await supabase
               .from('profiles')
               .update({ referral_rewarded: true })
@@ -159,7 +150,6 @@ export async function POST(req: Request) {
     }
   }
 
-  // Handle failed payments — optionally downgrade or notify
   if (event.type === 'invoice.payment_failed') {
     const invoice = event.data.object as Stripe.Invoice
     const stripeCustomerId = invoice.customer as string

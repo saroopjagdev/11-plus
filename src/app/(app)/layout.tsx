@@ -20,7 +20,7 @@ export default async function AppLayout({
   // 2. Fetch profile for subscription status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status, role')
+    .select('subscription_status, stripe_customer_id, role')
     .eq('id', user.id)
     .single()
 
@@ -38,6 +38,7 @@ export default async function AppLayout({
       <Sidebar 
         userEmail={user.email} 
         subscriptionStatus={profile?.subscription_status || 'free'} 
+        stripeCustomerId={profile?.stripe_customer_id}
         childName={primaryChild?.name}
         xp={primaryChild?.xp}
         level={primaryChild?.level}

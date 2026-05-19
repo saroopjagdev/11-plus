@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { hasProAccess } from '@/lib/entitlements'
+import { reconcileCheckoutSessionForUser } from '@/lib/subscription-server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ClaimResultsPrompt } from '@/components/ClaimResultsPrompt'
@@ -18,13 +20,29 @@ import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session_id?: string }>
+}) {
   const supabase = await createClient()
 
   // 1. Check if user is logged in
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     redirect('/login')
+  }
+
+  const { session_id: sessionId } = await searchParams
+
+  if (sessionId) {
+    try {
+      await reconcileCheckoutSessionForUser(sessionId, user.id)
+    } catch (error) {
+      console.error('Checkout return reconciliation failed:', error)
+    }
+
+    redirect('/dashboard')
   }
 
   // 2. Fetch profile and children
@@ -125,7 +143,7 @@ export default async function DashboardPage() {
               curriculum={CURRICULUM_LADDER}
               threshold={MASTERY_THRESHOLD}
               minQuestions={MIN_QUESTIONS_FOR_MASTERY}
-              isPro={profile?.subscription_status === 'pro'}
+              isPro={hasProAccess(profile)}
             />
 
             {/* Topic Mastery Section */}

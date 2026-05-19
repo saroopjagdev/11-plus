@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSubscriptionPlanLabel, hasProAccess, normalizeAppSubscriptionStatus } from '@/lib/entitlements'
 import { redirect } from 'next/navigation'
 import { Check, Sparkles, Zap, ShieldCheck, Star } from 'lucide-react'
 
@@ -16,8 +17,10 @@ export default async function PricingPage() {
     .eq('id', user.id)
     .single()
 
-  const isPro = profile?.subscription_status === 'pro'
+  const status = normalizeAppSubscriptionStatus(profile?.subscription_status)
+  const isPro = hasProAccess(profile)
   const isReferred = !!profile?.referred_by
+  const planLabel = getSubscriptionPlanLabel(profile)
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto">
@@ -104,7 +107,7 @@ export default async function PricingPage() {
 
           {isPro ? (
             <button className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 text-sm">
-              Active Subscription
+              {planLabel}
               <ShieldCheck className="h-4 w-4" />
             </button>
           ) : (
@@ -122,6 +125,12 @@ export default async function PricingPage() {
                 unless cancelled.
               </p>
             </form>
+          )}
+
+          {!isPro && status === 'canceled' && (
+            <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-widest text-amber-300">
+              Previous subscription canceled
+            </p>
           )}
 
           <div className="absolute -right-20 -bottom-20 h-64 w-64 bg-indigo-500/20 rounded-full blur-[80px]" />

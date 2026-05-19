@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { hasProAccess } from '@/lib/entitlements'
 import { PracticeSession } from '@/components/PracticeSession'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -25,8 +26,12 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
   if (!user) redirect('/login')
 
   // 2. Pro check for Mocks
-  const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('id', user.id).single()
-  const isPro = profile?.subscription_status === 'pro'
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_status')
+    .eq('id', user.id)
+    .single()
+  const isPro = hasProAccess(profile)
 
   // 3. Fetch Child
   const { data: children } = await supabase.from('children').select('id').eq('parent_id', user.id).limit(1)

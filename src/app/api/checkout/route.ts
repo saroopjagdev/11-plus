@@ -1,8 +1,9 @@
 import { stripe } from '@/lib/stripe'
+import { hasProAccess } from '@/lib/entitlements'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -18,9 +19,16 @@ export async function POST(req: Request) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('referred_by')
+      .select('referred_by, stripe_customer_id, subscription_status')
       .eq('id', user.id)
       .single()
+
+    if (hasProAccess(profile)) {
+      return NextResponse.json(
+        { error: 'An active subscription or trial already exists.' },
+        { status: 400 }
+      )
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -31,15 +39,21 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'subscription',
-      subscription_data: {
-        trial_period_days: 7,
-      },
       discounts: profile?.referred_by ? [{ coupon: 'REFERRAL50' }] : [],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing`,
-      customer_email: user.email,
+      ...(profile?.stripe_customer_id
+        ? { customer: profile.stripe_customer_id }
+        : { customer_email: user.email }),
+      client_reference_id: user.id,
       metadata: {
         userId: user.id,
+      },
+      subscription_data: {
+        trial_period_days: 7,
+        metadata: {
+          userId: user.id,
+        },
       },
     })
 
@@ -48,8 +62,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.redirect(session.url, 303)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Stripe Checkout Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Failed to create checkout session'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

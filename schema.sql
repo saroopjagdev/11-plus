@@ -7,7 +7,12 @@ create table public.profiles (
   email text unique not null,
   role text check (role in ('parent', 'student')) default 'parent',
   stripe_customer_id text,
-  subscription_status text default 'free',
+  stripe_subscription_id text,
+  subscription_status text check (subscription_status in ('free', 'trialing', 'active', 'past_due', 'canceled')) default 'free',
+  subscription_trial_end timestamp with time zone,
+  subscription_current_period_end timestamp with time zone,
+  subscription_cancel_at_period_end boolean default false,
+  subscription_last_synced_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
