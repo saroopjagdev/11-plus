@@ -52,10 +52,11 @@ export async function getParentDashboardData(childId: string) {
     .eq('child_id', childId)
 
   if (masteryError) throw new Error(masteryError.message)
+  const safeMastery = mastery || []
 
   // Aggregate by subject
   const subjectStats: Record<string, { totalProgress: number, count: number }> = {}
-  mastery.forEach(m => {
+  safeMastery.forEach(m => {
     if (!subjectStats[m.subject]) {
       subjectStats[m.subject] = { totalProgress: 0, count: 0 }
     }
@@ -80,7 +81,7 @@ export async function getParentDashboardData(childId: string) {
 
   return {
     subjectStats: aggregatedStats,
-    recentSessions: sessions
+    recentSessions: sessions || []
   }
 }
 
