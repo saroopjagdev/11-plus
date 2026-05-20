@@ -427,7 +427,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
           </div>
 
           {/* Action Bar - Brought closer to card */}
-          <div className={cn('max-w-4xl w-full shrink-0 mt-auto', useCompactLayout ? 'py-1' : 'py-2')}>
+          <div className={cn('max-w-4xl w-full shrink-0 mt-auto', useCompactLayout ? 'pt-1 pb-1' : 'pt-1 pb-2')}>
             <div className="flex flex-col items-center gap-4">
               {!showFeedback ? (
                 <button
