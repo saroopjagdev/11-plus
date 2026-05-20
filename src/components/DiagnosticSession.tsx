@@ -204,8 +204,51 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
               </div>
             </div>
 
+            {!childId && (
+              <div className="mb-10 rounded-[2.5rem] border-2 border-indigo-100 bg-white p-8 text-center shadow-xl shadow-indigo-100">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                  <Lock className="h-7 w-7" />
+                </div>
+                <p className="text-lg font-bold text-slate-900 mb-2">Unlock Your Full Analysis</p>
+                <p className="text-sm text-slate-500 mb-4">
+                  Create your free parent account to save this result and turn it into a real study plan.
+                </p>
+                <div className="mb-6 grid gap-2 text-left max-w-md mx-auto">
+                  <div className="rounded-2xl bg-indigo-50 px-4 py-3 text-sm font-medium text-slate-700">
+                    Full tutor review with strengths and weak points
+                  </div>
+                  <div className="rounded-2xl bg-indigo-50 px-4 py-3 text-sm font-medium text-slate-700">
+                    Topic-by-topic breakdown and next steps
+                  </div>
+                  <div className="rounded-2xl bg-indigo-50 px-4 py-3 text-sm font-medium text-slate-700">
+                    Saved progress and a personalized learning roadmap
+                  </div>
+                </div>
+
+                <form className="space-y-4 max-w-md mx-auto" onSubmit={handleGuestUnlock}>
+                  <input
+                    type="email"
+                    required
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    placeholder="parent@email.com"
+                    className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-sm text-slate-900 placeholder:text-slate-400"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isCapturingLead}
+                    className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100"
+                  >
+                    {isCapturingLead ? 'Saving Your Report...' : 'Reveal My Full Report'}
+                  </button>
+                </form>
+                {leadError && <p className="text-xs text-rose-500 mt-3 font-bold">{leadError}</p>}
+                <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-widest">No Credit Card Required</p>
+              </div>
+            )}
+
             <div className="relative">
-              <div className={cn("space-y-10", !childId && "blur-lg select-none pointer-events-none opacity-25")}>
+              <div className={cn("space-y-10", !childId && "blur-md select-none pointer-events-none opacity-35")}>
                 {results.aiSummary && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -284,40 +327,6 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                   </div>
                 </section>
               </div>
-
-              {!childId && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-[2rem]">
-                  <div className="max-w-md rounded-[2.5rem] border-2 border-indigo-100 bg-white/95 p-8 text-center shadow-2xl backdrop-blur-md">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                      <Lock className="h-7 w-7" />
-                    </div>
-                    <p className="text-lg font-bold text-slate-900 mb-2">Unlock Your Full Analysis</p>
-                    <p className="text-sm text-slate-500 mb-6">
-                      Save this score, reveal the full tutor review, and get a personalized learning plan for the next steps.
-                    </p>
-
-                    <form className="space-y-4" onSubmit={handleGuestUnlock}>
-                      <input
-                        type="email"
-                        required
-                        value={guestEmail}
-                        onChange={(e) => setGuestEmail(e.target.value)}
-                        placeholder="parent@email.com"
-                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-sm text-slate-900 placeholder:text-slate-400"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isCapturingLead}
-                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100"
-                      >
-                        {isCapturingLead ? 'Saving Your Report...' : 'Reveal My Full Report'}
-                      </button>
-                    </form>
-                    {leadError && <p className="text-xs text-rose-500 mt-3 font-bold">{leadError}</p>}
-                    <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-widest">No Credit Card Required</p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {childId && (
