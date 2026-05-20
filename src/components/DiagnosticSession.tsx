@@ -401,8 +401,8 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
 
         {/* Main Question Area & Footer - Grouped tightly */}
         <div className={cn(
-          'flex-1 min-h-0 overflow-hidden px-6 flex flex-col items-center justify-center',
-          useCompactLayout ? 'py-2 gap-3' : 'py-4 gap-6'
+          'flex-1 min-h-0 overflow-hidden px-6 flex flex-col items-center justify-start',
+          useCompactLayout ? 'pt-4 pb-2 gap-3' : 'pt-6 pb-4 gap-6'
         )}>
           <div className="max-w-4xl w-full">
             <AnimatePresence mode="wait">
