@@ -401,10 +401,10 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
 
         {/* Main Question Area & Footer - Grouped tightly */}
         <div className={cn(
-          'flex-1 min-h-0 overflow-hidden px-6 flex flex-col items-center justify-start',
-          useCompactLayout ? 'pt-4 pb-2 gap-3' : 'pt-5 pb-3 gap-4'
-        )}>
-          <div className="max-w-4xl w-full flex-1 flex items-start justify-center">
+          'flex-1 min-h-0 overflow-hidden px-6 grid items-stretch',
+          useCompactLayout ? 'pt-4 pb-3 gap-3' : 'pt-5 pb-4 gap-4'
+        )} style={{ gridTemplateRows: 'minmax(0, 1fr) auto' }}>
+          <div className="max-w-4xl w-full min-h-0 flex items-center justify-center mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
@@ -427,7 +427,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
           </div>
 
           {/* Action Bar - Brought closer to card */}
-          <div className={cn('max-w-4xl w-full shrink-0 mt-auto', useCompactLayout ? 'pt-1 pb-1' : 'pt-1 pb-2')}>
+          <div className={cn('max-w-4xl w-full shrink-0 mx-auto', useCompactLayout ? 'pb-2' : 'pb-3')}>
             <div className="flex flex-col items-center gap-4">
               {!showFeedback ? (
                 <button
