@@ -401,10 +401,10 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
 
         {/* Main Question Area & Footer - Grouped tightly */}
         <div className={cn(
-          'flex-1 min-h-0 overflow-hidden px-6 flex flex-col items-center justify-start',
-          useCompactLayout ? 'pt-4 pb-2 gap-3' : 'pt-6 pb-4 gap-6'
+          'flex-1 min-h-0 overflow-hidden px-6 flex flex-col items-center justify-between',
+          useCompactLayout ? 'pt-4 pb-2 gap-3' : 'pt-5 pb-3 gap-5'
         )}>
-          <div className="max-w-4xl w-full">
+          <div className="max-w-4xl w-full flex-1 flex items-start">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
@@ -427,7 +427,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
           </div>
 
           {/* Action Bar - Brought closer to card */}
-          <div className={cn('max-w-4xl w-full shrink-0', useCompactLayout ? 'py-2' : 'py-4')}>
+          <div className={cn('max-w-4xl w-full shrink-0', useCompactLayout ? 'py-1' : 'py-2')}>
             <div className="flex flex-col items-center gap-4">
               {!showFeedback ? (
                 <button
