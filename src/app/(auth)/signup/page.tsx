@@ -5,9 +5,9 @@ import { CheckCircle2, ShieldCheck, Target, TrendingUp, Sparkles } from 'lucide-
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; ref?: string; email?: string; guest_diag?: string }>
+  searchParams: Promise<{ error?: string; ref?: string; email?: string; guest_diag?: string; lead?: string }>
 }) {
-  const { error, ref, email, guest_diag } = await searchParams;
+  const { error, ref, email, guest_diag, lead } = await searchParams;
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Left Sidebar - Value Proposition */}
@@ -34,7 +34,7 @@ export default async function SignupPage({
               <Target className="h-6 w-6 text-indigo-300 shrink-0 mt-1" />
               <div>
                 <h4 className="font-bold text-lg">Adaptive Practice</h4>
-                <p className="text-indigo-200 text-sm">Our platform adapts to your child's skill level, focusing on areas that need the most improvement.</p>
+                <p className="text-indigo-200 text-sm">Our platform adapts to your child&apos;s skill level, focusing on areas that need the most improvement.</p>
               </div>
             </div>
             <div className="flex gap-4 items-start">
@@ -101,6 +101,7 @@ export default async function SignupPage({
 
           <form action={signup} className="mt-8 space-y-6">
             <input type="hidden" name="referralCode" defaultValue={ref} />
+            <input type="hidden" name="leadId" defaultValue={lead} />
             <div className="space-y-5 rounded-md">
               <div>
                 <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-1.5">

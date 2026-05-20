@@ -113,6 +113,26 @@ create table public.diagnostic_results (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- LEADS: Captured diagnostic and marketing leads before signup
+create table public.leads (
+  id uuid primary key default uuid_generate_v4(),
+  email text not null,
+  source text not null default 'diagnostic',
+  status text not null default 'captured' check (status in ('captured', 'signup_started', 'account_created', 'claimed', 'abandoned')),
+  diagnostic_score integer,
+  diagnostic_breakdown jsonb,
+  diagnostic_ai_summary text,
+  diagnostic_completed_at timestamp with time zone,
+  claimed_by_user_id uuid references public.profiles(id) on delete set null,
+  referral_code text,
+  landing_path text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index leads_email_idx on public.leads(email);
+create index leads_status_idx on public.leads(status);
+
 -- WEEKLY REPORTS: AI-generated summaries for parents
 create table public.weekly_reports (
   id uuid primary key default uuid_generate_v4(),
@@ -136,6 +156,7 @@ alter table public.question_attempts enable row level security;
 alter table public.topic_mastery enable row level security;
 alter table public.diagnostic_results enable row level security;
 alter table public.weekly_reports enable row level security;
+alter table public.leads enable row level security;
 
 -- Policies for Profiles
 create policy "Users can view their own profile" on public.profiles

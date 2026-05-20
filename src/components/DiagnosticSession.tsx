@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { QuestionCard } from '@/components/QuestionCard'
 import { motion, AnimatePresence } from 'framer-motion'
-import { submitDiagnostic } from '@/app/actions/diagnostic'
+import { captureLead, submitDiagnostic } from '@/app/actions/diagnostic'
 import { Trophy, BarChart2, ArrowRight, Loader2, Target, Brain, Play, Lock } from 'lucide-react'
 import { CelebrationModal } from '@/components/CelebrationModal'
 import { cn } from '@/lib/utils'
@@ -39,6 +39,8 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
   const [results, setResults] = useState<{ score: number; breakdown: DiagnosticBreakdownItem[]; aiSummary?: string } | null>(null)
   const [levelUpData, setLevelUpData] = useState<{ level: number } | null>(null)
   const [guestEmail, setGuestEmail] = useState('')
+  const [isCapturingLead, setIsCapturingLead] = useState(false)
+  const [leadError, setLeadError] = useState<string | null>(null)
 
   const currentQuestion = questions[currentIndex]
   const progress = ((currentIndex + 1) / questions.length) * 100
@@ -100,6 +102,37 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
       console.error('Submission error:', error)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleGuestUnlock = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!results || !guestEmail) return
+
+    setIsCapturingLead(true)
+    setLeadError(null)
+
+    try {
+      const response = await captureLead({
+        email: guestEmail,
+        score: results.score,
+        breakdown: results.breakdown.map((item) => ({
+          topic: item.topic,
+          subject: item.subject,
+          accuracy: item.accuracy,
+          questions_answered: item.questions_answered || 0,
+        })),
+        aiSummary: results.aiSummary || '',
+        landingPath: '/diagnostic',
+      })
+
+      if (response.success) {
+        window.location.href = `/signup?email=${encodeURIComponent(guestEmail)}&guest_diag=true&lead=${encodeURIComponent(response.leadId)}`
+      }
+    } catch (error) {
+      console.error('Lead capture failed:', error)
+      setLeadError('We could not save your report yet. Please try again.')
+      setIsCapturingLead(false)
     }
   }
 
@@ -237,7 +270,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                       Save this score, reveal the full tutor review, and get a personalized learning plan for the next steps.
                     </p>
 
-                    <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href = `/signup?email=${encodeURIComponent(guestEmail)}&guest_diag=true`; }}>
+                    <form className="space-y-4" onSubmit={handleGuestUnlock}>
                       <input
                         type="email"
                         required
@@ -248,11 +281,13 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                       />
                       <button
                         type="submit"
+                        disabled={isCapturingLead}
                         className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100"
                       >
-                        Reveal My Full Report
+                        {isCapturingLead ? 'Saving Your Report...' : 'Reveal My Full Report'}
                       </button>
                     </form>
+                    {leadError && <p className="text-xs text-rose-500 mt-3 font-bold">{leadError}</p>}
                     <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-widest">No Credit Card Required</p>
                   </div>
                 </div>

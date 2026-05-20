@@ -37,7 +37,7 @@ async function run() {
       for (const mode of item.modes) {
         // We split into small batches of 10 for maximum quality/focus per prompt
         const QUESTIONS_PER_BATCH = 10;
-        const BATCH_COUNT = 1; // Increase this to 2 or 3 for more volume per topic
+        const BATCH_COUNT = 3; // Increase this to 2 or 3 for more volume per topic
 
         for (let i = 0; i < BATCH_COUNT; i++) {
           console.log(`\n--- Batch ${i + 1}/${BATCH_COUNT} | ${item.topic} (${difficulty} ${mode}) ---`);

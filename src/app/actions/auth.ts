@@ -3,6 +3,49 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
+function createAdminClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
+async function attachLeadToUser(leadId: string | null, email: string, userId: string) {
+  const admin = createAdminClient()
+  const normalizedEmail = email.trim().toLowerCase()
+
+  if (leadId) {
+    const { error } = await admin
+      .from('leads')
+      .update({
+        status: 'account_created',
+        claimed_by_user_id: userId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', leadId)
+
+    if (!error) return
+    console.error('Lead attachment by id failed:', error)
+  }
+
+  const { error } = await admin
+    .from('leads')
+    .update({
+      status: 'account_created',
+      claimed_by_user_id: userId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('email', normalizedEmail)
+    .eq('source', 'diagnostic')
+    .in('status', ['captured', 'signup_started'])
+    .is('claimed_by_user_id', null)
+
+  if (error) {
+    console.error('Lead attachment by email failed:', error)
+  }
+}
 
 export async function login(formData: FormData) {
   const supabase = await createClient()
@@ -28,6 +71,7 @@ export async function signup(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const referralCode = formData.get('referralCode') as string
+  const leadId = formData.get('leadId') as string | null
 
   const { data: { user }, error } = await supabase.auth.signUp({
     email,
@@ -66,6 +110,8 @@ export async function signup(formData: FormData) {
       referred_by: referredBy,
       subscription_status: 'free'
     })
+
+    await attachLeadToUser(leadId, email, user.id)
   }
 
   redirect('/login?message=Check your email to continue')
@@ -77,6 +123,7 @@ export async function signUpAndCreateChild(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const referralCode = formData.get('referralCode') as string
+  const leadId = formData.get('leadId') as string | null
 
   const childName = formData.get('childName') as string || 'Student'
   const childAge = parseInt(formData.get('childAge') as string) || 10
@@ -120,6 +167,8 @@ export async function signUpAndCreateChild(formData: FormData) {
       referred_by: referredBy,
       subscription_status: 'free'
     })
+
+    await attachLeadToUser(leadId, email, user.id)
 
     // Auto-create child profile with details from onboarding planner
     await supabase.from('children').insert({
@@ -168,4 +217,3 @@ export async function resendEmail(formData: FormData) {
 
   redirect('/login?message=Confirmation email resent. Please check your inbox.')
 }
-

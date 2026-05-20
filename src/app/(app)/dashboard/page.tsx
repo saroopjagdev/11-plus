@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { hasProAccess } from '@/lib/entitlements'
 import { reconcileCheckoutSessionForUser } from '@/lib/subscription-server'
+import { claimLeadDiagnosticForUser } from '@/app/actions/diagnostic'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ClaimResultsPrompt } from '@/components/ClaimResultsPrompt'
@@ -63,6 +64,16 @@ export default async function DashboardPage({
     .eq('parent_id', user.id)
 
   const childId = children?.[0]?.id
+  let shouldClearGuestCache = false
+
+  if (childId) {
+    try {
+      const claimResult = await claimLeadDiagnosticForUser(user.id, childId)
+      shouldClearGuestCache = claimResult.success
+    } catch (error) {
+      console.error('Diagnostic lead claim failed:', error)
+    }
+  }
 
   const { data: masteryData } = childId 
     ? await supabase.from('topic_mastery').select('*').eq('child_id', childId)
@@ -93,7 +104,7 @@ export default async function DashboardPage({
   return (
     <div className="min-h-screen bg-slate-50">
       
-      {childId && <ClaimResultsPrompt childId={childId} />}
+      {childId && <ClaimResultsPrompt childId={childId} shouldClearGuestCache={shouldClearGuestCache} />}
       
       {children?.[0] && (
         <DashboardOnboardingTrigger 
