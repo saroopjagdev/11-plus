@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { QuestionCard } from '@/components/QuestionCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { captureLead, submitDiagnostic } from '@/app/actions/diagnostic'
@@ -30,7 +30,31 @@ interface DiagnosticSessionProps {
   userEmail?: string
 }
 
+function hasRenderableQuestionShape(question: Question | null | undefined): question is Question {
+  return Boolean(
+    question &&
+      question.question_text &&
+      question.correct_answer &&
+      Array.isArray(question.options) &&
+      question.options.length >= 4
+  )
+}
+
+function shouldUseCompactQuestionLayout(question: Pick<Question, 'question_text' | 'options'>) {
+  const questionLength = question.question_text.trim().length
+  const optionLengths = question.options.map((option) => option.trim().length)
+  const longestOption = optionLengths.reduce((max, length) => Math.max(max, length), 0)
+  const totalOptionLength = optionLengths.reduce((sum, length) => sum + length, 0)
+
+  return questionLength > 140 || longestOption > 34 || totalOptionLength > 135
+}
+
 export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticSessionProps) {
+  const safeQuestions = useMemo(
+    () => questions.filter(hasRenderableQuestionShape),
+    [questions]
+  )
+
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
@@ -42,8 +66,9 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
   const [isCapturingLead, setIsCapturingLead] = useState(false)
   const [leadError, setLeadError] = useState<string | null>(null)
 
-  const currentQuestion = questions[currentIndex]
-  const progress = ((currentIndex + 1) / questions.length) * 100
+  const currentQuestion = safeQuestions[currentIndex]
+  const progress = safeQuestions.length > 0 ? ((currentIndex + 1) / safeQuestions.length) * 100 : 0
+  const useCompactLayout = currentQuestion ? shouldUseCompactQuestionLayout(currentQuestion) : false
 
   const handleSelect = (answer: string) => {
     if (showFeedback) return
@@ -52,6 +77,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
 
   const handleCheck = () => {
     if (!selectedAnswer) return
+    if (!currentQuestion) return
     const isCorrect = selectedAnswer === currentQuestion.correct_answer
 
     setAttempts([...attempts, {
@@ -64,7 +90,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
   }
 
   const handleNext = async () => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < safeQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1)
       setSelectedAnswer(null)
       setShowFeedback(false)
@@ -152,7 +178,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
               <h2 className="text-3xl font-black text-slate-900 mb-2">Diagnostic Complete!</h2>
               {childId ? (
                 <div className="flex flex-col items-center gap-2">
-                  <p className="text-slate-500">We&apos;ve mapped out {questions[0]?.subject || 'the'} ability across all topics.</p>
+                  <p className="text-slate-500">We&apos;ve mapped out {safeQuestions[0]?.subject || 'the'} ability across all topics.</p>
                   <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
                     <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
                     Saved to student profile
@@ -167,14 +193,14 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
               <div className="bg-indigo-50 rounded-3xl p-6 text-center">
                 <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Status</p>
                 <p className="text-3xl font-black text-indigo-600">
-                  {results.score / questions.length === 1 ? '11+ Ready' :
-                    results.score / questions.length >= 0.86 ? 'Competent' :
-                      results.score / questions.length >= 0.61 ? 'Developing' : 'Foundation'}
+                  {results.score / safeQuestions.length === 1 ? '11+ Ready' :
+                    results.score / safeQuestions.length >= 0.86 ? 'Competent' :
+                      results.score / safeQuestions.length >= 0.61 ? 'Developing' : 'Foundation'}
                 </p>
               </div>
               <div className="bg-emerald-50 rounded-3xl p-6 text-center">
                 <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">Score</p>
-                <p className="text-3xl font-black text-emerald-600">{results.score} / {questions.length}</p>
+                <p className="text-3xl font-black text-emerald-600">{results.score} / {safeQuestions.length}</p>
               </div>
             </div>
 
@@ -324,20 +350,34 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
     )
   }
 
+  if (!currentQuestion || safeQuestions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <h2 className="text-2xl font-bold text-slate-800 mb-3">Diagnostic unavailable</h2>
+        <p className="text-slate-500 max-w-md">
+          We could not load a full set of multiple-choice questions for this diagnostic. Please try again shortly.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
         {/* Header & Progress - Fixed at Top with margin for breathing room */}
-        <div className="max-w-4xl mx-auto w-full px-6 pt-10 shrink-0">
-          <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 flex items-center justify-between gap-4">
+        <div className="max-w-4xl mx-auto w-full px-6 pt-6 md:pt-8 shrink-0">
+          <div className={cn(
+            'bg-white rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between gap-4',
+            useCompactLayout ? 'p-4' : 'p-5'
+          )}>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
+              <div className={cn('flex items-center gap-2', useCompactLayout ? 'mb-2' : 'mb-3')}>
                 <div className="bg-amber-100 p-1.5 rounded-lg">
                   <Target className="h-4 w-4 text-amber-600" />
                 </div>
-                <span className="text-sm font-bold text-slate-700">Diagnostic Assessment</span>
+                <span className={cn('font-bold text-slate-700', useCompactLayout ? 'text-xs sm:text-sm' : 'text-sm')}>Diagnostic Assessment</span>
                 <span className="h-1 w-1 bg-slate-300 rounded-full" />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                <span className={cn('font-bold text-slate-400 uppercase tracking-widest', useCompactLayout ? 'text-[10px]' : 'text-xs')}>
                   {currentQuestion.topic}
                 </span>
               </div>
@@ -352,15 +392,18 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
             </div>
             <div className="text-right shrink-0">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5 leading-none">Question</div>
-              <div className="text-3xl font-black text-slate-900 leading-none">
-                {currentIndex + 1}<span className="text-slate-200">/</span>{questions.length}
+              <div className={cn('font-black text-slate-900 leading-none', useCompactLayout ? 'text-2xl' : 'text-3xl')}>
+                {currentIndex + 1}<span className="text-slate-200">/</span>{safeQuestions.length}
               </div>
             </div>
           </div>
         </div>
 
         {/* Main Question Area & Footer - Grouped tightly */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col items-center gap-6">
+        <div className={cn(
+          'flex-1 min-h-0 overflow-hidden px-6 flex flex-col items-center justify-center',
+          useCompactLayout ? 'py-2 gap-3' : 'py-4 gap-6'
+        )}>
           <div className="max-w-4xl w-full">
             <AnimatePresence mode="wait">
               <motion.div
@@ -377,20 +420,22 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                   disabled={showFeedback}
                   showFeedback={showFeedback}
                   correctAnswer={currentQuestion.correct_answer}
+                  compact={useCompactLayout}
                 />
               </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Action Bar - Brought closer to card */}
-          <div className="max-w-4xl w-full py-4 shrink-0">
+          <div className={cn('max-w-4xl w-full shrink-0', useCompactLayout ? 'py-2' : 'py-4')}>
             <div className="flex flex-col items-center gap-4">
               {!showFeedback ? (
                 <button
                   onClick={handleCheck}
                   disabled={!selectedAnswer}
                   className={cn(
-                    "w-full max-w-sm py-5 rounded-2xl font-black text-lg shadow-xl shadow-amber-200/20 transition-all transform active:scale-95",
+                    'w-full max-w-sm rounded-2xl font-black shadow-xl shadow-amber-200/20 transition-all transform active:scale-95',
+                    useCompactLayout ? 'py-4 text-base' : 'py-5 text-lg',
                     selectedAnswer
                       ? "bg-amber-500 text-white hover:bg-amber-600"
                       : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
@@ -400,15 +445,21 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                 </button>
               ) : (
                 <div className="w-full max-w-sm flex flex-col gap-3">
-                  <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-3 text-indigo-700 shadow-sm">
+                  <div className={cn(
+                    'bg-indigo-50 border border-indigo-100 rounded-2xl flex gap-3 text-indigo-700 shadow-sm',
+                    useCompactLayout ? 'p-3' : 'p-4'
+                  )}>
                     <Brain className="h-5 w-5 shrink-0" />
                     <p className="text-sm font-bold">Diagnostic mode doesn&apos;t allow redos. Next challenge!</p>
                   </div>
                   <button
                     onClick={handleNext}
-                    className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
+                    className={cn(
+                      'w-full bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2',
+                      useCompactLayout ? 'py-4 text-base' : 'py-5 text-lg'
+                    )}
                   >
-                    {currentIndex < questions.length - 1 ? 'Next Challenge' : 'Finish & See Results'}
+                    {currentIndex < safeQuestions.length - 1 ? 'Next Challenge' : 'Finish & See Results'}
                     <ArrowRight className="h-5 w-5" />
                   </button>
                 </div>

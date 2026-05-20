@@ -4,7 +4,6 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-
 interface QuestionCardProps {
   question: {
     question_text: string
@@ -15,6 +14,7 @@ interface QuestionCardProps {
   disabled?: boolean
   showFeedback?: boolean
   correctAnswer?: string
+  compact?: boolean
 }
 
 export function QuestionCard({
@@ -23,7 +23,8 @@ export function QuestionCard({
   onSelect,
   disabled,
   showFeedback,
-  correctAnswer
+  correctAnswer,
+  compact = false
 }: QuestionCardProps) {
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -32,17 +33,23 @@ export function QuestionCard({
         animate={{ opacity: 1, y: 0 }}
         className={cn(
           "bg-white rounded-[2rem] shadow-xl shadow-indigo-100 ring-1 ring-indigo-50 border-b-4 border-indigo-100 transition-all duration-300",
-          showFeedback ? "p-4" : "p-5"
+          showFeedback ? (compact ? 'p-3' : 'p-4') : compact ? 'p-4' : 'p-5'
         )}
       >
         <h3 className={cn(
           "font-bold text-slate-800 leading-snug whitespace-pre-wrap transition-all",
-          showFeedback ? "text-sm mb-3" : "text-lg sm:text-xl mb-4"
+          showFeedback
+            ? compact
+              ? 'text-xs sm:text-sm mb-2.5'
+              : 'text-sm mb-3'
+            : compact
+              ? 'text-base sm:text-lg mb-3'
+              : 'text-lg sm:text-xl mb-4'
         )}>
           {question.question_text}
         </h3>
 
-        <div className={cn("grid", showFeedback ? "gap-2" : "gap-3")}>
+        <div className={cn("grid", showFeedback ? (compact ? 'gap-1.5' : 'gap-2') : compact ? 'gap-2' : 'gap-3')}>
           {question.options.map((option, index) => {
             const isSelected = selectedAnswer === option
             const isCorrect = showFeedback && option === correctAnswer
@@ -58,7 +65,7 @@ export function QuestionCard({
                 className={cn(
                   'relative flex items-center justify-between rounded-xl border-2 transition-all duration-200 text-left font-medium text-base',
                   'group overflow-hidden',
-                  showFeedback ? "p-2" : "p-3",
+                  showFeedback ? (compact ? 'p-1.5' : 'p-2') : compact ? 'p-2.5' : 'p-3',
                   !showFeedback && !isSelected && 'border-slate-100 bg-slate-50 hover:border-indigo-200 hover:bg-indigo-50/50 text-slate-600',
                   !showFeedback && isSelected && 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-4 ring-indigo-50',
                   showFeedback && isCorrect && 'border-emerald-500 bg-emerald-50 text-emerald-700 ring-4 ring-emerald-50',
@@ -69,7 +76,7 @@ export function QuestionCard({
                 <div className="flex items-center gap-3">
                   <span className={cn(
                     'flex shrink-0 items-center justify-center rounded-lg font-bold text-sm transition-all duration-200',
-                    showFeedback ? 'h-6 w-6' : 'h-8 w-8',
+                    showFeedback ? (compact ? 'h-5 w-5 text-[11px]' : 'h-6 w-6') : compact ? 'h-7 w-7 text-xs' : 'h-8 w-8',
                    !showFeedback && !isSelected && 'bg-white text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-600',
                    !showFeedback && isSelected && 'bg-indigo-600 text-white',
                    showFeedback && isCorrect && 'bg-emerald-600 text-white',
@@ -77,7 +84,9 @@ export function QuestionCard({
                   )}>
                     {String.fromCharCode(65 + index)}
                   </span>
-                  <span className={cn("transition-all", showFeedback ? "text-sm" : "text-base")}>{option}</span>
+                  <span className={cn("transition-all leading-snug", showFeedback ? (compact ? 'text-xs' : 'text-sm') : compact ? 'text-sm' : 'text-base')}>
+                    {option}
+                  </span>
                 </div>
                 
                 {showFeedback && (isCorrect || isWrong) && (

@@ -13,6 +13,20 @@ interface DiagnosticQuestion {
   subject: string
   topic: string
   passage_id: string | null
+  type?: string
+}
+
+function hasRenderableDiagnosticShape(question: DiagnosticQuestion | null | undefined) {
+  return Boolean(
+    question &&
+      question.type === 'mcq' &&
+      question.topic !== 'Comprehension' &&
+      !question.passage_id &&
+      question.question_text &&
+      question.correct_answer &&
+      Array.isArray(question.options) &&
+      question.options.length >= 4
+  )
 }
 
 export default async function DiagnosticPage() {
@@ -45,21 +59,21 @@ export default async function DiagnosticPage() {
 
   // Fetch pools for each difficulty/topic group, ensuring no Comprehension or passage-tied questions
   const [easyPool, mediumPool, hardPool, extraHardPool] = await Promise.all([
-    supabase.from('questions').select('*').in('topic', easyTopics).eq('difficulty', 'Easy').is('passage_id', null),
-    supabase.from('questions').select('*').in('topic', mediumTopics).eq('difficulty', 'Medium').is('passage_id', null),
-    supabase.from('questions').select('*').in('topic', hardTopics).eq('difficulty', 'Hard').is('passage_id', null),
-    supabase.from('questions').select('*').eq('difficulty', 'Hard').neq('topic', 'Comprehension').is('passage_id', null).limit(20) // Extra pool for variety and filling gaps
+    supabase.from('questions').select('*').in('topic', easyTopics).eq('difficulty', 'Easy').eq('type', 'mcq').is('passage_id', null),
+    supabase.from('questions').select('*').in('topic', mediumTopics).eq('difficulty', 'Medium').eq('type', 'mcq').is('passage_id', null),
+    supabase.from('questions').select('*').in('topic', hardTopics).eq('difficulty', 'Hard').eq('type', 'mcq').is('passage_id', null),
+    supabase.from('questions').select('*').eq('difficulty', 'Hard').eq('type', 'mcq').neq('topic', 'Comprehension').is('passage_id', null).limit(40) // Extra pool for variety and filling gaps
   ])
 
   const selectedQuestions: DiagnosticQuestion[] = []
   const usedIds = new Set<string>()
-  const easyData = shuffleArray(easyPool.data || [])
-  const mediumData = shuffleArray(mediumPool.data || [])
-  const hardData = shuffleArray(hardPool.data || [])
-  const extraHardData = shuffleArray(extraHardPool.data || [])
+  const easyData = shuffleArray((easyPool.data || []).filter(hasRenderableDiagnosticShape))
+  const mediumData = shuffleArray((mediumPool.data || []).filter(hasRenderableDiagnosticShape))
+  const hardData = shuffleArray((hardPool.data || []).filter(hasRenderableDiagnosticShape))
+  const extraHardData = shuffleArray((extraHardPool.data || []).filter(hasRenderableDiagnosticShape))
 
   // Helper validation to ensure no passage-tied or comprehension questions slip through
-  const isValidQuestion = (q: DiagnosticQuestion | null | undefined) => q && q.topic !== 'Comprehension' && !q.passage_id
+  const isValidQuestion = (q: DiagnosticQuestion | null | undefined) => hasRenderableDiagnosticShape(q)
 
   // 1. Pick one Easy per easyTopic
   easyTopics.forEach(topic => {
@@ -100,8 +114,15 @@ export default async function DiagnosticPage() {
 
   // Final fallback: if still not 20, just get any random ones (shouldn't happen with decent bank)
   if (selectedQuestions.length < 20) {
-    const { data: fallback } = await supabase.from('questions').select('*').neq('topic', 'Comprehension').is('passage_id', null).limit(20)
-    shuffleArray(fallback || []).forEach(q => {
+    const { data: fallback } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('type', 'mcq')
+      .neq('topic', 'Comprehension')
+      .is('passage_id', null)
+      .limit(60)
+
+    shuffleArray((fallback || []).filter(hasRenderableDiagnosticShape)).forEach(q => {
       if (selectedQuestions.length < 20 && !usedIds.has(q.id) && isValidQuestion(q)) {
         selectedQuestions.push(q)
         usedIds.add(q.id)
@@ -109,13 +130,13 @@ export default async function DiagnosticPage() {
     })
   }
 
-  const allQuestions = selectedQuestions
+  const allQuestions = selectedQuestions.filter(hasRenderableDiagnosticShape)
 
-  if (allQuestions.length < 10) {
+  if (allQuestions.length < 20) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 text-center px-4">
         <h1 className="text-2xl font-bold text-slate-800 mb-4">Not enough questions!</h1>
-        <p className="text-slate-500 mb-8">We need at least 10 questions to run a diagnostic. Current count: {allQuestions.length}</p>
+        <p className="text-slate-500 mb-8">We need at least 20 multiple-choice questions to run a diagnostic. Current count: {allQuestions.length}</p>
         <Link href="/dashboard" className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">
           Back to Dashboard
         </Link>

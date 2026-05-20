@@ -85,6 +85,10 @@ async function automate(options) {
       2. EXAM ALIGNMENT: Ensure the style, tone, and logical rigor match GL Assessment and CEM standards.
       3. CLARITY: Questions must be concise and free of ambiguity.
       4. RUBRICS: For written questions, the correct_answer must be a detailed "Award X marks if..." rubric.
+      5. PLAIN TEXT ONLY: Do not use LaTeX, MathJax, markdown math, code formatting, backslashes, or braces. Write fractions as plain text like 3/4.
+      6. AGE APPROPRIATE: Every question and option must be suitable for a UK child aged 10-11. Avoid sexual, violent, graphic, medical-procedure, or otherwise adult language.
+      7. LENGTH LIMITS: Keep each question under 220 characters. Keep each MCQ option under 70 characters.
+      8. MCQ FORMAT: For MCQs, provide exactly 5 unique options and make sure correct_answer exactly matches one of them.
 
       JSON Format:
       {
@@ -120,7 +124,6 @@ async function automate(options) {
       // Force correct type to avoid DB constraint violations
       type: options.mode === 'mcq' ? 'mcq' : 'written'
     }));
-
     const { data: qInsert, error: qError } = await supabase
       .from('questions')
       .insert(questionsToInsert)
