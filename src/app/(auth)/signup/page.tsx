@@ -13,11 +13,15 @@ export default async function SignupPage({
     lead?: string
     confirm?: string
     message?: string
+    existing?: string
+    rate_limited?: string
   }>
 }) {
-  const { error, ref, email, guest_diag, lead, confirm, message } = await searchParams
+  const { error, ref, email, guest_diag, lead, confirm, message, existing, rate_limited } = await searchParams
   const showConfirmState = confirm === '1'
   const hasKnownEmail = Boolean(email)
+  const isExistingPending = existing === '1'
+  const isRateLimited = rate_limited === '1'
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -129,18 +133,30 @@ export default async function SignupPage({
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                   <MailCheck className="h-7 w-7" />
                 </div>
-                <h3 className="text-center text-xl font-black text-slate-900 mb-2">Check your inbox</h3>
+                <h3 className="text-center text-xl font-black text-slate-900 mb-2">
+                  {isExistingPending ? 'Finish confirming your account' : 'Check your inbox'}
+                </h3>
                 <p className="text-center text-sm text-slate-500 mb-5">
                   {hasKnownEmail ? (
                     <>
-                      We&apos;ve sent a confirmation link to <span className="font-bold text-slate-700">{email}</span>. Confirm your email to unlock your account and continue.
+                      {isExistingPending ? (
+                        <>
+                          <span className="font-bold text-slate-700">{email}</span> is already registered and still waiting for email confirmation. Use the latest email in your inbox, or request one fresh confirmation link below.
+                        </>
+                      ) : (
+                        <>
+                          We&apos;ve sent a confirmation link to <span className="font-bold text-slate-700">{email}</span>. Confirm your email to unlock your account and continue.
+                        </>
+                      )}
                     </>
                   ) : (
                     <>Your confirmation link could not be completed. Enter your email below and we&apos;ll send you a fresh one.</>
                   )}
                 </p>
                 <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-500 text-center">
-                  Once you&apos;ve confirmed, return here and sign in with the same email and password.
+                  {isRateLimited
+                    ? 'We recently sent a confirmation email. Please wait a few minutes before requesting another.'
+                    : 'Once you&apos;ve confirmed, return here and sign in with the same email and password.'}
                 </div>
               </div>
 
@@ -169,7 +185,7 @@ export default async function SignupPage({
                     type="submit"
                     className="w-full rounded-xl bg-slate-900 py-3 px-4 text-sm font-bold text-white shadow-lg hover:bg-slate-800 transition-all duration-200 transform active:scale-95"
                   >
-                    Resend Confirmation Email
+                    {isRateLimited ? 'Try Resending Again Soon' : 'Resend Confirmation Email'}
                   </button>
                 </form>
               </div>

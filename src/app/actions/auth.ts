@@ -18,6 +18,60 @@ function getEmailRedirectTo(next = '/dashboard', email?: string) {
   return `${baseUrl}/auth/confirm?${params.toString()}`
 }
 
+function getFriendlyAuthError(message: string) {
+  if (message.includes('over_email_send_rate_limit')) {
+    return "You've requested confirmation emails too quickly. Please wait a few minutes before trying again."
+  }
+
+  return message
+}
+
+function buildSignupConfirmRedirect({
+  email,
+  guestDiag,
+  message,
+  error,
+  existing,
+  rateLimited,
+}: {
+  email?: string
+  guestDiag?: string | null
+  message?: string
+  error?: string
+  existing?: boolean
+  rateLimited?: boolean
+}) {
+  const params = new URLSearchParams({
+    confirm: '1',
+  })
+
+  if (email) {
+    params.set('email', email)
+  }
+
+  if (message) {
+    params.set('message', message)
+  }
+
+  if (error) {
+    params.set('error', error)
+  }
+
+  if (guestDiag) {
+    params.set('guest_diag', guestDiag)
+  }
+
+  if (existing) {
+    params.set('existing', '1')
+  }
+
+  if (rateLimited) {
+    params.set('rate_limited', '1')
+  }
+
+  return `/signup?${params.toString()}`
+}
+
 function createAdminClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -99,6 +153,8 @@ export async function signup(formData: FormData) {
     return redirect('/signup?error=' + encodeURIComponent(error.message))
   }
 
+  const isRepeatedSignup = (user?.identities?.length ?? 0) === 0
+
   if (user) {
     // Generate a unique referral code for the new user (e.g. PART OF EMAIL + RANDOM)
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase()
@@ -131,17 +187,16 @@ export async function signup(formData: FormData) {
     await attachLeadToUser(leadId, email, user.id)
   }
 
-  const confirmParams = new URLSearchParams({
-    confirm: '1',
-    email,
-    message: 'Check your email to continue',
-  })
-
-  if (guestDiag) {
-    confirmParams.set('guest_diag', guestDiag)
-  }
-
-  redirect(`/signup?${confirmParams.toString()}`)
+  redirect(
+    buildSignupConfirmRedirect({
+      email,
+      guestDiag,
+      message: isRepeatedSignup
+        ? 'This email is already registered and still waiting for confirmation. Use the resend option below if you need a fresh link.'
+        : 'Check your email to continue.',
+      existing: isRepeatedSignup,
+    })
+  )
 }
 
 export async function signUpAndCreateChild(formData: FormData) {
@@ -170,6 +225,8 @@ export async function signUpAndCreateChild(formData: FormData) {
   if (error) {
     return redirect('/signup?error=' + encodeURIComponent(error.message))
   }
+
+  const isRepeatedSignup = (user?.identities?.length ?? 0) === 0
 
   if (user) {
     // Generate a unique referral code for the new user
@@ -216,17 +273,16 @@ export async function signUpAndCreateChild(formData: FormData) {
     })
   }
 
-  const confirmParams = new URLSearchParams({
-    confirm: '1',
-    email,
-    message: 'Check your email to continue',
-  })
-
-  if (guestDiag) {
-    confirmParams.set('guest_diag', guestDiag)
-  }
-
-  redirect(`/signup?${confirmParams.toString()}`)
+  redirect(
+    buildSignupConfirmRedirect({
+      email,
+      guestDiag,
+      message: isRepeatedSignup
+        ? 'This email is already registered and still waiting for confirmation. Use the resend option below if you need a fresh link.'
+        : 'Check your email to continue.',
+      existing: isRepeatedSignup,
+    })
+  )
 }
 
 export async function signOut() {
@@ -243,17 +299,16 @@ export async function resendEmail(formData: FormData) {
   const guestDiag = formData.get('guestDiag') as string | null
   
   if (!email) {
-    const errorParams = new URLSearchParams({
-      error: 'Email is required to resend confirmation',
-    })
-
     if (returnTo === 'signup') {
-      errorParams.set('confirm', '1')
-      if (guestDiag) errorParams.set('guest_diag', guestDiag)
-      return redirect(`/signup?${errorParams.toString()}`)
+      return redirect(
+        buildSignupConfirmRedirect({
+          guestDiag,
+          error: 'Email is required to resend confirmation.',
+        })
+      )
     }
 
-    return redirect(`/login?${errorParams.toString()}`)
+    return redirect('/login?error=' + encodeURIComponent('Email is required to resend confirmation.'))
   }
 
   const { error } = await supabase.auth.resend({
@@ -265,30 +320,37 @@ export async function resendEmail(formData: FormData) {
   })
 
   if (error) {
-    const errorParams = new URLSearchParams({
-      error: error.message,
-      email,
-    })
+    const friendlyError = getFriendlyAuthError(error.message)
+    const rateLimited = error.message.includes('over_email_send_rate_limit')
 
     if (returnTo === 'signup') {
-      errorParams.set('confirm', '1')
-      if (guestDiag) errorParams.set('guest_diag', guestDiag)
-      return redirect(`/signup?${errorParams.toString()}`)
+      return redirect(
+        buildSignupConfirmRedirect({
+          email,
+          guestDiag,
+          error: friendlyError,
+          rateLimited,
+        })
+      )
     }
 
-    return redirect(`/login?${errorParams.toString()}`)
+    return redirect(`/login?error=${encodeURIComponent(friendlyError)}`)
+  }
+
+  if (returnTo === 'signup') {
+    redirect(
+      buildSignupConfirmRedirect({
+        email,
+        guestDiag,
+        message: 'Confirmation email resent. Please check your inbox.',
+      })
+    )
   }
 
   const messageParams = new URLSearchParams({
     message: 'Confirmation email resent. Please check your inbox.',
     email,
   })
-
-  if (returnTo === 'signup') {
-    messageParams.set('confirm', '1')
-    if (guestDiag) messageParams.set('guest_diag', guestDiag)
-    redirect(`/signup?${messageParams.toString()}`)
-  }
 
   redirect(`/login?${messageParams.toString()}`)
 }
