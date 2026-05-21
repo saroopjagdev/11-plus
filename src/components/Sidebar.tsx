@@ -21,10 +21,10 @@ import {
   Sparkles,
   ChevronRight,
   GraduationCap,
-  Calendar,
   Trophy,
   Gift,
-  ClipboardCheck
+  ClipboardCheck,
+  Target
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -68,7 +68,7 @@ export function Sidebar({
   const navItems: NavItem[] = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     ...(role === 'parent' ? [{ label: 'Parent View', href: '/parent/dashboard', icon: Sparkles }] : []),
-    { label: 'Study Plan', href: '/study-plan', icon: Calendar },
+    { label: 'Diagnostics', href: '/diagnostics', icon: Target },
     { label: 'Practice Hubs', href: '/dashboard#hubs', icon: BookOpen },
     { label: 'Mocks', href: '/practice/mock/Mixed', icon: ClipboardCheck },
     { label: 'Topic Library', href: '/library', icon: GraduationCap },
@@ -120,7 +120,7 @@ export function Sidebar({
           {/* Nav Links */}
           <nav className="flex-1 space-y-1 overflow-hidden">
             {navItems.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = item.href === '/diagnostics' ? pathname.startsWith('/diagnostics') : pathname === item.href
               
               if (item.isAction) {
                 return (

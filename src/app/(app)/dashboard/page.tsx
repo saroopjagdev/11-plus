@@ -191,20 +191,32 @@ export default async function DashboardPage({
             </section>
 
             {/* Diagnostic Results Section */}
-            {diagnostic && (
+            {childId && (
               <section className="bg-amber-50 rounded-3xl p-8 border border-amber-100">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-amber-900">Last Diagnostic</h3>
-                  <span className="bg-amber-200 text-amber-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Baseline Set</span>
+                  <h3 className="text-xl font-bold text-amber-900">Diagnostics</h3>
+                  <span className="bg-amber-200 text-amber-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase">
+                    {diagnostic ? 'Baseline Set' : 'Start Here'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-6">
-                  <div className="bg-white p-4 rounded-2xl shadow-sm">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Score</p>
-                    <p className="text-2xl font-black text-slate-900">{diagnostic.score} / 20</p>
+                  <div className="bg-white p-4 rounded-2xl shadow-sm min-w-[120px]">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      {diagnostic ? 'Score' : 'Status'}
+                    </p>
+                    <p className="text-2xl font-black text-slate-900">
+                      {diagnostic ? `${diagnostic.score} / 20` : 'Not Taken'}
+                    </p>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-amber-800 font-medium mb-2">Strengths identified in {diagnostic.topic_breakdown[0]?.topic || 'Maths'}.</p>
-                    <Link href="/diagnostic" className="text-xs font-bold text-amber-600 underline underline-offset-4 decoration-2">Retake Diagnostic</Link>
+                    <p className="text-sm text-amber-800 font-medium mb-2">
+                      {diagnostic
+                        ? `Latest baseline highlights ${diagnostic.topic_breakdown[0]?.topic || 'Maths'} as an area to keep building.`
+                        : 'Take the baseline assessment to measure current level and unlock a clearer starting point.'}
+                    </p>
+                    <Link href="/diagnostics" className="text-xs font-bold text-amber-600 underline underline-offset-4 decoration-2">
+                      {diagnostic ? 'View Latest Diagnostic' : 'Take Your Baseline'}
+                    </Link>
                   </div>
                 </div>
               </section>
