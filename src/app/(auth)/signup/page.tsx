@@ -17,6 +17,7 @@ export default async function SignupPage({
 }) {
   const { error, ref, email, guest_diag, lead, confirm, message } = await searchParams
   const showConfirmState = confirm === '1'
+  const hasKnownEmail = Boolean(email)
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -130,7 +131,13 @@ export default async function SignupPage({
                 </div>
                 <h3 className="text-center text-xl font-black text-slate-900 mb-2">Check your inbox</h3>
                 <p className="text-center text-sm text-slate-500 mb-5">
-                  We&apos;ve sent a confirmation link to <span className="font-bold text-slate-700">{email}</span>. Confirm your email to unlock your account and continue.
+                  {hasKnownEmail ? (
+                    <>
+                      We&apos;ve sent a confirmation link to <span className="font-bold text-slate-700">{email}</span>. Confirm your email to unlock your account and continue.
+                    </>
+                  ) : (
+                    <>Your confirmation link could not be completed. Enter your email below and we&apos;ll send you a fresh one.</>
+                  )}
                 </p>
                 <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-500 text-center">
                   Once you&apos;ve confirmed, return here and sign in with the same email and password.
@@ -142,10 +149,22 @@ export default async function SignupPage({
                 <form action={resendEmail} className="space-y-3">
                   <input type="hidden" name="returnTo" value="signup" />
                   <input type="hidden" name="guestDiag" value={guest_diag || ''} />
-                  <input type="hidden" name="email" value={email || ''} />
-                  <div className="rounded-xl bg-white px-4 py-3 text-sm text-slate-700 border border-slate-200">
-                    {email}
-                  </div>
+                  {hasKnownEmail ? (
+                    <>
+                      <input type="hidden" name="email" value={email || ''} />
+                      <div className="rounded-xl bg-white px-4 py-3 text-sm text-slate-700 border border-slate-200">
+                        {email}
+                      </div>
+                    </>
+                  ) : (
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      placeholder="parent@example.com"
+                      className="block w-full rounded-xl border-0 py-3.5 px-4 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition-all duration-200 bg-white"
+                    />
+                  )}
                   <button
                     type="submit"
                     className="w-full rounded-xl bg-slate-900 py-3 px-4 text-sm font-bold text-white shadow-lg hover:bg-slate-800 transition-all duration-200 transform active:scale-95"

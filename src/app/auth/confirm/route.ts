@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
   const next = searchParams.get('next') ?? '/dashboard'
+  const email = searchParams.get('email')
 
   const redirectTo = request.nextUrl.clone()
   redirectTo.pathname = next
@@ -29,6 +30,9 @@ export async function GET(request: NextRequest) {
   redirectTo.pathname = '/signup'
   redirectTo.searchParams.set('error', 'This confirmation link is invalid or has expired. Please request a new one.')
   redirectTo.searchParams.set('confirm', '1')
+  if (email) {
+    redirectTo.searchParams.set('email', email)
+  }
 
   return NextResponse.redirect(redirectTo)
 }

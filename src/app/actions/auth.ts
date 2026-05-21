@@ -5,9 +5,17 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-function getEmailRedirectTo(next = '/dashboard') {
+function getEmailRedirectTo(next = '/dashboard', email?: string) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-  return `${baseUrl}/auth/confirm?next=${encodeURIComponent(next)}`
+  const params = new URLSearchParams({
+    next,
+  })
+
+  if (email) {
+    params.set('email', email)
+  }
+
+  return `${baseUrl}/auth/confirm?${params.toString()}`
 }
 
 function createAdminClient() {
@@ -83,7 +91,7 @@ export async function signup(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: getEmailRedirectTo('/dashboard'),
+      emailRedirectTo: getEmailRedirectTo('/dashboard', email),
     },
   })
 
@@ -155,7 +163,7 @@ export async function signUpAndCreateChild(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: getEmailRedirectTo('/dashboard'),
+      emailRedirectTo: getEmailRedirectTo('/dashboard', email),
     },
   })
 
@@ -252,7 +260,7 @@ export async function resendEmail(formData: FormData) {
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: getEmailRedirectTo('/dashboard'),
+      emailRedirectTo: getEmailRedirectTo('/dashboard', email),
     }
   })
 
