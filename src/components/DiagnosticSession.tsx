@@ -65,6 +65,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
   const [guestEmail, setGuestEmail] = useState('')
   const [isCapturingLead, setIsCapturingLead] = useState(false)
   const [leadError, setLeadError] = useState<string | null>(null)
+  const isSignedInWithoutChild = Boolean(userEmail && !childId)
 
   const currentQuestion = safeQuestions[currentIndex]
   const progress = safeQuestions.length > 0 ? ((currentIndex + 1) / safeQuestions.length) * 100 : 0
@@ -204,7 +205,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
               </div>
             </div>
 
-            {!childId && (
+            {!childId && !isSignedInWithoutChild && (
               <div className="mb-10 rounded-[2.5rem] border-2 border-indigo-100 bg-white p-8 text-center shadow-xl shadow-indigo-100">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                   <Lock className="h-7 w-7" />
@@ -244,6 +245,41 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                 </form>
                 {leadError && <p className="text-xs text-rose-500 mt-3 font-bold">{leadError}</p>}
                 <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase tracking-widest">No Credit Card Required</p>
+              </div>
+            )}
+
+            {isSignedInWithoutChild && (
+              <div className="mb-10 rounded-[2.5rem] border-2 border-indigo-100 bg-white p-8 text-center shadow-xl shadow-indigo-100">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                  <Lock className="h-7 w-7" />
+                </div>
+                <p className="text-lg font-bold text-slate-900 mb-2">Add Your Child to Save This Result</p>
+                <p className="text-sm text-slate-500 mb-4">
+                  Your baseline is ready. Add your child now and we&apos;ll attach this diagnostic to their profile so the dashboard and recommendations can use it.
+                </p>
+                <div className="mb-6 grid gap-2 text-left max-w-md mx-auto">
+                  <div className="rounded-2xl bg-indigo-50 px-4 py-3 text-sm font-medium text-slate-700">
+                    Save this score to the right student profile
+                  </div>
+                  <div className="rounded-2xl bg-indigo-50 px-4 py-3 text-sm font-medium text-slate-700">
+                    Unlock your personalized breakdown in the app
+                  </div>
+                  <div className="rounded-2xl bg-indigo-50 px-4 py-3 text-sm font-medium text-slate-700">
+                    Use the result across dashboard, practice, and progress tracking
+                  </div>
+                </div>
+                <div className="max-w-md mx-auto space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => window.location.href = '/dashboard/add-student'}
+                    className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100"
+                  >
+                    Add Child and Save Result
+                  </button>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                    Signed in as {userEmail}
+                  </p>
+                </div>
               </div>
             )}
 

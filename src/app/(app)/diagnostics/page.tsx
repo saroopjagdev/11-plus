@@ -45,22 +45,63 @@ export default async function DiagnosticsHubPage() {
   if (!child) {
     return (
       <div className="p-8 lg:p-12 max-w-5xl mx-auto">
-        <section className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-            <Target className="h-8 w-8" />
-          </div>
-          <h1 className="text-3xl font-black text-slate-900 mb-3">Diagnostics</h1>
-          <p className="text-slate-500 max-w-xl mx-auto mb-8">
-            Add your child first to unlock a baseline assessment, personalized breakdowns, and retakes over time.
-          </p>
-          <Link
-            href="/dashboard/add-student"
-            className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-100"
-          >
-            Register Your Child
-            <ChevronRight className="h-5 w-5" />
-          </Link>
-        </section>
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.85fr] gap-8">
+          <section className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-12 w-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Target className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">No Child Added Yet</p>
+                <h1 className="text-3xl font-black text-slate-900">Take the baseline first</h1>
+              </div>
+            </div>
+            <p className="text-slate-500 max-w-2xl mb-8">
+              You do not need to register a child before taking the diagnostic. Complete the baseline first, then add your child afterwards to save the result and attach it to their profile.
+            </p>
+
+            <div className="grid gap-4 mb-8">
+              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+                <p className="font-bold text-slate-900 mb-1">Lower friction</p>
+                <p className="text-sm text-slate-500">Get the baseline done first instead of filling in profile details up front.</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+                <p className="font-bold text-slate-900 mb-1">Save it afterwards</p>
+                <p className="text-sm text-slate-500">Once you add your child, the result can be attached to the student profile and used across the app.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="/diagnostic"
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+              >
+                Take Baseline Assessment
+                <ChevronRight className="h-5 w-5" />
+              </Link>
+              <Link
+                href="/dashboard/add-student"
+                className="inline-flex items-center gap-2 rounded-2xl bg-indigo-50 px-8 py-4 font-bold text-indigo-700 hover:bg-indigo-100 transition-all border border-indigo-100"
+              >
+                Add Child First
+                <ChevronRight className="h-5 w-5" />
+              </Link>
+            </div>
+          </section>
+
+          <section className="bg-indigo-50 rounded-[2.5rem] p-8 border border-indigo-100">
+            <div className="h-12 w-12 rounded-2xl bg-white text-indigo-600 flex items-center justify-center mb-5 shadow-sm">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-3">How the save works</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              If you take the diagnostic now, we can still hold the result in your session. After you add your child, you will be prompted to attach that baseline to their profile.
+            </p>
+            <div className="rounded-2xl bg-white/70 border border-white px-5 py-4 text-sm text-slate-600">
+              This keeps the entry friction low while still making sure the baseline ends up on the right student record.
+            </div>
+          </section>
+        </div>
       </div>
     )
   }
