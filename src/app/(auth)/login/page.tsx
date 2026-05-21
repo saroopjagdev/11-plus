@@ -116,10 +116,10 @@ export default async function LoginPage({
 
         <details className="mt-4 group">
           <summary className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 cursor-pointer list-none transition-colors">
-            Didn't receive a confirmation email?
+            Didn&apos;t receive a confirmation email?
           </summary>
           <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <p className="text-[10px] text-slate-500 mb-3 font-medium">Enter your email and we'll send a fresh link.</p>
+            <p className="text-[10px] text-slate-500 mb-3 font-medium">Enter your email and we&apos;ll send a fresh link.</p>
             <form action={resendEmail} className="flex flex-col gap-2">
               <input 
                 type="email" 

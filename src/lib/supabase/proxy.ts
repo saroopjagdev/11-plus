@@ -15,7 +15,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
             request,
           })
@@ -28,7 +28,23 @@ export async function updateSession(request: NextRequest) {
   )
 
   // refreshing the auth token
-  await supabase.auth.getUser()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error && error.message.includes('User from sub claim in JWT does not exist')) {
+    await supabase.auth.signOut()
+
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('error', 'Your previous session expired after the account was removed. Please sign in again.')
+
+    return NextResponse.redirect(loginUrl)
+  }
+
+  if (error && !user) {
+    return supabaseResponse
+  }
 
   return supabaseResponse
 }
