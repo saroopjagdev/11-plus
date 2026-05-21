@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { Loader2, MailCheck } from 'lucide-react'
@@ -19,7 +19,7 @@ function buildSignupRedirect(email: string | null, error: string) {
   return `/signup?${params.toString()}`
 }
 
-export default function ConfirmEmailPage() {
+function ConfirmEmailContent() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -102,5 +102,31 @@ export default function ConfirmEmailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ConfirmEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+          <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-xl">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+              <MailCheck className="h-7 w-7" />
+            </div>
+            <h1 className="text-2xl font-black text-slate-900">Confirming your email</h1>
+            <p className="mt-3 text-sm text-slate-500">
+              We&apos;re preparing your confirmation now.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+              Please wait a moment...
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <ConfirmEmailContent />
+    </Suspense>
   )
 }
