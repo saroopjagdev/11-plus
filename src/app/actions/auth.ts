@@ -5,6 +5,11 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
+function getEmailRedirectTo(next = '/dashboard') {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return `${baseUrl}/auth/confirm?next=${encodeURIComponent(next)}`
+}
+
 function createAdminClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -77,6 +82,9 @@ export async function signup(formData: FormData) {
   const { data: { user }, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: getEmailRedirectTo('/dashboard'),
+    },
   })
 
   if (error) {
@@ -146,6 +154,9 @@ export async function signUpAndCreateChild(formData: FormData) {
   const { data: { user }, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: getEmailRedirectTo('/dashboard'),
+    },
   })
 
   if (error) {
@@ -241,7 +252,7 @@ export async function resendEmail(formData: FormData) {
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: getEmailRedirectTo('/dashboard'),
     }
   })
 
