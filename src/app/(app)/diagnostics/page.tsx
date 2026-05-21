@@ -43,6 +43,21 @@ export default async function DiagnosticsHubPage() {
   const child = children?.[0] || null
 
   if (!child) {
+    const { data: pendingLead } = await supabase
+      .from('leads')
+      .select('diagnostic_score, diagnostic_ai_summary, diagnostic_completed_at')
+      .eq('claimed_by_user_id', user.id)
+      .eq('source', 'diagnostic')
+      .in('status', ['captured', 'account_created'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const pendingScore =
+      typeof pendingLead?.diagnostic_score === 'number' ? pendingLead.diagnostic_score : null
+    const pendingStatus = pendingScore != null ? getDiagnosticStatus(pendingScore, 20) : null
+    const pendingDate = formatDiagnosticDate(pendingLead?.diagnostic_completed_at)
+
     return (
       <div className="p-8 lg:p-12 max-w-5xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.85fr] gap-8">
@@ -53,37 +68,65 @@ export default async function DiagnosticsHubPage() {
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">No Child Added Yet</p>
-                <h1 className="text-3xl font-black text-slate-900">Take the baseline first</h1>
+                <h1 className="text-3xl font-black text-slate-900">
+                  {pendingLead ? 'Your baseline is ready to save' : 'Take the baseline first'}
+                </h1>
               </div>
             </div>
             <p className="text-slate-500 max-w-2xl mb-8">
-              You do not need to register a child before taking the diagnostic. Complete the baseline first, then add your child afterwards to save the result and attach it to their profile.
+              {pendingLead
+                ? 'You already completed a diagnostic before adding a child. Add your child now and we will attach that saved baseline to the correct student profile.'
+                : 'You do not need to register a child before taking the diagnostic. Complete the baseline first, then add your child afterwards to save the result and attach it to their profile.'}
             </p>
 
-            <div className="grid gap-4 mb-8">
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                <p className="font-bold text-slate-900 mb-1">Lower friction</p>
-                <p className="text-sm text-slate-500">Get the baseline done first instead of filling in profile details up front.</p>
+            {pendingLead ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                <div className="rounded-3xl bg-indigo-50 p-6 text-center">
+                  <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">Saved Status</p>
+                  <p className="text-3xl font-black text-indigo-600">{pendingStatus}</p>
+                </div>
+                <div className="rounded-3xl bg-emerald-50 p-6 text-center">
+                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Saved Score</p>
+                  <p className="text-3xl font-black text-emerald-600">{pendingScore} / 20</p>
+                </div>
+                <div className="sm:col-span-2 rounded-2xl bg-slate-50 border border-slate-100 p-5">
+                  <p className="font-bold text-slate-900 mb-1">Saved baseline</p>
+                  <p className="text-sm text-slate-500">
+                    {pendingLead.diagnostic_ai_summary || 'Your latest baseline is waiting to be attached as soon as you add your child.'}
+                  </p>
+                  {pendingDate && (
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+                      Completed {pendingDate}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                <p className="font-bold text-slate-900 mb-1">Save it afterwards</p>
-                <p className="text-sm text-slate-500">Once you add your child, the result can be attached to the student profile and used across the app.</p>
+            ) : (
+              <div className="grid gap-4 mb-8">
+                <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+                  <p className="font-bold text-slate-900 mb-1">Lower friction</p>
+                  <p className="text-sm text-slate-500">Get the baseline done first instead of filling in profile details up front.</p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+                  <p className="font-bold text-slate-900 mb-1">Save it afterwards</p>
+                  <p className="text-sm text-slate-500">Once you add your child, the result can be attached to the student profile and used across the app.</p>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex flex-wrap gap-4">
               <Link
-                href="/diagnostic"
+                href={pendingLead ? '/dashboard/add-student' : '/diagnostic'}
                 className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
               >
-                Take Baseline Assessment
+                {pendingLead ? 'Add Child to Save Result' : 'Take Baseline Assessment'}
                 <ChevronRight className="h-5 w-5" />
               </Link>
               <Link
-                href="/dashboard/add-student"
+                href={pendingLead ? '/diagnostic' : '/dashboard/add-student'}
                 className="inline-flex items-center gap-2 rounded-2xl bg-indigo-50 px-8 py-4 font-bold text-indigo-700 hover:bg-indigo-100 transition-all border border-indigo-100"
               >
-                Add Child First
+                {pendingLead ? 'Retake Baseline Instead' : 'Add Child First'}
                 <ChevronRight className="h-5 w-5" />
               </Link>
             </div>
@@ -95,10 +138,14 @@ export default async function DiagnosticsHubPage() {
             </div>
             <h3 className="text-xl font-black text-slate-900 mb-3">How the save works</h3>
             <p className="text-sm text-slate-600 mb-5">
-              If you take the diagnostic now, we can still hold the result in your session. After you add your child, you will be prompted to attach that baseline to their profile.
+              {pendingLead
+                ? 'Your completed baseline has already been saved against your account. Once you add your child, we can attach that stored result to the right student profile.'
+                : 'If you take the diagnostic now, we can still hold the result in your session. After you add your child, you will be prompted to attach that baseline to their profile.'}
             </p>
             <div className="rounded-2xl bg-white/70 border border-white px-5 py-4 text-sm text-slate-600">
-              This keeps the entry friction low while still making sure the baseline ends up on the right student record.
+              {pendingLead
+                ? 'You do not need to retake the diagnostic unless you want a fresh measure. Adding your child is enough to attach the existing result.'
+                : 'This keeps the entry friction low while still making sure the baseline ends up on the right student record.'}
             </div>
           </section>
         </div>
