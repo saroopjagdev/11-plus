@@ -72,6 +72,7 @@ export async function signup(formData: FormData) {
   const password = formData.get('password') as string
   const referralCode = formData.get('referralCode') as string
   const leadId = formData.get('leadId') as string | null
+  const guestDiag = formData.get('guestDiag') as string | null
 
   const { data: { user }, error } = await supabase.auth.signUp({
     email,
@@ -114,7 +115,17 @@ export async function signup(formData: FormData) {
     await attachLeadToUser(leadId, email, user.id)
   }
 
-  redirect('/login?message=Check your email to continue')
+  const confirmParams = new URLSearchParams({
+    confirm: '1',
+    email,
+    message: 'Check your email to continue',
+  })
+
+  if (guestDiag) {
+    confirmParams.set('guest_diag', guestDiag)
+  }
+
+  redirect(`/signup?${confirmParams.toString()}`)
 }
 
 export async function signUpAndCreateChild(formData: FormData) {
@@ -124,6 +135,7 @@ export async function signUpAndCreateChild(formData: FormData) {
   const password = formData.get('password') as string
   const referralCode = formData.get('referralCode') as string
   const leadId = formData.get('leadId') as string | null
+  const guestDiag = formData.get('guestDiag') as string | null
 
   const childName = formData.get('childName') as string || 'Student'
   const childAge = parseInt(formData.get('childAge') as string) || 10
@@ -185,7 +197,17 @@ export async function signUpAndCreateChild(formData: FormData) {
     })
   }
 
-  redirect('/login?message=Check your email to continue')
+  const confirmParams = new URLSearchParams({
+    confirm: '1',
+    email,
+    message: 'Check your email to continue',
+  })
+
+  if (guestDiag) {
+    confirmParams.set('guest_diag', guestDiag)
+  }
+
+  redirect(`/signup?${confirmParams.toString()}`)
 }
 
 export async function signOut() {
@@ -198,9 +220,21 @@ export async function signOut() {
 export async function resendEmail(formData: FormData) {
   const supabase = await createClient()
   const email = formData.get('email') as string
+  const returnTo = (formData.get('returnTo') as string) || 'login'
+  const guestDiag = formData.get('guestDiag') as string | null
   
   if (!email) {
-    return redirect('/login?error=Email is required to resend confirmation')
+    const errorParams = new URLSearchParams({
+      error: 'Email is required to resend confirmation',
+    })
+
+    if (returnTo === 'signup') {
+      errorParams.set('confirm', '1')
+      if (guestDiag) errorParams.set('guest_diag', guestDiag)
+      return redirect(`/signup?${errorParams.toString()}`)
+    }
+
+    return redirect(`/login?${errorParams.toString()}`)
   }
 
   const { error } = await supabase.auth.resend({
@@ -212,8 +246,30 @@ export async function resendEmail(formData: FormData) {
   })
 
   if (error) {
-    return redirect('/login?error=' + encodeURIComponent(error.message))
+    const errorParams = new URLSearchParams({
+      error: error.message,
+      email,
+    })
+
+    if (returnTo === 'signup') {
+      errorParams.set('confirm', '1')
+      if (guestDiag) errorParams.set('guest_diag', guestDiag)
+      return redirect(`/signup?${errorParams.toString()}`)
+    }
+
+    return redirect(`/login?${errorParams.toString()}`)
   }
 
-  redirect('/login?message=Confirmation email resent. Please check your inbox.')
+  const messageParams = new URLSearchParams({
+    message: 'Confirmation email resent. Please check your inbox.',
+    email,
+  })
+
+  if (returnTo === 'signup') {
+    messageParams.set('confirm', '1')
+    if (guestDiag) messageParams.set('guest_diag', guestDiag)
+    redirect(`/signup?${messageParams.toString()}`)
+  }
+
+  redirect(`/login?${messageParams.toString()}`)
 }
