@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { seoGuides } from '@/lib/seo-guides'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ace11plus.org'
+const siteUrl = 'https://www.ace11plus.org'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const publicRoutes = [

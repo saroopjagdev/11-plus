@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ChevronRight, HelpCircle, Sparkles, Target } from 'lucide-react'
 import { getGuideBySlug, getRelatedGuides, seoGuides } from '@/lib/seo-guides'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ace11plus.org'
+const siteUrl = 'https://www.ace11plus.org'
 
 type GuidePageProps = {
   params: Promise<{ slug: string }>

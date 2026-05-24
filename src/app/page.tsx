@@ -1,6 +1,30 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Sparkles, Target, Zap, ShieldCheck, Star, Check, HelpCircle, BookOpen, Clock, Trophy } from 'lucide-react'
+import { ArrowRight, Sparkles, Target, ShieldCheck, Check, HelpCircle, BookOpen, Clock } from 'lucide-react'
 import { OnboardingPlanner } from '@/components/OnboardingPlanner'
+
+const featuredGuides = [
+  {
+    href: '/guides/kent-test-11-plus-guide',
+    title: 'Kent Test guide',
+    description: 'A practical starting point for one of the biggest selective routes in England.',
+  },
+  {
+    href: '/guides/bucks-11-plus-guide',
+    title: 'Bucks 11+ guide',
+    description: 'Useful if you are preparing for a GL-style mixed profile with verbal, non-verbal and maths demands.',
+  },
+  {
+    href: '/guides/year-5-11-plus-preparation-guide',
+    title: 'Year 5 preparation guide',
+    description: 'A calm plan for parents who need to know what matters most this year.',
+  },
+  {
+    href: '/guides/11-plus-vocabulary-guide',
+    title: '11+ vocabulary guide',
+    description: 'A strong next read when word knowledge is starting to limit scores.',
+  },
+]
 
 export default function LandingPage() {
   return (
@@ -9,9 +33,11 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img
+            <Image
               src="/logo.png"
               alt="Ace 11+"
+              width={48}
+              height={48}
               className="h-12 w-12 object-contain rounded-xl"
             />
             <span className="font-bold text-slate-900 text-xl tracking-tight">Ace 11+</span>
@@ -25,6 +51,7 @@ export default function LandingPage() {
             <a href="#features" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">Features</a>
             <a href="#curriculum" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">Curriculum</a>
             <a href="#pricing" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">Pricing</a>
+            <Link href="/guides" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">Guides</Link>
             <Link href="/login" className="text-sm font-bold text-slate-900 hover:text-indigo-600 transition-colors">Log In</Link>
             <Link href="/signup" className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 hover:shadow-lg transition-all">
               Join Now
@@ -87,7 +114,7 @@ export default function LandingPage() {
       <section id="features" className="max-w-7xl mx-auto px-6 py-40">
         <div className="text-center max-w-3xl mx-auto mb-24">
           <h2 className="text-5xl font-black text-slate-900 mb-8 tracking-tight">The ultimate toolkit for success.</h2>
-          <p className="text-slate-500 text-xl font-medium leading-relaxed">We've automated the hard part of 11+ prep so you can focus on building confidence. Designed specifically for Year 4 and Year 5 students.</p>
+          <p className="text-slate-500 text-xl font-medium leading-relaxed">We&apos;ve automated the hard part of 11+ prep so you can focus on building confidence. Designed specifically for Year 4 and Year 5 students.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-10">
@@ -125,7 +152,7 @@ export default function LandingPage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">11+ Ready?</span>
             </h2>
             <p className="text-slate-500 text-xl mb-10 leading-relaxed font-medium">
-              Don't leave success to chance. Our rigorous diagnostic test uses real exam-standard questions to map your child's current ability against the 11+ requirements.
+              Don&apos;t leave success to chance. Our rigorous diagnostic test uses real exam-standard questions to map your child&apos;s current ability against the 11+ requirements.
             </p>
             <ul className="space-y-4 mb-10">
               <li className="flex items-center gap-3 font-bold text-slate-700">
@@ -177,9 +204,54 @@ export default function LandingPage() {
                 </div>
 
                 <div className="mt-8 p-6 bg-indigo-600 rounded-3xl text-white">
-                   <p className="text-sm font-medium italic opacity-90">"Focus on Multi-step Word Problems to reach the Competent level."</p>
+                   <p className="text-sm font-medium italic opacity-90">&ldquo;Focus on Multi-step Word Problems to reach the Competent level.&rdquo;</p>
                 </div>
              </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-7xl mx-auto px-6 py-24 lg:py-28">
+        <div className="rounded-[3rem] border border-slate-100 bg-white p-8 shadow-sm lg:p-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2">
+                <BookOpen className="h-4 w-4 text-indigo-600" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700">
+                  Parent guides
+                </span>
+              </div>
+              <h2 className="mt-5 text-4xl font-black tracking-tight text-slate-900">
+                Browse practical 11+ guides before you choose the next step.
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-slate-500">
+                Explore school-specific routes, exam formats, Year 4 and Year 5 planning, and the skill areas that most often need attention first.
+              </p>
+            </div>
+            <Link
+              href="/guides"
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-6 py-3 font-bold text-slate-900 transition-all hover:border-indigo-200 hover:bg-white"
+            >
+              Browse all guides
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {featuredGuides.map((guide) => (
+              <Link
+                key={guide.href}
+                href={guide.href}
+                className="group rounded-[2rem] border border-slate-100 bg-slate-50 p-5 transition-all hover:border-indigo-100 hover:bg-white hover:shadow-md"
+              >
+                <h3 className="text-lg font-black tracking-tight text-slate-900 transition-colors group-hover:text-indigo-600">
+                  {guide.title}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-500">
+                  {guide.description}
+                </p>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -244,8 +316,8 @@ export default function LandingPage() {
                     <Sparkles className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-black text-slate-900 mb-2">"Exam Trap" Analysis</h4>
-                    <p className="text-slate-500 text-sm leading-relaxed">Our engine identifies recurring patterns in mistakes—like rushing word problems or logic gaps—and summarizes them for you.</p>
+                    <h4 className="text-xl font-black text-slate-900 mb-2">&ldquo;Exam Trap&rdquo; Analysis</h4>
+                    <p className="text-slate-500 text-sm leading-relaxed">Our engine identifies recurring patterns in mistakes, like rushing word problems or logic gaps, and summarizes them for you.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -275,7 +347,7 @@ export default function LandingPage() {
                     <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Exam Trap Identified</h5>
                     <p className="text-sm font-bold text-slate-800 leading-relaxed">
                       Charlie is consistently struggling with <span className="text-emerald-600 italic underline decoration-2">Multi-step Word Problems</span>.
-                      He often skips the second operation in a question, leading to "Near-Miss" errors.
+                      He often skips the second operation in a question, leading to &ldquo;Near-Miss&rdquo; errors.
                     </p>
                   </div>
 
@@ -378,6 +450,7 @@ export default function LandingPage() {
           <span className="font-bold text-slate-900 tracking-tight">Ace 11+</span>
         </div>
         <div className="flex gap-10">
+          <Link href="/guides" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Guides</Link>
           <Link href="/privacy" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Privacy</Link>
           <Link href="/terms" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Terms</Link>
           <a href="mailto:support@ace11plus.org" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">Contact</a>
@@ -388,8 +461,8 @@ export default function LandingPage() {
   )
 }
 
-function FeatureCard({ icon, title, desc, color }: { icon: React.ReactNode, title: string, desc: string, color: string }) {
-  const colorMap: any = {
+function FeatureCard({ icon, title, desc, color }: { icon: React.ReactNode, title: string, desc: string, color: 'indigo' | 'violet' | 'emerald' }) {
+  const colorMap: Record<'indigo' | 'violet' | 'emerald', string> = {
     indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
     violet: 'bg-violet-50 text-violet-600 border-violet-100',
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100'
@@ -463,14 +536,6 @@ function FAQItem({ question, answer }: { question: string, answer: string }) {
         </div>
       </div>
     </div>
-  )
-}
-
-function BarChart3({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
   )
 }
 

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ArrowRight, BookOpen, ChevronRight, Sparkles, Target } from 'lucide-react'
 import { guideCategories, getGuidesByCategory, seoGuides } from '@/lib/seo-guides'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ace11plus.org'
+const siteUrl = 'https://www.ace11plus.org'
 
 export const metadata: Metadata = {
   title: '11+ Guides for Parents | Ace 11+',
