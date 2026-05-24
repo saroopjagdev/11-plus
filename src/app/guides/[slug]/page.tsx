@@ -89,19 +89,21 @@ export default async function GuidePage({ params }: GuidePageProps) {
     <div className="min-h-screen bg-slate-50">
       <section className="bg-slate-900 px-6 pb-24 pt-16 text-white lg:pb-28 lg:pt-20">
         <div className="mx-auto max-w-5xl">
-          <Link
-            href="/guides"
-            className="inline-flex items-center gap-2 text-sm font-bold text-slate-300 transition-colors hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to guides
-          </Link>
+          <div className="flex flex-wrap items-center gap-4 sm:gap-5">
+            <Link
+              href="/guides"
+              className="inline-flex items-center gap-2 text-sm font-bold text-slate-300 transition-colors hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to guides
+            </Link>
 
-          <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2">
-            <Sparkles className="h-4 w-4 text-indigo-300" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-200">
-              Parent guide
-            </span>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2">
+              <Sparkles className="h-4 w-4 text-indigo-300" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-200">
+                Parent guide
+              </span>
+            </div>
           </div>
 
           <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight text-white sm:text-6xl">
