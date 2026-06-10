@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Target, Trophy, ChevronRight, RotateCcw, BarChart2, Sparkles } from 'lucide-react'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { DiagnosticsNoChildState } from '@/components/DiagnosticsNoChildState'
+import { ReportIssueButton } from '@/components/ReportIssueButton'
 
 function getDiagnosticStatus(score: number, totalQuestions = 20) {
   const ratio = totalQuestions > 0 ? score / totalQuestions : 0
@@ -160,6 +161,15 @@ export default async function DiagnosticsHubPage() {
             <div className="rounded-2xl bg-white/70 border border-white px-5 py-4 text-sm text-slate-600">
               Retakes are most useful after meaningful practice, not day to day. Think of this page as the place to check the last baseline and decide when to measure again.
             </div>
+            <div className="mt-5">
+              <ReportIssueButton
+                category="Diagnostic result issue"
+                userEmail={user.email}
+                context={{
+                  pageLabel: 'Diagnostics Hub Empty State',
+                }}
+              />
+            </div>
           </section>
         </div>
       ) : (
@@ -224,6 +234,20 @@ export default async function DiagnosticsHubPage() {
             </p>
             <div className="rounded-2xl bg-white/70 border border-white px-5 py-4 text-sm text-slate-600">
               A retake is most meaningful after a solid block of practice. The dashboard and practice hubs are where the day-to-day work happens; this page is the checkpoint.
+            </div>
+            <div className="mt-5">
+              <ReportIssueButton
+                category="Diagnostic result issue"
+                userEmail={user.email}
+                childId={child.id}
+                diagnosticId={diagnostic.id}
+                context={{
+                  pageLabel: 'Diagnostics Hub',
+                  score: diagnostic.score,
+                  status,
+                  latestTopic,
+                }}
+              />
             </div>
           </section>
         </div>

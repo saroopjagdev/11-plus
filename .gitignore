@@ -39,3 +39,6 @@ plan.txt
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+fb_reels.csv
+fb_reels.txt

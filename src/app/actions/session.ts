@@ -3,13 +3,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { calculateLevel } from '@/lib/gamification'
-import { MASTERY_TIERS } from '@/lib/constants/curriculum'
+import {
+  calculateAggregateAccuracy,
+  deriveHasEverMastered,
+  normalizeSubjectAndTopic,
+  sanitizeSelectedAnswer,
+} from '@/lib/tracking'
 
 interface SessionResult {
   childId: string
   score: number
-  topic: string
-  subject: string
   attempts: {
     questionId: string
     selectedAnswer: string | null
@@ -17,10 +20,37 @@ interface SessionResult {
     timeTakenSeconds?: number
   }[]
   type?: 'practice' | 'diagnostic' | 'mock'
+  startedAt?: string
+  completedAt?: string
 }
 
-export async function logPracticeSession({ childId, score, topic, subject, attempts, type = 'practice' }: SessionResult) {
+function ensureChronologicalTimestamps(startedAt?: string, completedAt?: string) {
+  const safeStartedAt = startedAt || new Date().toISOString()
+  const safeCompletedAt = completedAt || new Date().toISOString()
+
+  if (new Date(safeCompletedAt).getTime() < new Date(safeStartedAt).getTime()) {
+    return {
+      startedAt: safeStartedAt,
+      completedAt: safeStartedAt,
+    }
+  }
+
+  return {
+    startedAt: safeStartedAt,
+    completedAt: safeCompletedAt,
+  }
+}
+
+export async function logPracticeSession({
+  childId,
+  score,
+  attempts,
+  type = 'practice',
+  startedAt,
+  completedAt,
+}: SessionResult) {
   const supabase = await createClient()
+  const timestamps = ensureChronologicalTimestamps(startedAt, completedAt)
 
   // 1. Create the Session
   const { data: session, error: sessionError } = await supabase
@@ -29,9 +59,8 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
       child_id: childId,
       score: score,
       type: type,
-      topic: topic,
-      subject: subject,
-      completed_at: new Date().toISOString()
+      started_at: timestamps.startedAt,
+      completed_at: timestamps.completedAt,
     })
     .select()
     .single()
@@ -43,10 +72,10 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
 
   // 2. Log Individual Attempts
   const attemptsToInsert = attempts.map(attempt => ({
-    session_id: session?.id || '', 
+    session_id: session?.id || '',
     child_id: childId,
     question_id: attempt.questionId,
-    selected_answer: attempt.selectedAnswer,
+    selected_answer: sanitizeSelectedAnswer(attempt.selectedAnswer),
     is_correct: attempt.isCorrect,
     time_taken_seconds: attempt.timeTakenSeconds || 0
   }))
@@ -57,73 +86,108 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
 
   if (attemptsError) console.error('Error logging attempts:', attemptsError)
 
-  // 3. Update Topic Mastery
-  const correctCount = attempts.filter(a => a.isCorrect).length
-  const totalCount = attempts.length
-  const sessionAccuracy = (correctCount / totalCount) * 100
+  // 3. Update Topic Mastery from real attempt metadata
+  const uniqueQuestionIds = Array.from(new Set(attempts.map((attempt) => attempt.questionId)))
+  const { data: questions, error: questionsError } = await supabase
+    .from('questions')
+    .select('id, subject, topic')
+    .in('id', uniqueQuestionIds)
 
-  const { data: existingMastery } = await supabase
-    .from('topic_mastery')
-    .select('*')
-    .eq('child_id', childId)
-    .eq('topic', topic)
-    .maybeSingle()
-
-  if (existingMastery) {
-    const newTotalQuestions = (existingMastery.questions_answered || 0) + totalCount
-    const newTotalCorrect = (existingMastery.total_correct || 0) + correctCount
-    
-    // Use an Exponential Moving Average (EMA) that is slower for long-term progression
-    const weight = 0.1 // Fixed slow weight for "sticky" progress
-    const newAccuracy = (sessionAccuracy * weight) + (existingMastery.accuracy * (1 - weight))
-    
-    // Calculate new mastery level
-    const currentAccuracy = Math.round(newAccuracy)
-    let newMasteryLevel = 0
-    for (const tier of [...MASTERY_TIERS].reverse()) {
-      if (currentAccuracy >= tier.minAccuracy && newTotalQuestions >= tier.minQuestions) {
-        newMasteryLevel = tier.level
-        break
-      }
-    }
-
-    const hasMastered = existingMastery.has_ever_mastered || newMasteryLevel >= 1
-    
-    await supabase
-      .from('topic_mastery')
-      .update({
-        accuracy: currentAccuracy,
-        has_ever_mastered: hasMastered,
-        questions_answered: newTotalQuestions,
-        total_correct: newTotalCorrect,
-        mastery_level: newMasteryLevel,
-        last_updated: new Date().toISOString()
-      })
-      .eq('id', existingMastery.id)
+  if (questionsError) {
+    console.error('Error fetching questions for mastery update:', questionsError)
   } else {
-    // New topic entry
-    const accuracy = Math.round(sessionAccuracy)
-    let masteryLevel = 0
-    for (const tier of [...MASTERY_TIERS].reverse()) {
-      if (accuracy >= tier.minAccuracy && totalCount >= tier.minQuestions) {
-        masteryLevel = tier.level
-        break
+    const questionMap = new Map(
+      (questions || []).map((question) => [question.id, normalizeSubjectAndTopic(question.subject, question.topic)])
+    )
+
+    const aggregates = new Map<
+      string,
+      {
+        subject: string
+        topic: string
+        questionsAnswered: number
+        correctAnswers: number
       }
+    >()
+
+    for (const attempt of attempts) {
+      const meta = questionMap.get(attempt.questionId)
+      if (!meta || !meta.topic) continue
+
+      const aggregateKey = `${meta.subject}::${meta.topic}`
+      const existingAggregate = aggregates.get(aggregateKey) || {
+        subject: meta.subject,
+        topic: meta.topic,
+        questionsAnswered: 0,
+        correctAnswers: 0,
+      }
+
+      existingAggregate.questionsAnswered += 1
+      if (attempt.isCorrect) {
+        existingAggregate.correctAnswers += 1
+      }
+
+      aggregates.set(aggregateKey, existingAggregate)
     }
 
-    await supabase
-      .from('topic_mastery')
-      .insert({
-        child_id: childId,
-        subject,
-        topic,
-        accuracy: accuracy,
-        has_ever_mastered: masteryLevel >= 1,
-        questions_answered: totalCount,
-        total_correct: correctCount,
-        mastery_level: masteryLevel,
-        last_updated: new Date().toISOString()
-      })
+    const topics = Array.from(aggregates.values()).map((aggregate) => aggregate.topic)
+
+    const { data: existingMasteryRows, error: masteryFetchError } = topics.length
+      ? await supabase
+          .from('topic_mastery')
+          .select('*')
+          .eq('child_id', childId)
+          .in('topic', topics)
+      : { data: [], error: null }
+
+    if (masteryFetchError) {
+      console.error('Error fetching existing mastery rows:', masteryFetchError)
+    } else {
+      const masteryByTopic = new Map((existingMasteryRows || []).map((row) => [row.topic, row]))
+
+      for (const aggregate of aggregates.values()) {
+        const existingMastery = masteryByTopic.get(aggregate.topic)
+        const previousQuestionsAnswered = Number(existingMastery?.questions_answered || 0)
+        const previousCorrectAnswers = Math.round(
+          ((Number(existingMastery?.accuracy || 0) / 100) * previousQuestionsAnswered)
+        )
+
+        const questionsAnswered = previousQuestionsAnswered + aggregate.questionsAnswered
+        const correctAnswers = previousCorrectAnswers + aggregate.correctAnswers
+        const accuracy = calculateAggregateAccuracy(correctAnswers, questionsAnswered)
+        const hasEverMastered = deriveHasEverMastered(
+          accuracy,
+          questionsAnswered,
+          Boolean(existingMastery?.has_ever_mastered)
+        )
+
+        if (existingMastery) {
+          await supabase
+            .from('topic_mastery')
+            .update({
+              subject: aggregate.subject,
+              topic: aggregate.topic,
+              accuracy,
+              has_ever_mastered: hasEverMastered,
+              questions_answered: questionsAnswered,
+              last_updated: timestamps.completedAt,
+            })
+            .eq('id', existingMastery.id)
+        } else {
+          await supabase
+            .from('topic_mastery')
+            .insert({
+              child_id: childId,
+              subject: aggregate.subject,
+              topic: aggregate.topic,
+              accuracy,
+              has_ever_mastered: hasEverMastered,
+              questions_answered: aggregate.questionsAnswered,
+              last_updated: timestamps.completedAt,
+            })
+        }
+      }
+    }
   }
 
   // 4. Update Child Stats (Streak & Points)
@@ -138,12 +202,20 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
     return { success: false, error: 'Student profile not found' }
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = timestamps.completedAt.split('T')[0]
   const lastPractice = child?.last_practice_date
 
   let newStreak = child?.current_streak || 0
-  if (lastPractice !== today) {
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayValue = yesterday.toISOString().split('T')[0]
+
+  if (lastPractice === today) {
+    newStreak = child?.current_streak || 0
+  } else if (lastPractice === yesterdayValue) {
     newStreak += 1
+  } else {
+    newStreak = 1
   }
 
   const xpGained = score * 10
@@ -165,6 +237,7 @@ export async function logPracticeSession({ childId, score, topic, subject, attem
   revalidatePath('/dashboard')
   revalidatePath('/analytics')
   revalidatePath('/leaderboard')
+  revalidatePath('/parent/dashboard')
   
   return { 
     success: true, 

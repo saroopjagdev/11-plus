@@ -7,6 +7,19 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
+function buildAnswerReview(learnerAnswer: string | null | undefined, correctAnswer: string) {
+  const safeLearnerAnswer = learnerAnswer?.trim()
+  if (!safeLearnerAnswer) {
+    return `No answer was saved for this attempt. The correct answer is "${correctAnswer}".`
+  }
+
+  if (safeLearnerAnswer === correctAnswer) {
+    return `You chose "${safeLearnerAnswer}", which is correct.`
+  }
+
+  return `You chose "${safeLearnerAnswer}". The correct answer is "${correctAnswer}".`
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient()
 
@@ -32,13 +45,24 @@ export async function POST(request: Request) {
     )
   }
 
-  const { questionId } = await request.json()
+  const { questionId, learnerAnswer } = await request.json()
   if (!questionId) {
     return NextResponse.json({ error: 'Question ID required' }, { status: 400 })
   }
 
   try {
-    // 2. Check if explanation exists in DB
+    // 2. Fetch question details to provide context to AI
+    const { data: question, error: qError } = await supabase
+      .from('questions')
+      .select('*, passage:passages(title, content)')
+      .eq('id', questionId)
+      .single()
+
+    if (qError || !question) {
+      return NextResponse.json({ error: 'Question not found' }, { status: 404 })
+    }
+
+    // 3. Check if explanation exists in DB
     const { data: existing } = await supabase
       .from('explanations')
       .select('*')
@@ -47,18 +71,11 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (existing) {
-      return NextResponse.json({ explanation: existing.explanation_text, cached: true })
-    }
-
-    // 3. If not, fetch question details to provide context to AI
-    const { data: question, error: qError } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('id', questionId)
-      .single()
-
-    if (qError || !question) {
-      return NextResponse.json({ error: 'Question not found' }, { status: 404 })
+      return NextResponse.json({
+        explanation: existing.explanation_text,
+        answerReview: buildAnswerReview(learnerAnswer, question.correct_answer),
+        cached: true,
+      })
     }
 
     // 4. Generate explanation via OpenAI (GPT-4o-mini)
@@ -70,6 +87,7 @@ export async function POST(request: Request) {
       Correct Answer: ${question.correct_answer}
       Subject: ${question.subject}
       Topic: ${question.topic}
+      ${question.passage ? `Passage Title: ${question.passage.title}\nPassage Content: ${question.passage.content}` : ''}
 
       Requirements:
       - Use simple, encouraging language.
@@ -97,10 +115,15 @@ export async function POST(request: Request) {
     await supabase.from('explanations').insert({
       question_id: questionId,
       explanation_text: explanationContent,
+      helpful_count: 0,
       is_verified: false
     })
     
-    return NextResponse.json({ explanation: explanationContent, cached: false })
+    return NextResponse.json({
+      explanation: explanationContent,
+      answerReview: buildAnswerReview(learnerAnswer, question.correct_answer),
+      cached: false,
+    })
   } catch (error: unknown) {
     console.error('AI Explanation Error:', error)
     const openAiError = error as { status?: number; code?: string }
@@ -108,11 +131,17 @@ export async function POST(request: Request) {
     // Check for OpenAI quota specifically
     if (openAiError?.status === 429 || openAiError?.code === 'insufficient_quota') {
       return NextResponse.json({ 
-        error: 'AI Credits Exceeded', 
-        message: 'The daily AI limit for this trial has been reached. Please upgrade to Pro for unlimited tutor help.' 
+        error: 'Temporary AI limit reached', 
+        message: 'We have hit our current AI explanation limit. Please try again shortly.' 
       }, { status: 429 })
     }
 
-    return NextResponse.json({ error: 'Failed to generate explanation' }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: 'Explanation unavailable',
+        message: 'We could not generate an explanation right now. Please try again in a moment.',
+      },
+      { status: 500 }
+    )
   }
 }

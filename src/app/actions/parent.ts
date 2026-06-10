@@ -48,7 +48,7 @@ export async function getParentDashboardData(childId: string) {
   // 1. Get Subject Accuracy
   const { data: mastery, error: masteryError } = await supabase
     .from('topic_mastery')
-    .select('subject, accuracy, questions_answered, mastery_level')
+    .select('subject, accuracy, questions_answered')
     .eq('child_id', childId)
 
   if (masteryError) throw new Error(masteryError.message)

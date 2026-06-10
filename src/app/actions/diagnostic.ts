@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { calculateLevel } from '@/lib/gamification'
 import OpenAI from 'openai'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { deriveHasEverMastered, normalizeSubjectAndTopic } from '@/lib/tracking'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -45,13 +46,21 @@ async function persistDiagnosticForChild(
   data: { score: number; breakdown: DiagnosticTopicBreakdown[]; aiSummary: string }
 ) {
   const supabase = await createClient()
+  const normalizedBreakdown = data.breakdown.map((item) => {
+    const normalized = normalizeSubjectAndTopic(item.subject, item.topic)
+    return {
+      ...item,
+      subject: normalized.subject,
+      topic: normalized.topic,
+    }
+  })
 
   const { data: diagnostic, error: diagError } = await supabase
     .from('diagnostic_results')
     .insert({
       child_id: childId,
       score: data.score,
-      topic_breakdown: data.breakdown,
+      topic_breakdown: normalizedBreakdown,
       ai_summary: data.aiSummary,
     })
     .select()
@@ -59,18 +68,28 @@ async function persistDiagnosticForChild(
 
   if (diagError) throw new Error(diagError.message)
 
-  for (const topic of data.breakdown) {
-    await supabase.from('topic_mastery').upsert(
-      {
-        child_id: childId,
-        subject: topic.subject,
-        topic: topic.topic,
-        accuracy: topic.accuracy,
-        questions_answered: topic.questions_answered || 0,
-        last_updated: new Date().toISOString(),
-      },
-      { onConflict: 'child_id,topic' }
-    )
+  const { data: existingMasteryRows } = await supabase
+    .from('topic_mastery')
+    .select('topic')
+    .eq('child_id', childId)
+
+  const existingTopics = new Set((existingMasteryRows || []).map((row) => row.topic))
+
+  const baselineRows = normalizedBreakdown
+    .filter((topic) => !existingTopics.has(topic.topic))
+    .map((topic) => ({
+      child_id: childId,
+      subject: topic.subject,
+      topic: topic.topic,
+      accuracy: topic.accuracy,
+      questions_answered: topic.questions_answered || 0,
+      has_ever_mastered: deriveHasEverMastered(topic.accuracy, topic.questions_answered || 0),
+      last_updated: new Date().toISOString(),
+    }))
+
+  if (baselineRows.length > 0) {
+    const { error: masteryInsertError } = await supabase.from('topic_mastery').insert(baselineRows)
+    if (masteryInsertError) throw new Error(masteryInsertError.message)
   }
 
   revalidatePath('/dashboard')
@@ -84,11 +103,20 @@ export async function submitDiagnostic(
   const supabase = await createClient()
 
   try {
-    const score = attempts.filter((attempt) => attempt.isCorrect).length
+    const normalizedAttempts = attempts.map((attempt) => {
+      const normalized = normalizeSubjectAndTopic(attempt.subject, attempt.topic)
+      return {
+        ...attempt,
+        subject: normalized.subject,
+        topic: normalized.topic,
+      }
+    })
+
+    const score = normalizedAttempts.filter((attempt) => attempt.isCorrect).length
 
     const topics: Record<string, TopicResult> = {}
 
-    attempts.forEach((attempt) => {
+    normalizedAttempts.forEach((attempt) => {
       if (!topics[attempt.topic]) {
         topics[attempt.topic] = {
           topic: attempt.topic,
@@ -113,7 +141,7 @@ export async function submitDiagnostic(
         You are an expert, direct 11+ tutor. Analyze these diagnostic results for a prospective student.
         The 11+ is extremely competitive. If they aren't at 100%, they aren't "11+ Ready" yet.
         
-        Overall Score: ${score} / ${attempts.length}
+        Overall Score: ${score} / ${normalizedAttempts.length}
         Topic Breakdown: ${JSON.stringify(topicBreakdown)}
 
         Provide a blunt, honest, and professional tutor-style review (2-3 sentences). 
@@ -148,7 +176,7 @@ export async function submitDiagnostic(
       You are an expert, direct 11+ tutor. Analyze the following results for ${child.name || 'the student'}.
       The 11+ standard is 100% readiness.
 
-      Overall Score: ${score} / ${attempts.length}
+      Overall Score: ${score} / ${normalizedAttempts.length}
       Topic Breakdown: ${JSON.stringify(topicBreakdown)}
 
       Provide a blunt, honest review (2-3 sentences). 

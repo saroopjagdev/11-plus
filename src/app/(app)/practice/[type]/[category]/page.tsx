@@ -133,6 +133,28 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
   const difficulty = sParams.difficulty as string
   const start = sParams.start === 'true'
 
+  if (type === 'topic' && mode === 'written' && !isPro) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-center">
+        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-2 border-indigo-50 max-w-md">
+          <div className="h-16 w-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Lock className="h-8 w-8 text-indigo-600" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-800 mb-4">Written Practice is Pro Only</h2>
+          <p className="text-slate-500 mb-8">
+            Upgrade to Pro to unlock written-answer practice, AI marking, and detailed tutor feedback.
+          </p>
+          <Link href="/pricing" className="block w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all">
+            Upgrade to Pro
+          </Link>
+          <Link href="/dashboard" className="block mt-4 text-sm font-bold text-slate-400">
+            Maybe Later
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   // If we're in 'topic' mode and haven't explicitly clicked START, show the Prep Screen
   if (type === 'topic' && !start) {
     const isMission = sParams.mission === 'true'
@@ -146,7 +168,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
     } else {
       const { data: topicMastery } = await supabase
         .from('topic_mastery')
-        .select('accuracy, questions_answered, mastery_level')
+        .select('accuracy, questions_answered')
         .eq('child_id', childId)
         .ilike('topic', decodedCategory)
         .maybeSingle()
@@ -337,6 +359,10 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
   const diffParam = sParams.difficulty
   if (type !== 'mock' && diffParam && typeof diffParam === 'string' && diffParam !== 'Mixed') {
     query = query.eq('difficulty', diffParam)
+  }
+
+  if (type !== 'mock' && !isPro) {
+    query = query.neq('type', 'written')
   }
 
   let shuffled: MockQuestion[] = []

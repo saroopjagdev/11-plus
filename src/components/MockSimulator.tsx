@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { QuestionCard } from '@/components/QuestionCard'
 import { InputQuestion } from '@/components/InputQuestion'
 import { evaluateWrittenAnswer } from '@/app/actions/ai-evaluator'
@@ -10,6 +10,7 @@ import { ProUpsellModal } from '@/components/ProUpsellModal'
 import { Clock, Flag, ChevronRight, ChevronLeft, AlertCircle, CheckCircle2, XCircle, Lock, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { ReportIssueButton } from '@/components/ReportIssueButton'
 
 interface Question {
   id: string
@@ -35,13 +36,106 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
   const [timeLeft, setTimeLeft] = useState(timeLimit * 60)
   const [isFinished, setIsFinished] = useState(false)
   const [isEvaluating, setIsEvaluating] = useState(false)
-  const [results, setResults] = useState<{ score: number, maxScore: number, attempts: any[] } | null>(null)
+  const [results, setResults] = useState<{
+    score: number
+    maxScore: number
+    attempts: {
+      questionId: string
+      selectedAnswer: string | null
+      isCorrect: boolean
+      timeTakenSeconds: number
+      question: Question
+    }[]
+  } | null>(null)
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false)
   const [explanationQuestionId, setExplanationQuestionId] = useState<string | null>(null)
+  const [explanationAnswer, setExplanationAnswer] = useState<string | null>(null)
   const [showUpsell, setShowUpsell] = useState(false)
   const [upsellFeature, setUpsellFeature] = useState({ name: '', desc: '' })
+  const [sessionStartedAt] = useState(() => new Date().toISOString())
+  const questionViewStartedAtRef = useRef<number | null>(null)
+  const questionTimeSpentRef = useRef<Record<string, number>>({})
 
   const currentQuestion = questions[currentIndex]
+
+  const captureCurrentQuestionTime = useCallback(() => {
+    const questionId = currentQuestion?.id
+    if (!questionId) return
+    if (questionViewStartedAtRef.current === null) {
+      questionViewStartedAtRef.current = Date.now()
+      return
+    }
+
+    const elapsedSeconds = Math.max(1, Math.round((Date.now() - questionViewStartedAtRef.current) / 1000))
+    questionTimeSpentRef.current[questionId] = (questionTimeSpentRef.current[questionId] || 0) + elapsedSeconds
+    questionViewStartedAtRef.current = Date.now()
+  }, [currentQuestion?.id])
+
+  const handleFinish = useCallback(async () => {
+    setShowConfirmSubmit(false)
+    setIsEvaluating(true)
+    captureCurrentQuestionTime()
+
+    let totalScore = 0
+    let totalScoredQuestions = 0
+    const finalAttempts = []
+
+    // Evaluate all questions
+    for (const q of questions) {
+      const studentAnswer = answers[q.id]
+      let isCorrect = false
+
+      if (!studentAnswer) {
+        // Unanswered
+        isCorrect = false
+      } else {
+        const isWritten = q.type === 'written' || !q.options || q.options.length === 0
+        if (isWritten) {
+          const result = await evaluateWrittenAnswer(q.question_text, q.correct_answer, studentAnswer)
+          isCorrect = result.score > 0
+        } else {
+          isCorrect = studentAnswer === q.correct_answer
+        }
+      }
+
+      totalScoredQuestions += 1
+      if (isCorrect) totalScore += 1
+
+      finalAttempts.push({
+        questionId: q.id,
+        selectedAnswer: studentAnswer || null,
+        isCorrect: isCorrect,
+        timeTakenSeconds: questionTimeSpentRef.current[q.id] || 0,
+        question: q,
+      })
+    }
+
+    if (childId) {
+      await logPracticeSession({
+        childId,
+        score: totalScore,
+        attempts: finalAttempts,
+        type: 'mock',
+        startedAt: sessionStartedAt,
+        completedAt: new Date().toISOString(),
+      })
+    }
+
+    setResults({
+      score: totalScore,
+      maxScore: totalScoredQuestions,
+      attempts: finalAttempts,
+    })
+
+    setIsEvaluating(false)
+    setIsFinished(true)
+  }, [answers, captureCurrentQuestionTime, childId, questions, sessionStartedAt])
+
+  useEffect(() => {
+    if (questionViewStartedAtRef.current === null) {
+      questionViewStartedAtRef.current = Date.now()
+    }
+  }, [])
 
   // Timer logic
   useEffect(() => {
@@ -51,7 +145,7 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval)
-          handleFinish()
+          void handleFinish()
           return 0
         }
         return prev - 1
@@ -59,7 +153,7 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [isFinished, isEvaluating])
+  }, [handleFinish, isFinished, isEvaluating, currentQuestion?.id])
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
@@ -77,75 +171,16 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
 
   const handleNext = () => {
     if (currentIndex < questions.length - 1) {
+      captureCurrentQuestionTime()
       setCurrentIndex(prev => prev + 1)
     }
   }
 
   const handlePrev = () => {
     if (currentIndex > 0) {
+      captureCurrentQuestionTime()
       setCurrentIndex(prev => prev - 1)
     }
-  }
-
-  const handleFinish = async () => {
-    setShowConfirmSubmit(false)
-    setIsEvaluating(true)
-
-    let totalScore = 0
-    const finalAttempts = []
-
-    // Evaluate all questions
-    for (const q of questions) {
-      const studentAnswer = answers[q.id]
-      let isCorrect = false
-
-      if (!studentAnswer) {
-        // Unanswered
-        isCorrect = false
-      } else {
-        const isWritten = q.type === 'written' || !q.options || q.options.length === 0
-        if (isWritten) {
-          if (!isPro) {
-            isCorrect = true // Treated as completed
-          } else {
-            const result = await evaluateWrittenAnswer(q.question_text, q.correct_answer, studentAnswer)
-            isCorrect = result.score > 0
-          }
-        } else {
-          isCorrect = studentAnswer === q.correct_answer
-        }
-      }
-
-      if (isCorrect) totalScore += 1
-
-      finalAttempts.push({
-        questionId: q.id,
-        selectedAnswer: studentAnswer || null,
-        isCorrect: isCorrect,
-        timeTakenSeconds: 0, // In mock we don't track per question time currently
-        question: q // store question for review screen
-      })
-    }
-
-    if (childId) {
-      await logPracticeSession({
-        childId,
-        score: totalScore,
-        subject: questions[0].subject,
-        topic: 'Mock Exam', // Or specific mock name
-        attempts: finalAttempts,
-        type: 'mock'
-      })
-    }
-
-    setResults({
-      score: totalScore,
-      maxScore: questions.length,
-      attempts: finalAttempts
-    })
-    
-    setIsEvaluating(false)
-    setIsFinished(true)
   }
 
   if (isEvaluating) {
@@ -162,7 +197,7 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
 
   if (isFinished && results) {
     const incorrectAttempts = results.attempts.filter(a => !a.isCorrect)
-    const percentage = Math.round((results.score / results.maxScore) * 100)
+    const percentage = results.maxScore > 0 ? Math.round((results.score / results.maxScore) * 100) : 0
 
     return (
       <div className="h-full overflow-y-auto bg-slate-50 p-4 md:p-8">
@@ -197,6 +232,20 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
                  <p className="text-2xl font-black text-rose-600">{incorrectAttempts.length}</p>
                </div>
              </div>
+
+             <div className="mt-6 flex justify-center">
+               <ReportIssueButton
+                 category="Tracking looks wrong"
+                 childId={childId}
+                 context={{
+                   pageLabel: 'Mock Results',
+                   score: results.score,
+                   maxScore: results.maxScore,
+                   incorrectCount: incorrectAttempts.length,
+                   isPro,
+                 }}
+               />
+             </div>
           </div>
 
           {incorrectAttempts.length > 0 && (
@@ -225,6 +274,7 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
                       <button 
                         onClick={() => {
                           if (isPro) {
+                            setExplanationAnswer(attempt.selectedAnswer)
                             setExplanationQuestionId(attempt.questionId)
                           } else {
                             setUpsellFeature({ 
@@ -243,6 +293,21 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
                         )}
                         View AI Explanation
                       </button>
+                      <div className="mt-3">
+                        <ReportIssueButton
+                          category="Tracking looks wrong"
+                          childId={childId}
+                          questionId={attempt.questionId}
+                          context={{
+                            pageLabel: 'Mock Incorrect Review',
+                            learnerAnswer: attempt.selectedAnswer,
+                            correctAnswer: attempt.question.correct_answer,
+                            topic: attempt.question.topic,
+                            subject: attempt.question.subject,
+                            isPro,
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -253,8 +318,13 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
           {explanationQuestionId && (
             <AiExplanation 
               questionId={explanationQuestionId} 
-              onClose={() => setExplanationQuestionId(null)} 
+              learnerAnswer={explanationAnswer}
+              childId={childId}
               isPro={isPro}
+              onClose={() => {
+                setExplanationQuestionId(null)
+                setExplanationAnswer(null)
+              }} 
             />
           )}
 
@@ -391,7 +461,10 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
               return (
                 <button
                   key={q.id}
-                  onClick={() => setCurrentIndex(i)}
+                  onClick={() => {
+                    captureCurrentQuestionTime()
+                    setCurrentIndex(i)
+                  }}
                   className={`h-10 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all relative ${bgColor}`}
                 >
                   {i + 1}

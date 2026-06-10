@@ -1,20 +1,19 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { QuestionCard } from '@/components/QuestionCard'
 import { InputQuestion } from '@/components/InputQuestion'
 import { evaluateWrittenAnswer } from '@/app/actions/ai-evaluator'
 import { AiExplanation } from '@/components/AiExplanation'
-import { CelebrationModal } from '@/components/CelebrationModal'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, XCircle, ArrowRight, Zap, Info, Clock, Trophy, Target, Star, Sparkles, BookOpen } from 'lucide-react'
+import { CheckCircle2, XCircle, ArrowRight, Trophy, Sparkles, BookOpen } from 'lucide-react'
 import { logPracticeSession } from '@/app/actions/session'
-import { useRouter } from 'next/navigation'
 import confetti from 'canvas-confetti'
 import { ProUpsellModal } from '@/components/ProUpsellModal'
 import { EXAM_TIPS } from '@/lib/constants/exam_tips'
 import { cn } from '@/lib/utils'
 import { Lock } from 'lucide-react'
+import { ReportIssueButton } from '@/components/ReportIssueButton'
 
 interface Question {
   id: string
@@ -41,7 +40,9 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
   const [score, setScore] = useState(0)
-  const [attempts, setAttempts] = useState<{ questionId: string; isCorrect: boolean; timeTakenSeconds: number }[]>([])
+  const [attempts, setAttempts] = useState<
+    { questionId: string; selectedAnswer: string | null; isCorrect: boolean; timeTakenSeconds: number }[]
+  >([])
   const [isFinished, setIsFinished] = useState(false)
   const [isEvaluating, setIsEvaluating] = useState(false)
   const [aiEvaluationResult, setAiEvaluationResult] = useState<{score: number, maxMarks: number, feedback: string} | null>(null)
@@ -50,18 +51,21 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
   const [upsellFeature, setUpsellFeature] = useState({ name: '', desc: '' })
   const [timeLeft, setTimeLeft] = useState(timeLimit ? timeLimit * 60 : null)
   const [showTip, setShowTip] = useState(false)
-  const [sessionStreak, setSessionStreak] = useState(0)
-  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now())
+  const [sessionStreak] = useState(0)
+  const [questionStartTime, setQuestionStartTime] = useState<number>(() => Date.now())
   const [totalPossibleMarks, setTotalPossibleMarks] = useState(0)
+  const [sessionStartedAt] = useState(() => new Date().toISOString())
+  const hasLoggedSessionRef = useRef(false)
 
   const currentQuestion = questions[currentIndex]
   const currentTip = EXAM_TIPS.find(t => t.subject === currentQuestion.subject) || EXAM_TIPS[0]
 
   const [newStreak, setNewStreak] = useState<number | null>(null)
-  const [levelUpData, setLevelUpData] = useState<{ level: number } | null>(null)
 
   useEffect(() => {
-    if (isFinished && childId) {
+    if (isFinished && childId && !hasLoggedSessionRef.current) {
+      hasLoggedSessionRef.current = true
+
       // Confetti burst!
       confetti({
         particleCount: 150,
@@ -73,32 +77,37 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
       logPracticeSession({
         childId,
         score,
-        topic: currentQuestion.topic,
-        subject: currentQuestion.subject,
         attempts: attempts.map(a => ({
           questionId: a.questionId,
           isCorrect: a.isCorrect,
-          selectedAnswer: null, // Simplified for MVP
+          selectedAnswer: a.selectedAnswer,
           timeTakenSeconds: a.timeTakenSeconds
-        }))
+        })),
+        startedAt: sessionStartedAt,
+        completedAt: new Date().toISOString(),
       }).then(res => {
         if (res.success) {
           setNewStreak(res.newStreak)
-          if (res.isLevelUp) {
-            setLevelUpData({ level: res.newLevel })
-          }
         }
       })
     }
-  }, [isFinished, childId, score, attempts])
+  }, [attempts, childId, isFinished, score, sessionStartedAt])
 
   useEffect(() => {
     if (timeLeft === null || isFinished) return
-    if (timeLeft <= 0) {
-      setIsFinished(true)
-      return
-    }
-    const timer = setInterval(() => setTimeLeft(t => (t !== null ? t - 1 : null)), 1000)
+
+    const timer = setInterval(() => {
+      setTimeLeft((remainingTime) => {
+        if (remainingTime === null) return null
+        if (remainingTime <= 1) {
+          clearInterval(timer)
+          setIsFinished(true)
+          return 0
+        }
+        return remainingTime - 1
+      })
+    }, 1000)
+
     return () => clearInterval(timer)
   }, [timeLeft, isFinished])
 
@@ -118,14 +127,12 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
     
     if (isWritten) {
       if (!isPro) {
-        // For Free users: No AI marking, just show feedback
-        earnedMarks = 1 
-        maxMarks = 3 // Default for written
-        setAiEvaluationResult({ 
-          score: 1,
-          maxMarks: 3,
-          feedback: "Upgrade to Pro for personalized AI marking and specific feedback on how to secure all 3 marks." 
+        setUpsellFeature({
+          name: 'AI Written Marking',
+          desc: 'Upgrade to Pro to unlock written-answer marking, step-by-step feedback, and explanations.',
         })
+        setShowUpsell(true)
+        return
       } else {
         setIsEvaluating(true)
         const result = await evaluateWrittenAnswer(currentQuestion.question_text, currentQuestion.correct_answer, selectedAnswer)
@@ -144,11 +151,15 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
     
     const timeTaken = Math.round((Date.now() - questionStartTime) / 1000)
     
-    setAttempts([...attempts, { 
-      questionId: currentQuestion.id, 
-      isCorrect: earnedMarks > 0, 
-      timeTakenSeconds: timeTaken 
-    }])
+    setAttempts([
+      ...attempts,
+      {
+        questionId: currentQuestion.id,
+        selectedAnswer,
+        isCorrect: earnedMarks > 0,
+        timeTakenSeconds: timeTaken,
+      },
+    ])
     setShowFeedback(true)
   }
 
@@ -207,6 +218,20 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
           >
             Go to Dashboard
           </button>
+
+          <div className="mt-5 flex justify-center">
+            <ReportIssueButton
+              category="Tracking looks wrong"
+              childId={childId}
+              context={{
+                pageLabel: 'Practice Session Complete',
+                score,
+                totalPossibleMarks,
+                questionCount: questions.length,
+                isPro,
+              }}
+            />
+          </div>
         </motion.div>
       </div>
     )
@@ -430,6 +455,18 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
                   )}
                   Explain Step-by-Step
                 </button>
+                <ReportIssueButton
+                  category={aiEvaluationResult ? 'Tracking looks wrong' : 'Something failed'}
+                  childId={childId}
+                  questionId={currentQuestion.id}
+                  context={{
+                    pageLabel: 'Practice Session Feedback',
+                    learnerAnswer: selectedAnswer,
+                    isPro,
+                    aiEvaluationResult,
+                    currentIndex,
+                  }}
+                />
                 <button
                   onClick={handleNext}
                   className="w-full sm:w-auto flex items-center justify-center gap-3 px-16 py-5 bg-indigo-600 text-white font-black rounded-[2rem] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 group"
@@ -482,6 +519,9 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
         {showExplanation && (
           <AiExplanation 
             questionId={currentQuestion.id} 
+            learnerAnswer={selectedAnswer}
+            childId={childId}
+            isPro={isPro}
             onClose={() => setShowExplanation(false)} 
           />
         )}

@@ -7,6 +7,7 @@ import { captureLead, submitDiagnostic } from '@/app/actions/diagnostic'
 import { Trophy, BarChart2, ArrowRight, Loader2, Target, Brain, Play, Lock } from 'lucide-react'
 import { CelebrationModal } from '@/components/CelebrationModal'
 import { cn } from '@/lib/utils'
+import { ReportIssueButton } from '@/components/ReportIssueButton'
 
 interface Question {
   id: string
@@ -60,7 +61,7 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
   const [showFeedback, setShowFeedback] = useState(false)
   const [attempts, setAttempts] = useState<{ questionId: string; isCorrect: boolean; topic: string; subject: string }[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [results, setResults] = useState<{ score: number; breakdown: DiagnosticBreakdownItem[]; aiSummary?: string } | null>(null)
+  const [results, setResults] = useState<{ score: number; breakdown: DiagnosticBreakdownItem[]; aiSummary?: string; diagnosticId?: string } | null>(null)
   const [levelUpData, setLevelUpData] = useState<{ level: number } | null>(null)
   const [guestEmail, setGuestEmail] = useState('')
   const [isCapturingLead, setIsCapturingLead] = useState(false)
@@ -118,7 +119,8 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
         setResults({
           score: response.score || attempts.filter(a => a.isCorrect).length,
           aiSummary: response.aiSummary,
-          breakdown: response.topicBreakdown || []
+          breakdown: response.topicBreakdown || [],
+          diagnosticId: response.diagnosticId,
         })
 
         if (response.isLevelUp) {
@@ -379,6 +381,22 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
                 </p>
               </div>
             )}
+
+            <div className="mt-6 flex justify-center">
+              <ReportIssueButton
+                category="Diagnostic result issue"
+                userEmail={userEmail}
+                childId={childId}
+                diagnosticId={results.diagnosticId}
+                context={{
+                  pageLabel: 'Diagnostic Results',
+                  score: results.score,
+                  questionCount: safeQuestions.length,
+                  breakdown: results.breakdown,
+                  aiSummary: results.aiSummary,
+                }}
+              />
+            </div>
           </motion.div>
         </div>
       </div>

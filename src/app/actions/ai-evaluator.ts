@@ -6,6 +6,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
+interface WrittenAnswerEvaluation {
+  success: boolean
+  score: number
+  maxMarks: number
+  feedback: string
+}
+
 export async function evaluateWrittenAnswer(questionText: string, expectedAnswer: string, studentAnswer: string) {
   try {
     const prompt = `
@@ -37,10 +44,23 @@ export async function evaluateWrittenAnswer(questionText: string, expectedAnswer
     })
 
     const result = JSON.parse(response.choices[0].message.content || '{"score": 0, "maxMarks": 1, "feedback": "Evaluation failed."}')
-    return { success: true, score: result.score, maxMarks: result.maxMarks, feedback: result.feedback }
+    const safeScore = Number.isFinite(result.score) ? Number(result.score) : 0
+    const safeMaxMarks = Number.isFinite(result.maxMarks) ? Number(result.maxMarks) : 1
 
-  } catch (error: any) {
+    return {
+      success: true,
+      score: Math.max(0, safeScore),
+      maxMarks: Math.max(1, safeMaxMarks),
+      feedback: typeof result.feedback === 'string' ? result.feedback : 'Keep practicing and aim for a more complete answer.',
+    } satisfies WrittenAnswerEvaluation
+
+  } catch (error: unknown) {
     console.error('AI Evaluation Error:', error)
-    return { success: false, isCorrect: false, feedback: "We couldn't evaluate your answer right now due to a system error. Keep practicing!" }
+    return {
+      success: false,
+      score: 0,
+      maxMarks: 3,
+      feedback: "We couldn't evaluate your answer right now due to a temporary system issue. Keep practicing and try again in a moment!",
+    } satisfies WrittenAnswerEvaluation
   }
 }

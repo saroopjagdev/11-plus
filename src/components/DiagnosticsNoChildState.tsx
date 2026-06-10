@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { ChevronRight, Sparkles, Target } from 'lucide-react'
 import type { DiagnosticTopicBreakdown } from '@/app/actions/diagnostic'
+import { ReportIssueButton } from '@/components/ReportIssueButton'
 
 interface PendingDiagnosticSummary {
   score: number
@@ -145,6 +146,16 @@ export function DiagnosticsNoChildState({
               {pendingDiagnostic ? 'Retake Baseline Instead' : 'Add Child First'}
               <ChevronRight className="h-5 w-5" />
             </Link>
+          </div>
+
+          <div className="mt-5 flex justify-center sm:justify-start">
+            <ReportIssueButton
+              category="Diagnostic result issue"
+              context={{
+                pageLabel: 'Diagnostics No Child State',
+                pendingDiagnostic,
+              }}
+            />
           </div>
         </section>
 

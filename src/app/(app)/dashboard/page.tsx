@@ -20,6 +20,7 @@ import {
   getMasteryTier,
   getProgressToNextTier,
 } from '@/lib/mastery'
+import { normalizeTopic } from '@/lib/tracking'
 
 
 
@@ -92,13 +93,32 @@ export default async function DashboardPage({
   const { data: todaySessions } = childId
     ? await supabase
         .from('sessions')
-        .select('topic')
+        .select('id')
         .eq('child_id', childId)
         .eq('type', 'practice')
         .gte('completed_at', today)
     : { data: [] }
 
-  const completedTopics = Array.from(new Set(todaySessions?.map(s => s.topic).filter(Boolean) || [])) as string[]
+  const todaySessionIds = todaySessions?.map((session) => session.id).filter(Boolean) || []
+  const { data: todayAttempts } = childId && todaySessionIds.length > 0
+    ? await supabase
+        .from('question_attempts')
+        .select(`
+          questions (
+            topic
+          )
+        `)
+        .eq('child_id', childId)
+        .in('session_id', todaySessionIds)
+    : { data: [] }
+
+  const completedTopics = Array.from(
+    new Set(
+      (todayAttempts || [])
+        .map((attempt: { questions?: { topic?: string | null }[] | null }) => normalizeTopic(attempt.questions?.[0]?.topic))
+        .filter(Boolean)
+    )
+  ) as string[]
   const missionsComplete = recommendations.length > 0 && recommendations.every(rec => completedTopics.includes(rec.topic))
 
   return (
