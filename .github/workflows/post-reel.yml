@@ -1,0 +1,52 @@
+name: Post Facebook Reel
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub Actions cron uses UTC.
+    # These run at 07:30 and 17:30 UTC, which is roughly morning/evening UK time.
+    - cron: "30 7 * * *"
+    - cron: "30 17 * * *"
+
+jobs:
+  post-reel:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+      FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+      FACEBOOK_USER_ACCESS_TOKEN: ${{ secrets.FACEBOOK_USER_ACCESS_TOKEN }}
+      FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
+      FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
+      FACEBOOK_TOKEN_CACHE_PATH: scratch/facebook_tokens.json
+      FIXED_CAPTION: ${{ secrets.FIXED_CAPTION }}
+      GRAPH_API_VERSION: v19.0
+      POSTS_PER_RUN: "1"
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+      R2_REELS_PREFIX: reels/
+      R2_MUSIC_PREFIX: music/
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Post reel
+        run: python scripts/post_reel.py
