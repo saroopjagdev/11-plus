@@ -18,6 +18,11 @@ function getEmailRedirectTo(next = '/dashboard', email?: string) {
   return `${baseUrl}/auth/confirm?${params.toString()}`
 }
 
+function getPasswordResetRedirectTo() {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return `${baseUrl}/reset-password`
+}
+
 function getFriendlyAuthError(message: string) {
   if (message.includes('over_email_send_rate_limit')) {
     return "You've requested confirmation emails too quickly. Please wait a few minutes before trying again."
@@ -70,6 +75,32 @@ function buildSignupConfirmRedirect({
   }
 
   return `/signup?${params.toString()}`
+}
+
+function buildForgotPasswordRedirect({
+  message,
+  error,
+  email,
+}: {
+  message?: string
+  error?: string
+  email?: string
+}) {
+  const params = new URLSearchParams()
+
+  if (message) {
+    params.set('message', message)
+  }
+
+  if (error) {
+    params.set('error', error)
+  }
+
+  if (email) {
+    params.set('email', email)
+  }
+
+  return `/forgot-password${params.toString() ? `?${params.toString()}` : ''}`
 }
 
 function createAdminClient() {
@@ -353,4 +384,38 @@ export async function resendEmail(formData: FormData) {
   })
 
   redirect(`/login?${messageParams.toString()}`)
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const supabase = await createClient()
+  const email = (formData.get('email') as string | null)?.trim() || ''
+
+  if (!email) {
+    return redirect(
+      buildForgotPasswordRedirect({
+        error: 'Email is required to send a password reset link.',
+      })
+    )
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: getPasswordResetRedirectTo(),
+  })
+
+  if (error) {
+    const friendlyError = getFriendlyAuthError(error.message)
+    return redirect(
+      buildForgotPasswordRedirect({
+        error: friendlyError,
+        email,
+      })
+    )
+  }
+
+  return redirect(
+    buildForgotPasswordRedirect({
+      message: "If an account exists for that email, we've sent a password reset link.",
+      email,
+    })
+  )
 }

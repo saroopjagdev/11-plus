@@ -43,13 +43,13 @@ export function TopicGuide({ title, content, practiceHref }: TopicGuideProps) {
          ">
             <ReactMarkdown
               components={{
-                h2: ({node, ...props}) => (
+                h2: ({...props}) => (
                   <h2 {...props} className="text-3xl mt-16 mb-8 flex items-center gap-3">
                      <span className="h-8 w-1.5 bg-indigo-600 rounded-full" />
                      {props.children}
                   </h2>
                 ),
-                strong: ({node, ...props}) => {
+                strong: ({...props}) => {
                   const content = String(props.children)
                   if (content.includes('11+ Secret')) {
                      return (
@@ -76,7 +76,7 @@ export function TopicGuide({ title, content, practiceHref }: TopicGuideProps) {
                   }
                   return <strong {...props} />
                 },
-                blockquote: ({node, ...props}) => (
+                blockquote: ({...props}) => (
                    <blockquote className="border-l-8 border-indigo-100 pl-8 italic text-2xl text-slate-400 font-bold my-12">
                       {props.children}
                    </blockquote>
@@ -99,7 +99,7 @@ export function TopicGuide({ title, content, practiceHref }: TopicGuideProps) {
                </div>
             </div>
             <Link 
-              href={practiceHref || '/dashboard#hubs'}
+              href={practiceHref || '/practice'}
               className="px-10 py-5 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
             >
                Take Practice Quiz

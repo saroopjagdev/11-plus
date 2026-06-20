@@ -12,7 +12,6 @@ import { getLevelProgress } from '@/lib/gamification'
 import { AVATAR_COLLECTION } from '@/lib/constants/avatars'
 import {
   LayoutDashboard,
-  BookOpen,
   BarChart3,
   CreditCard,
   Settings,
@@ -69,7 +68,6 @@ export function Sidebar({
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     ...(role === 'parent' ? [{ label: 'Parent View', href: '/parent/dashboard', icon: Sparkles }] : []),
     { label: 'Diagnostics', href: '/diagnostics', icon: Target },
-    { label: 'Practice Hubs', href: '/dashboard#hubs', icon: BookOpen },
     { label: 'Mocks', href: '/practice/mock/Mixed', icon: ClipboardCheck },
     { label: 'Topic Library', href: '/library', icon: GraduationCap },
     { label: 'Performance', href: '/analytics', icon: BarChart3 },
@@ -118,9 +116,14 @@ export function Sidebar({
           </Link>
 
           {/* Nav Links */}
-          <nav className="flex-1 space-y-1 overflow-hidden">
+          <nav className="flex-1 space-y-1 overflow-y-auto pr-1 min-h-0">
             {navItems.map((item) => {
-              const isActive = item.href === '/diagnostics' ? pathname.startsWith('/diagnostics') : pathname === item.href
+              const isActive =
+                item.href === '/diagnostics'
+                  ? pathname.startsWith('/diagnostics')
+                  : item.href === '/practice/mock/Mixed'
+                      ? pathname.startsWith('/practice/mock')
+                      : pathname === item.href
               
               if (item.isAction) {
                 return (
@@ -161,7 +164,7 @@ export function Sidebar({
           </nav>
 
           {/* Bottom Section */}
-          <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="space-y-3 pt-4 border-t border-slate-100 shrink-0">
             {/* Pro Card */}
             {!isPro && (
               <Link href="/pricing" className="block p-3 bg-slate-900 rounded-xl relative overflow-hidden group">

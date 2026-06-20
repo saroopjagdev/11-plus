@@ -91,9 +91,9 @@ export default async function LoginPage({
             </div>
 
             <div className="text-sm">
-              <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
+              <Link href="/forgot-password" className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
                 Forgot password?
-              </a>
+              </Link>
             </div>
           </div>
 

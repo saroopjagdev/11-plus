@@ -3,16 +3,10 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Target, 
   Calendar, 
   ChevronRight, 
-  Sparkles, 
   Brain, 
-  BarChart3, 
-  Zap, 
   Check,
-  Plus,
-  X
 } from 'lucide-react'
 import { updateChildGoals } from '@/app/actions/children'
 import { cn } from '@/lib/utils'
@@ -48,31 +42,13 @@ export function ConversionOnboarding({ childId, childName, isOpen, onClose }: Co
         examDate
       })
       router.refresh()
-      setStep(4) // Move to "Pro Offer" or "Finish"
+      setStep(3)
     } catch (err) {
       console.error(err)
     } finally {
       setIsSubmitting(false)
     }
   }
-
-  const steps = [
-    {
-      title: "Exam Countdown",
-      desc: `Let's personalize the experience for ${childName}. When is the big day?`,
-      icon: <Calendar className="h-6 w-6 text-indigo-600" />
-    },
-    {
-      title: "Focus Areas",
-      desc: "Which subjects should we prioritize to ensure success?",
-      icon: <Brain className="h-6 w-6 text-violet-600" />
-    },
-    {
-      title: "Why Go Pro?",
-      desc: "Unlock the full potential of AI-powered 11+ preparation.",
-      icon: <Sparkles className="h-6 w-6 text-amber-500" />
-    }
-  ]
 
   if (!isOpen) return null
 
@@ -85,7 +61,7 @@ export function ConversionOnboarding({ childId, childName, isOpen, onClose }: Co
       >
         {/* Progress Bar */}
         <div className="flex h-2 bg-slate-100 overflow-hidden rounded-t-[3rem]">
-           {[1, 2, 3, 4].map((s) => (
+           {[1, 2, 3].map((s) => (
              <div 
               key={s} 
               className={cn(
@@ -111,7 +87,7 @@ export function ConversionOnboarding({ childId, childName, isOpen, onClose }: Co
                     <Calendar className="h-6 w-6 text-indigo-600" />
                   </div>
                   <h2 className="text-3xl font-black text-slate-900 leading-tight">Exam Countdown</h2>
-                  <p className="text-slate-500 font-medium text-sm">We'll build a custom roadmap based on your remaining prep time.</p>
+                  <p className="text-slate-500 font-medium text-sm">We&apos;ll build a custom roadmap based on your remaining prep time.</p>
                 </div>
 
                 <div className="space-y-4">
@@ -175,11 +151,12 @@ export function ConversionOnboarding({ childId, childName, isOpen, onClose }: Co
                 </div>
 
                 <button 
-                  onClick={() => setStep(3)}
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
                 >
-                  Confirm Priority
-                  <ChevronRight className="h-5 w-5" />
+                  {isSubmitting ? 'Saving setup...' : 'Save and continue'}
+                  {!isSubmitting && <ChevronRight className="h-5 w-5" />}
                 </button>
               </motion.div>
             )}
@@ -187,60 +164,6 @@ export function ConversionOnboarding({ childId, childName, isOpen, onClose }: Co
             {step === 3 && (
               <motion.div
                 key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div className="space-y-2">
-                   <div className="h-12 w-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-4">
-                    <Sparkles className="h-6 w-6 text-amber-500" />
-                  </div>
-                  <h2 className="text-3xl font-black text-slate-900 leading-tight">Unlock Your Full Potential</h2>
-                  <p className="text-slate-500 font-medium">Upgrade to <span className="font-bold text-slate-900">Ace 11+ Pro</span> for the most advanced preparation toolkit.</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50">
-                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
-                      <Zap className="h-5 w-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <p className="font-black text-slate-900 text-sm">Unlimited AI Tutor Guidance</p>
-                      <p className="text-xs text-slate-500 font-medium">Get step-by-step help on every tricky question.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50">
-                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
-                      <BarChart3 className="h-5 w-5 text-violet-600" />
-                    </div>
-                    <div>
-                      <p className="font-black text-slate-900 text-sm">Full Mock Exams</p>
-                      <p className="text-xs text-slate-500 font-medium">Timed papers that mirror the real GL & CEM exams.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <button 
-                    onClick={handleSubmit}
-                    className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-200"
-                  >
-                    {isSubmitting ? "Saving Goals..." : "Complete Setup"}
-                  </button>
-                  <button 
-                    onClick={handleSubmit}
-                    className="w-full py-4 text-slate-400 font-bold text-sm hover:text-slate-600 transition-all"
-                  >
-                    I'll explore for now
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {step === 4 && (
-              <motion.div
-                key="step4"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center py-12 space-y-8"
@@ -251,8 +174,8 @@ export function ConversionOnboarding({ childId, childName, isOpen, onClose }: Co
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-slate-900">You're All Set!</h2>
-                  <p className="text-slate-500 font-medium">Your personalized 11+ roadmap is ready.</p>
+                  <h2 className="text-3xl font-black text-slate-900">You&apos;re all set!</h2>
+                  <p className="text-slate-500 font-medium">{childName}&apos;s profile is ready and the dashboard has been tailored around the exam date you chose.</p>
                 </div>
                 <button 
                   onClick={onClose}

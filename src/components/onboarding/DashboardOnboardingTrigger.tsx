@@ -15,7 +15,7 @@ export function DashboardOnboardingTrigger({ childId, childName, hasCompletedOnb
   useEffect(() => {
     // Show onboarding if not completed
     if (!hasCompletedOnboarding) {
-      const timer = setTimeout(() => setShowOnboarding(true), 1500) // Delay for better UX
+      const timer = setTimeout(() => setShowOnboarding(true), 250)
       return () => clearTimeout(timer)
     }
   }, [hasCompletedOnboarding])
