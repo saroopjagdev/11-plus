@@ -21,6 +21,7 @@ interface GuestDiagnosticCache {
 export function ClaimResultsPrompt({ childId, shouldClearGuestCache = false }: ClaimResultsPromptProps) {
   const [isDismissed, setIsDismissed] = useState(false)
   const [isClaiming, setIsClaiming] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export function ClaimResultsPrompt({ childId, shouldClearGuestCache = false }: C
   const handleClaim = async () => {
     if (!guestData || !childId) return
     setIsClaiming(true)
+    setErrorMessage(null)
 
     try {
       const response = await claimGuestDiagnostic(childId, guestData)
@@ -64,9 +66,12 @@ export function ClaimResultsPrompt({ childId, shouldClearGuestCache = false }: C
         localStorage.removeItem('ace_diagnostic_guest')
         setIsDismissed(true)
         router.refresh()
+      } else {
+        setErrorMessage(response.error || 'We could not claim that diagnostic right now.')
       }
     } catch (error) {
       console.error('Failed to claim results', error)
+      setErrorMessage('We could not claim that diagnostic right now.')
     } finally {
       setIsClaiming(false)
     }
@@ -113,6 +118,14 @@ export function ClaimResultsPrompt({ childId, shouldClearGuestCache = false }: C
             </button>
           </div>
         </div>
+
+        {errorMessage && (
+          <div className="max-w-6xl mx-auto px-4 pb-4">
+            <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-indigo-50">
+              {errorMessage}
+            </div>
+          </div>
+        )}
 
         <div className="absolute top-0 right-1/4 h-full w-40 bg-gradient-to-l from-white/10 to-transparent skew-x-12 pointer-events-none" />
       </motion.div>

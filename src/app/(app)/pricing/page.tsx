@@ -37,22 +37,21 @@ export default async function PricingPage() {
           </div>
         )}
         <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">
-          {isReferred ? "Your friend got you a deal." : "Invest in their success."}
+          {isReferred ? 'Your friend got you a deal.' : 'Invest in their success.'}
         </h1>
         <p className="text-slate-500 text-base max-w-xl mx-auto">
-          {isReferred 
-            ? "Join Ace 11+ Pro today and get 50% off your first month after your trial ends."
-            : "Choose the plan that gives your child the edge in their 11+ preparation."
+          {isReferred
+            ? 'Join Ace 11+ Pro today and get 50% off your first month after your trial ends.'
+            : 'Choose the plan that gives your child the edge in their 11+ preparation.'
           }
         </p>
       </header>
 
       <div className="grid md:grid-cols-2 gap-6 items-start">
-        {/* Standard Plan */}
         <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
           <div className="mb-6">
             <h3 className="text-xl font-bold text-slate-900 mb-1">Standard</h3>
-            <p className="text-slate-500 text-xs">Perfect for baseline diagnostics.</p>
+            <p className="text-slate-500 text-xs">Perfect for baseline diagnostics and day-to-day practice.</p>
           </div>
 
           <div className="mb-6">
@@ -62,11 +61,11 @@ export default async function PricingPage() {
 
           <div className="space-y-3 mb-6">
             <FeatureItem label="1 Full Diagnostic Baseline" />
-            <FeatureItem label="5 Daily Practice Questions" />
+            <FeatureItem label="Unlimited topic practice" />
             <FeatureItem label="Basic Topic Mastery Stats" />
             <FeatureItem label="Single Student Profile" />
-            <FeatureItem label="Limited AI Explanations" disabled />
-            <FeatureItem label="Full Mock Exams" disabled />
+            <FeatureItem label="AI tutor explanations" disabled />
+            <FeatureItem label="Written practice and full mocks" disabled />
           </div>
 
           <button
@@ -77,7 +76,6 @@ export default async function PricingPage() {
           </button>
         </div>
 
-        {/* Pro Plan */}
         <div className="bg-slate-900 p-6 rounded-[2.5rem] border-4 border-indigo-500 shadow-2xl shadow-indigo-200 relative overflow-hidden transform scale-105 z-10">
           <div className="absolute top-0 right-0 p-3">
             <div className="bg-indigo-500 text-white px-2 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest">Most Popular</div>
@@ -92,17 +90,17 @@ export default async function PricingPage() {
           </div>
 
           <div className="mb-6 relative z-10">
-            <span className="text-4xl font-black text-white">£19.99</span>
+            <span className="text-4xl font-black text-white">&pound;19.99</span>
             <span className="text-slate-400 font-bold ml-2">/ month</span>
           </div>
 
           <div className="space-y-3 mb-6 relative z-10">
-            <FeatureItem label="Unlimited Diagnostic Retakes" invert />
-            <FeatureItem label="Unlimited Daily Drills" invert />
-            <FeatureItem label="Access to all Full Mocks" invert />
-            <FeatureItem label="Unlimited AI Tutor Explanations" invert />
-            <FeatureItem label="Advanced Performance Analytics" invert />
-            <FeatureItem label="Priority Topic Recommendations" invert />
+            <FeatureItem label="Unlimited diagnostic retakes" invert />
+            <FeatureItem label="Unlimited topic practice" invert />
+            <FeatureItem label="Access to all full mocks" invert />
+            <FeatureItem label="Unlimited AI tutor explanations" invert />
+            <FeatureItem label="Advanced performance analytics" invert />
+            <FeatureItem label="Priority topic recommendations" invert />
           </div>
 
           {isPro ? (

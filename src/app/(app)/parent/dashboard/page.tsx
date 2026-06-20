@@ -34,6 +34,7 @@ export default async function ParentDashboardPage() {
 
   if (profile?.role !== 'parent') redirect('/dashboard')
   const profileHasAccess = hasProAccess(profile)
+  const canViewWeeklyReport = profileHasAccess
   const showBilling = canManageBilling(profile)
   const planLabel = getSubscriptionPlanLabel(profile)
   const planCallout = getSubscriptionCallout(profile)
@@ -51,18 +52,20 @@ export default async function ParentDashboardPage() {
   // 3. Get/Generate Weekly Report
   let report: { ai_summary: string } | null = null
 
-  try {
-    report = await getWeeklyReport(child.id)
+  if (canViewWeeklyReport) {
+    try {
+      report = await getWeeklyReport(child.id)
 
-    if (!report) {
-      // Attempt to generate if it's the first visit of the week
-      const genResult = await generateWeeklyReport(child.id)
-      if (genResult.success && genResult.aiSummary) {
-        report = { ai_summary: genResult.aiSummary }
+      if (!report) {
+        // Attempt to generate if it's the first visit of the week
+        const genResult = await generateWeeklyReport(child.id)
+        if (genResult.success && genResult.aiSummary) {
+          report = { ai_summary: genResult.aiSummary }
+        }
       }
+    } catch (error) {
+      console.error('Parent dashboard report load failed:', error)
     }
-  } catch (error) {
-    console.error('Parent dashboard report load failed:', error)
   }
 
   // 4. Get Dashboard Stats
@@ -124,7 +127,21 @@ export default async function ParentDashboardPage() {
                   </div>
                 </div>
 
-                {report ? (
+                {!canViewWeeklyReport ? (
+                  <div className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center">
+                    <Sparkles className="h-12 w-12 text-indigo-400 mx-auto mb-4 opacity-80" />
+                    <p className="text-white font-bold italic">Weekly AI reports are part of Pro.</p>
+                    <p className="text-slate-400 text-sm mt-2 font-medium max-w-md mx-auto">
+                      Upgrade to unlock weekly summaries of patterns, mistakes, and next-step priorities for your child.
+                    </p>
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-white text-slate-900 rounded-2xl font-black text-sm hover:bg-indigo-50 transition-colors"
+                    >
+                      Unlock Pro Reports <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                ) : report ? (
                   <div className="prose prose-invert max-w-none">
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-8 leading-relaxed text-slate-300 text-sm whitespace-pre-wrap">
                       {report.ai_summary}

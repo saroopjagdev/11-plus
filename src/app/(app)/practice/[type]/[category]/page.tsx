@@ -1,7 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { hasProAccess } from '@/lib/entitlements'
-import {
-} from '@/lib/mastery'
 import { PracticeSession } from '@/components/PracticeSession'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -155,6 +153,28 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
     )
   }
 
+  if (type === 'topic' && length === 50 && !isPro) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-center">
+        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-2 border-indigo-50 max-w-md">
+          <div className="h-16 w-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Lock className="h-8 w-8 text-indigo-600" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-800 mb-4">50-question practice is Pro only</h2>
+          <p className="text-slate-500 mb-8">
+            Upgrade to Pro to unlock longer stamina sessions, full mocks, and written practice.
+          </p>
+          <Link href="/pricing" className="block w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all">
+            Upgrade to Pro
+          </Link>
+          <Link href={`/practice/topic/${encodeURIComponent(decodedCategory)}`} className="block mt-4 text-sm font-bold text-slate-400">
+            Back to setup
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   // If we're in 'topic' mode and haven't explicitly clicked START, show the Prep Screen
   if (type === 'topic' && !start) {
     const isMission = sParams.mission === 'true'
@@ -166,12 +186,14 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
        // Instead, we'll just fall through to the question fetching logic below.
        // We'll set 'start' to true effectively by skipping this block.
     } else {
-      const { data: topicMastery } = await supabase
-        .from('topic_mastery')
-        .select('accuracy, questions_answered')
-        .eq('child_id', childId)
-        .ilike('topic', decodedCategory)
-        .maybeSingle()
+      const { data: topicMastery } = childId
+        ? await supabase
+            .from('topic_mastery')
+            .select('accuracy, questions_answered')
+            .eq('child_id', childId)
+            .ilike('topic', decodedCategory)
+            .maybeSingle()
+        : { data: null }
 
       // Check if written questions even exist for this topic
       const { count: writtenCount } = await supabase
@@ -225,7 +247,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
                   ].map(opt => (
                     <Link
                       key={opt.val}
-                      href={`?length=${opt.val}&mode=${mode || 'balanced'}&difficulty=${difficulty || 'Mixed'}`}
+                      href={opt.pro && !isPro ? '/pricing' : `?length=${opt.val}&mode=${mode || 'balanced'}&difficulty=${difficulty || 'Mixed'}`}
                       className={cn(
                         "p-4 rounded-2xl border-2 transition-all group relative",
                         finalLength === opt.val ? "border-indigo-600 bg-indigo-50" : "border-slate-100 bg-white hover:border-indigo-200"
@@ -395,7 +417,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
     const mockError = easyPool.error || mediumPool.error || hardPool.error
     if (mockError) {
       console.error('Mock query error:', mockError)
-      redirect('/dashboard?error=no_questions')
+      return <NoQuestionsState category={decodedCategory} backHref="/practice/mock/Mixed" />
     }
 
     const balancedQuestions = takeBalancedQuestions(
@@ -407,7 +429,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
 
     if (balancedQuestions.length === 0) {
       console.log('Redirecting to dashboard due to 0 mock questions found for:', decodedCategory)
-      redirect('/dashboard?error=no_questions')
+      return <NoQuestionsState category={decodedCategory} backHref="/practice/mock/Mixed" />
     }
 
     shuffled = balancedQuestions
@@ -418,7 +440,10 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
 
     if (error || !questions || questions.length === 0) {
       console.log('Redirecting to dashboard due to 0 questions found for:', decodedCategory)
-      redirect('/dashboard?error=no_questions')
+      const backHref = type === 'topic'
+        ? `/practice/topic/${encodeURIComponent(decodedCategory)}`
+        : '/dashboard'
+      return <NoQuestionsState category={decodedCategory} backHref={backHref} />
     }
 
     shuffled = shuffleArray(questions as MockQuestion[])
@@ -441,6 +466,36 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
           isPro={isPro}
         />
       )}
+    </div>
+  )
+}
+
+function NoQuestionsState({ category, backHref }: { category: string; backHref: string }) {
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="max-w-lg w-full rounded-[3rem] border-2 border-slate-100 bg-white p-10 text-center shadow-xl">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+          <Target className="h-8 w-8" />
+        </div>
+        <h1 className="text-3xl font-black text-slate-900 mb-3">No questions ready yet</h1>
+        <p className="text-slate-500 mb-8">
+          We couldn&apos;t find a usable question set for <span className="font-bold text-slate-700">{category}</span> right now.
+        </p>
+        <div className="space-y-3">
+          <Link
+            href={backHref}
+            className="block w-full rounded-2xl bg-slate-900 px-6 py-4 font-bold text-white hover:bg-indigo-600 transition-all"
+          >
+            Choose another session
+          </Link>
+          <Link
+            href="/dashboard"
+            className="block text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            Back to dashboard
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

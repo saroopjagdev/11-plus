@@ -17,14 +17,17 @@ export default async function StudyPlanPage() {
   
   const child = children[0]
   const recommendations = await getStudentRecommendations(supabase, child.id)
+  const focusRecommendation = recommendations.find((item) => item.type === 'focus') || recommendations[0]
+  const warmupRecommendation = recommendations.find((item) => item.type === 'warmup') || recommendations[1] || recommendations[0]
+  const challengeRecommendation = recommendations.find((item) => item.type === 'challenge') || recommendations[2] || recommendations[0]
 
   const days = [
-    { name: 'Monday', focus: 'Mathematics', task: 'Fractions & Ratios', href: '/practice/topic/Fractions' },
-    { name: 'Tuesday', focus: 'English', task: 'Inference Skills', href: '/practice/topic/Inference' },
-    { name: 'Wednesday', focus: 'Reasoning', task: 'Logic Patterns', href: '/practice/topic/Logic' },
+    { name: 'Monday', focus: warmupRecommendation.subject, task: warmupRecommendation.topic, href: warmupRecommendation.action.href },
+    { name: 'Tuesday', focus: 'English', task: 'Comprehension Practice', href: '/practice/topic/Comprehension?length=10&mission=true' },
+    { name: 'Wednesday', focus: challengeRecommendation.subject, task: challengeRecommendation.topic, href: challengeRecommendation.action.href },
     { name: 'Thursday', focus: 'Mathematics', task: 'Geometry Basics', href: '/practice/topic/Geometry' },
     { name: 'Friday', focus: 'Mixed', task: 'Full Mock Exam', href: '/practice/mock/Mixed' },
-    { name: 'Saturday', focus: 'Review', task: 'Weak Point Focus', href: '/practice/drill/Mixed' },
+    { name: 'Saturday', focus: 'Review', task: focusRecommendation.topic, href: focusRecommendation.action.href },
     { name: 'Sunday', focus: 'Rest', task: 'Mindset & Prep', href: '/library' },
   ]
 

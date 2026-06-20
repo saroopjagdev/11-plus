@@ -306,8 +306,37 @@ export async function claimGuestDiagnostic(
   childId: string,
   data: { score: number; breakdown: DiagnosticTopicBreakdown[]; aiSummary: string }
 ) {
-  await persistDiagnosticForChild(childId, data)
-  return { success: true }
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return { success: false as const, error: 'Please sign in again and try claiming the result.' }
+  }
+
+  const { data: child } = await supabase
+    .from('children')
+    .select('id')
+    .eq('id', childId)
+    .eq('parent_id', user.id)
+    .maybeSingle()
+
+  if (!child) {
+    return { success: false as const, error: 'We could not find the student profile for this result.' }
+  }
+
+  try {
+    await persistDiagnosticForChild(childId, data)
+    return { success: true as const }
+  } catch (error) {
+    console.error('Claim guest diagnostic failed:', error)
+    return {
+      success: false as const,
+      error: 'We could not attach that diagnostic right now. Please try again.',
+    }
+  }
 }
 
 export async function claimLeadDiagnosticForUser(userId: string, childId: string) {

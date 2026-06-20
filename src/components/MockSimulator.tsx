@@ -205,6 +205,12 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
           <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 text-center">
              <h1 className="text-3xl font-black text-slate-900 mb-2">Mock Exam Complete</h1>
              <p className="text-slate-500 mb-8">Great effort! Here is your high-level performance summary.</p>
+
+             {!childId && (
+               <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                 This mock was not saved because no child profile is attached yet.
+               </div>
+             )}
              
              <div className="inline-block relative">
                <svg className="w-48 h-48 transform -rotate-90">
@@ -363,6 +369,11 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col pt-16 lg:pt-0 pb-20 lg:pb-0 h-full overflow-y-auto">
+        {!childId && (
+          <div className="mx-4 mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 lg:mx-8 lg:mt-8">
+            Progress will not save until you add a child profile.
+          </div>
+        )}
         <div className="flex-1 p-4 md:p-8 flex items-center justify-center">
           <div className="w-full max-w-3xl">
             <AnimatePresence mode="wait">

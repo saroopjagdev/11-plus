@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { AVATAR_COLLECTION } from '@/lib/constants/avatars'
-import { Trophy, Flame, Play, Star, ChevronRight } from 'lucide-react'
+import { Trophy, Flame, Play, Star } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function LeaderboardPage() {
@@ -125,7 +125,7 @@ export default async function LeaderboardPage() {
               <p className="text-slate-400 font-medium">Every practice session helps you level up and reach the top. Consistency is the key to 11+ success.</p>
            </div>
            <Link 
-            href="/dashboard"
+            href="/practice"
             className="px-10 py-5 bg-indigo-600 rounded-2xl font-black text-lg hover:bg-white hover:text-indigo-600 transition-all flex items-center gap-3 shadow-2xl shadow-indigo-500/20"
            >
               <Play className="h-5 w-5 fill-current" />

@@ -25,6 +25,8 @@ export async function GET(request: Request) {
     }
   }
 
-  // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  // return the user to a real login recovery path
+  const fallbackUrl = new URL('/login', origin)
+  fallbackUrl.searchParams.set('error', "We couldn't complete sign-in. Please try again.")
+  return NextResponse.redirect(fallbackUrl)
 }

@@ -22,9 +22,8 @@ import {
 } from '@/lib/mastery'
 import { normalizeTopic } from '@/lib/tracking'
 
-
-
 export const dynamic = 'force-dynamic'
+const MISSION_COMPLETION_MIN_ATTEMPTS = 8
 
 export default async function DashboardPage({
   searchParams,
@@ -104,6 +103,7 @@ export default async function DashboardPage({
     ? await supabase
         .from('question_attempts')
         .select(`
+          is_correct,
           questions (
             topic
           )
@@ -112,14 +112,34 @@ export default async function DashboardPage({
         .in('session_id', todaySessionIds)
     : { data: [] }
 
-  const completedTopics = Array.from(
-    new Set(
-      (todayAttempts || [])
-        .map((attempt: { questions?: { topic?: string | null }[] | null }) => normalizeTopic(attempt.questions?.[0]?.topic))
-        .filter(Boolean)
-    )
-  ) as string[]
+  const topicAttemptCounts = new Map<string, { attempts: number; correct: number }>()
+
+  ;(todayAttempts || []).forEach((attempt: {
+    is_correct?: boolean | null
+    questions?: { topic?: string | null }[] | null
+  }) => {
+    const topic = normalizeTopic(attempt.questions?.[0]?.topic)
+    if (!topic) return
+
+    const existing = topicAttemptCounts.get(topic) || { attempts: 0, correct: 0 }
+    existing.attempts += 1
+    if (attempt.is_correct) {
+      existing.correct += 1
+    }
+    topicAttemptCounts.set(topic, existing)
+  })
+
+  // Avoid marking a mission complete from a single accidental click or abandoned session.
+  const completedTopics = recommendations
+    .map((recommendation) => normalizeTopic(recommendation.topic))
+    .filter((topic): topic is string => {
+      if (!topic) return false
+      const progress = topicAttemptCounts.get(topic)
+      return Boolean(progress && progress.attempts >= MISSION_COMPLETION_MIN_ATTEMPTS && progress.correct > 0)
+    })
+
   const missionsComplete = recommendations.length > 0 && recommendations.every(rec => completedTopics.includes(rec.topic))
+  const completedMissionCount = recommendations.filter((rec) => completedTopics.includes(rec.topic)).length
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -160,15 +180,16 @@ export default async function DashboardPage({
                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Daily Goal: 30 Mins</span>
                       </div>
                       <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md uppercase">
-                         {missionsComplete ? "Target Reached! ✨" : `${Math.min(100, Math.round((completedTopics.length / (recommendations.length || 3)) * 100))}% toward goal`}
+                         {missionsComplete ? "Target Reached! ✨" : `${Math.min(100, Math.round((completedMissionCount / (recommendations.length || 3)) * 100))}% toward goal`}
                       </span>
                    </div>
                    <DailyMission 
                      recommendations={recommendations} 
                      childName={children?.[0]?.name || 'Student'} 
                      isComplete={missionsComplete}
-                     completedTopics={completedTopics}
-                   />
+                      completedTopics={completedTopics}
+                      isPro={profileHasAccess}
+                    />
                  </div>
                )}
             </div>

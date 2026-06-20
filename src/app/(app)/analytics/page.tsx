@@ -93,7 +93,7 @@ export default async function AnalyticsPage() {
   const trendData = sessions?.map((session) => {
     const sessionAttempts = attemptsBySession.get(session.id || '')
     const totalQuestions =
-      sessionAttempts?.total || (session.type === 'diagnostic' ? 20 : session.score && session.score > 0 ? session.score : 0)
+      sessionAttempts?.total || (session.type === 'diagnostic' ? 20 : 0)
     const correctAnswers = sessionAttempts?.correct ?? (session.score || 0)
 
     return {

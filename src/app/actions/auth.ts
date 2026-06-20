@@ -110,6 +110,68 @@ function createAdminClient() {
   )
 }
 
+async function upsertStarterChildProfile({
+  supabase,
+  userId,
+  childName,
+  childAge,
+  targetExams,
+  examDate,
+}: {
+  supabase: Awaited<ReturnType<typeof createClient>>
+  userId: string
+  childName: string
+  childAge: number
+  targetExams: string[]
+  examDate: string
+}) {
+  const childPayload = {
+    name: childName,
+    age: childAge,
+    target_exams: targetExams,
+    exam_date: examDate,
+    level: 1,
+    xp: 0,
+    total_points: 0,
+    current_streak: 0,
+    has_completed_onboarding: true,
+  }
+
+  const { data: existingChild } = await supabase
+    .from('children')
+    .select('id')
+    .eq('parent_id', userId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (existingChild?.id) {
+    await supabase
+      .from('children')
+      .update(childPayload)
+      .eq('id', existingChild.id)
+
+    return
+  }
+
+  await supabase.from('children').insert({
+    parent_id: userId,
+    ...childPayload,
+  })
+}
+
+function getFriendlyLoginError(message: string) {
+  if (message.includes('Email not confirmed')) {
+    return 'Your account still needs email confirmation. Use the resend confirmation option below.'
+  }
+
+  if (message.includes('Invalid login credentials')) {
+    return 'Your email or password did not match. If needed, reset your password.'
+  }
+
+  return getFriendlyAuthError(message)
+}
+
 async function attachLeadToUser(leadId: string | null, email: string, userId: string) {
   const admin = createAdminClient()
   const normalizedEmail = email.trim().toLowerCase()
@@ -156,7 +218,7 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    return redirect('/login?error=' + encodeURIComponent(error.message))
+    return redirect('/login?error=' + encodeURIComponent(getFriendlyLoginError(error.message)))
   }
 
   revalidatePath('/', 'layout')
@@ -289,18 +351,13 @@ export async function signUpAndCreateChild(formData: FormData) {
 
     await attachLeadToUser(leadId, email, user.id)
 
-    // Auto-create child profile with details from onboarding planner
-    await supabase.from('children').insert({
-      parent_id: user.id,
-      name: childName,
-      age: childAge,
-      target_exams: targetExams,
-      exam_date: examDate,
-      level: 1,
-      xp: 0,
-      total_points: 0,
-      current_streak: 0,
-      has_completed_onboarding: true
+    await upsertStarterChildProfile({
+      supabase,
+      userId: user.id,
+      childName,
+      childAge,
+      targetExams,
+      examDate,
     })
   }
 

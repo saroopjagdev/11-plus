@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { KeyRound, MailCheck } from 'lucide-react'
 import { requestPasswordReset } from '@/app/actions/auth'
 import { createClient } from '@/lib/supabase/server'
@@ -14,11 +13,8 @@ export default async function ForgotPasswordPage({
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user) {
-    redirect('/dashboard')
-  }
-
   const { error, message, email } = await searchParams
+  const defaultEmail = user?.email || email || ''
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-indigo-50 px-4 py-12 sm:px-6 lg:px-8">
@@ -62,7 +58,7 @@ export default async function ForgotPasswordPage({
                 type="email"
                 autoComplete="email"
                 required
-                defaultValue={email || ''}
+                defaultValue={defaultEmail}
                 className="block w-full rounded-xl border-0 py-3 px-4 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition-all duration-200"
                 placeholder="parent@example.com"
               />

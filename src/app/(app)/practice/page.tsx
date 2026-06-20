@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { PracticeSession } from '@/components/PracticeSession'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { hasProAccess } from '@/lib/entitlements'
 
 export default async function PracticePage() {
   const supabase = await createClient()
@@ -10,6 +12,14 @@ export default async function PracticePage() {
   if (authError || !user) {
     redirect('/login')
   }
+
+  const [{ data: profile }, { data: children }] = await Promise.all([
+    supabase.from('profiles').select('subscription_status').eq('id', user.id).single(),
+    supabase.from('children').select('id').eq('parent_id', user.id).limit(1),
+  ])
+
+  const childId = children?.[0]?.id
+  const isPro = hasProAccess(profile)
 
   // 2. Fetch 10 random questions
   // In a real app, you might want to fetch based on difficulty or topic.
@@ -37,9 +47,6 @@ export default async function PracticePage() {
     )
   }
 
-  // 3. Shuffle questions for variety (since limit is static)
-  const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5)
-
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Simple Practice Header */}
@@ -51,20 +58,17 @@ export default async function PracticePage() {
             </div>
             <span className="font-bold text-slate-800 text-lg">Ace11+ Practice</span>
           </div>
-          <button 
-            onClick={async () => {
-              'use server'
-              redirect('/dashboard')
-            }}
+          <Link
+            href="/dashboard"
             className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
           >
             Quit Session
-          </button>
+          </Link>
         </div>
       </nav>
 
       <main className="max-w-5xl mx-auto pb-20">
-        <PracticeSession questions={shuffledQuestions} />
+        <PracticeSession questions={questions} childId={childId} isPro={isPro} />
       </main>
     </div>
   )

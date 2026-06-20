@@ -6,7 +6,7 @@ import {
   normalizeAppSubscriptionStatus,
 } from '@/lib/entitlements'
 import { redirect } from 'next/navigation'
-import { Settings, User, CreditCard, Bell, Shield, LogOut } from 'lucide-react'
+import { User, CreditCard, Shield, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { signOut } from '@/app/actions/auth'
 
@@ -106,10 +106,13 @@ export default async function SettingsPage() {
               Security
            </h3>
            <div className="space-y-4">
-              <button className="w-full p-4 text-left bg-slate-50 rounded-2xl font-bold text-slate-600 hover:bg-slate-100 transition-all flex items-center justify-between">
+              <Link
+                href="/forgot-password"
+                className="w-full p-4 text-left bg-slate-50 rounded-2xl font-bold text-slate-600 hover:bg-slate-100 transition-all flex items-center justify-between"
+              >
                  Change Password
-                 <span className="text-xs text-slate-400">Last changed 3 months ago</span>
-              </button>
+                 <span className="text-xs text-slate-400">Send reset email</span>
+              </Link>
            </div>
         </section>
 

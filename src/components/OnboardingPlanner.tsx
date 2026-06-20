@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { signUpAndCreateChild } from '@/app/actions/auth'
-import { Sparkles, Target, Zap, ShieldCheck, Check, ArrowRight, User, BookOpen, Loader2 } from 'lucide-react'
+import { Sparkles, Target, ShieldCheck, Check, ArrowRight, User, Loader2 } from 'lucide-react'
 
 export function OnboardingPlanner() {
   const [step, setStep] = useState(1)
@@ -352,11 +352,11 @@ export function OnboardingPlanner() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      Creating Plan...
+                      Creating Account...
                     </>
                   ) : (
                     <>
-                      Save Plan & Start Free Trial
+                      Save Plan & Create Free Account
                       <ArrowRight className="h-5 w-5" />
                     </>
                   )}
@@ -365,7 +365,7 @@ export function OnboardingPlanner() {
 
               <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">
                 <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-                7-Day Trial • Cancel Online Anytime
+                No Card Needed At Signup
               </div>
             </motion.div>
           )}

@@ -188,6 +188,12 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
           </div>
           <h2 className="text-4xl font-black text-slate-800 mb-2">Session Complete!</h2>
           <p className="text-slate-500 mb-8 text-lg">Great effort! Here is how you did:</p>
+
+          {!childId && (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+              This session was not saved because no child profile is attached yet.
+            </div>
+          )}
           
           <div className="text-7xl font-black text-indigo-600 mb-8">
             {score} <span className="text-slate-300 text-4xl">/ {totalPossibleMarks || questions.length}</span>
@@ -244,6 +250,11 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
       <div className="bg-slate-50 border-b border-slate-100 px-6 pt-6 pb-2 shrink-0">
         <div className="max-w-7xl mx-auto w-full">
           <div className="flex flex-col gap-2">
+            {!childId && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                Progress will not save until you add a child profile.
+              </div>
+            )}
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-full uppercase tracking-wider">

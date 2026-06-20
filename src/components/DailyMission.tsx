@@ -20,9 +20,10 @@ interface DailyMissionProps {
   childName: string
   isComplete?: boolean
   completedTopics?: string[]
+  isPro: boolean
 }
 
-export function DailyMission({ recommendations, childName, isComplete, completedTopics = [] }: DailyMissionProps) {
+export function DailyMission({ recommendations, childName, isComplete, completedTopics = [], isPro }: DailyMissionProps) {
   const missionIcons = {
     warmup: <Zap className="h-5 w-5 text-amber-400 fill-current" />,
     focus: <Target className="h-5 w-5 text-indigo-400" />,
@@ -44,7 +45,7 @@ export function DailyMission({ recommendations, childName, isComplete, completed
         <header className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-black tracking-tight">
-              {isComplete ? "Daily Missions Complete! 🎉" : "Today's Mission"}
+              {isComplete ? "Daily Missions Complete!" : "Today's Mission"}
             </h2>
             <p className="text-slate-400 font-medium">
               {isComplete 
@@ -65,12 +66,16 @@ export function DailyMission({ recommendations, childName, isComplete, completed
             <div className="flex-1 p-8 bg-white/5 rounded-[2rem] border border-white/10 backdrop-blur-sm relative overflow-hidden group">
                <div className="relative z-10">
                   <div className="flex items-center gap-2 text-indigo-400 font-black text-[10px] uppercase tracking-widest mb-4">
-                     <Lock className="h-3 w-3" /> Elite Guidance
+                     <Lock className="h-3 w-3" /> {isPro ? 'Elite Guidance' : 'Pro Upgrade'}
                   </div>
                   <h3 className="text-2xl font-black mb-2">Simulate an Exam</h3>
-                  <p className="text-slate-400 text-sm mb-8 max-w-sm">Missions are done, but exam stamina is built in mocks. Try a 40-question timed simulation in your weakest subject.</p>
-                  <Link href="/practice/mock/Mixed" className="inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-900 rounded-2xl font-bold text-sm hover:bg-indigo-50 transition-all shadow-xl shadow-white/5">
-                     Start Full Mock Exam
+                  <p className="text-slate-400 text-sm mb-8 max-w-sm">
+                    {isPro
+                      ? 'Missions are done, but exam stamina is built in mocks. Try a 40-question timed simulation in your weakest subject.'
+                      : "You have finished today's mission. Upgrade to unlock full mock exams and build timed exam stamina with longer papers."}
+                  </p>
+                  <Link href={isPro ? "/practice/mock/Mixed" : "/pricing"} className="inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-900 rounded-2xl font-bold text-sm hover:bg-indigo-50 transition-all shadow-xl shadow-white/5">
+                     {isPro ? 'Start Full Mock Exam' : 'Unlock Full Mock Exams'}
                      <ChevronRight className="h-4 w-4" />
                   </Link>
                </div>
