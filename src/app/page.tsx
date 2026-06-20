@@ -403,9 +403,9 @@ export default function LandingPage() {
                 Start Your 7-Day Free Trial
               </Link>
               <p className="text-center text-slate-400 text-[10px] font-bold mt-4 uppercase tracking-widest leading-relaxed">
-                Card required for verification. <br />
-                No charge until day 7. Your subscription begins <br />
-                automatically unless cancelled.
+                No charge until day 7. <br />
+                Cancel any time before trial ends. <br />
+                Subscription begins automatically unless cancelled.
               </p>
             </div>
           </div>
