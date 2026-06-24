@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { sendEmail } from './resend'
 import { generateWeeklyProgressEmail, generateInactivityNudgeEmail, EMAIL_FALLBACKS } from './ai-emails'
 
 export async function processAutomatedEmails() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   // 1. Fetch eligible profiles (consented and due for email)
   // We'll use a 14-day threshold for nudges and 7-day for weekly reports

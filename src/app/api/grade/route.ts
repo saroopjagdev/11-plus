@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status')
+    .select('subscription_status, lifetime_access')
     .eq('id', user.id)
     .single()
 

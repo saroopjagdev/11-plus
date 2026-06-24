@@ -12,6 +12,7 @@ export interface SubscriptionProfileLike {
   subscription_trial_end?: string | null
   subscription_current_period_end?: string | null
   subscription_cancel_at_period_end?: boolean | null
+  lifetime_access?: boolean | null
 }
 
 export function normalizeAppSubscriptionStatus(
@@ -32,6 +33,7 @@ export function normalizeAppSubscriptionStatus(
 }
 
 export function hasProAccess(profile: SubscriptionProfileLike | null | undefined) {
+  if (profile?.lifetime_access) return true
   const status = normalizeAppSubscriptionStatus(profile?.subscription_status)
   return status === 'trialing' || status === 'active'
 }

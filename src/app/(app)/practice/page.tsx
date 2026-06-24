@@ -14,7 +14,7 @@ export default async function PracticePage() {
   }
 
   const [{ data: profile }, { data: children }] = await Promise.all([
-    supabase.from('profiles').select('subscription_status').eq('id', user.id).single(),
+    supabase.from('profiles').select('subscription_status, lifetime_access').eq('id', user.id).single(),
     supabase.from('children').select('id').eq('parent_id', user.id).limit(1),
   ])
 

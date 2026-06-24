@@ -20,7 +20,7 @@ export default async function AppLayout({
   // 2. Fetch profile for subscription status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status, stripe_customer_id, role')
+    .select('subscription_status, stripe_customer_id, role, lifetime_access')
     .eq('id', user.id)
     .single()
 

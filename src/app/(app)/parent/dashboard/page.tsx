@@ -28,7 +28,7 @@ export default async function ParentDashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, subscription_status, stripe_customer_id')
+    .select('role, subscription_status, stripe_customer_id, lifetime_access')
     .eq('id', user.id)
     .single()
 

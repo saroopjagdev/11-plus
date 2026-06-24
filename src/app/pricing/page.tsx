@@ -20,7 +20,7 @@ export default async function PublicPricingPage() {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('subscription_status, referred_by')
+      .select('subscription_status, referred_by, lifetime_access')
       .eq('id', user.id)
       .single()
 

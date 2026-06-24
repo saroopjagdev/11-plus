@@ -95,7 +95,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
   // 2. Pro check for Mocks
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status')
+    .select('subscription_status, lifetime_access')
     .eq('id', user.id)
     .single()
   const isPro = hasProAccess(profile)
