@@ -10,17 +10,17 @@ export async function GET(request: Request) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  try {
-    const results = await processAutomatedEmails()
-    return NextResponse.json({
-      success: true,
-      processed: results
-    })
-  } catch (error: any) {
-    console.error('Cron Error:', error)
-    return NextResponse.json({
-      success: false,
-      error: error.message
-    }, { status: 500 })
+  // Return immediately so cron-job.org doesn't time out waiting.
+  // processAutomatedEmails runs in the background via waitUntil.
+  const response = NextResponse.json({ success: true, queued: true })
+
+  // @ts-ignore — Next.js exposes waitUntil via the global ExtendableEvent in edge/node runtimes
+  if (typeof globalThis.EdgeRuntime !== 'undefined' && (globalThis as any).waitUntil) {
+    ;(globalThis as any).waitUntil(processAutomatedEmails())
+  } else {
+    // Node runtime: fire-and-forget
+    processAutomatedEmails().catch((err) => console.error('Cron Error:', err))
   }
+
+  return response
 }
