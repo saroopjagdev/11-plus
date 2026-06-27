@@ -46,7 +46,7 @@ export default async function AppLayout({
         avatarUrl={primaryChild?.avatar_url}
         role={profile?.role}
       />
-      <main className="flex-1 lg:pl-72 transition-all duration-300">
+      <main className="flex-1 lg:pl-72 transition-all duration-300 pt-16 lg:pt-0">
         {children}
       </main>
     </div>

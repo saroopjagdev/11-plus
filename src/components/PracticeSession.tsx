@@ -311,9 +311,9 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
       </div>
 
       {/* Main Question Area - Split scrollable panes */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
         <div className={cn(
-          "h-full max-w-7xl mx-auto flex gap-10 p-6 pt-8",
+          "min-h-full max-w-7xl mx-auto flex gap-10 p-6 pt-8 pb-12",
           currentQuestion.passage ? "flex-col lg:flex-row items-stretch" : "items-center justify-center"
         )}>
           {currentQuestion.passage && (
@@ -328,8 +328,8 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
           )}
 
           <div className={cn(
-            "w-full transition-all duration-500 flex flex-col gap-1 overflow-hidden",
-            currentQuestion.passage ? "lg:w-1/2 h-full" : "max-w-4xl mx-auto h-full items-center justify-center"
+            "w-full transition-all duration-500 flex flex-col gap-1",
+            currentQuestion.passage ? "lg:w-1/2" : "max-w-4xl mx-auto items-center justify-center"
           )}>
             {sessionStreak >= 5 && !showFeedback && (
               <motion.div 
@@ -444,47 +444,49 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
               </motion.div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button 
-                  onClick={() => {
-                    if (isPro) {
-                      setShowExplanation(true)
-                    } else {
-                      setUpsellFeature({ 
-                        name: 'AI Tutor Explanations', 
-                        desc: 'Unlock detailed, step-by-step guidance from our child-friendly AI tutor.' 
-                      })
-                      setShowUpsell(true)
-                    }
-                  }}
-                  className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-5 bg-white border-2 border-slate-200 rounded-[2rem] font-black text-slate-600 hover:bg-slate-50 transition-all hover:border-slate-300"
-                >
-                  {isPro ? (
-                    <BookOpen className="h-5 w-5 text-indigo-600" />
-                  ) : (
-                    <Lock className="h-5 w-5 text-slate-400" />
-                  )}
-                  Explain Step-by-Step
-                </button>
-                <ReportIssueButton
-                  category={aiEvaluationResult ? 'Tracking looks wrong' : 'Something failed'}
-                  childId={childId}
-                  questionId={currentQuestion.id}
-                  context={{
-                    pageLabel: 'Practice Session Feedback',
-                    learnerAnswer: selectedAnswer,
-                    isPro,
-                    aiEvaluationResult,
-                    currentIndex,
-                  }}
-                />
+              <div className="flex flex-col gap-3">
                 <button
                   onClick={handleNext}
-                  className="w-full sm:w-auto flex items-center justify-center gap-3 px-16 py-5 bg-indigo-600 text-white font-black rounded-[2rem] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 group"
+                  className="w-full flex items-center justify-center gap-3 px-8 py-5 bg-indigo-600 text-white font-black rounded-[2rem] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 group"
                 >
                   {currentIndex < questions.length - 1 ? 'Next Question' : 'Finish Session'}
                   <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      if (isPro) {
+                        setShowExplanation(true)
+                      } else {
+                        setUpsellFeature({
+                          name: 'AI Tutor Explanations',
+                          desc: 'Unlock detailed, step-by-step guidance from our child-friendly AI tutor.'
+                        })
+                        setShowUpsell(true)
+                      }
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-white border-2 border-slate-200 rounded-[2rem] font-black text-slate-600 hover:bg-slate-50 transition-all hover:border-slate-300 text-sm"
+                  >
+                    {isPro ? (
+                      <BookOpen className="h-5 w-5 text-indigo-600 shrink-0" />
+                    ) : (
+                      <Lock className="h-5 w-5 text-slate-400 shrink-0" />
+                    )}
+                    Explain
+                  </button>
+                  <ReportIssueButton
+                    category={aiEvaluationResult ? 'Tracking looks wrong' : 'Something failed'}
+                    childId={childId}
+                    questionId={currentQuestion.id}
+                    context={{
+                      pageLabel: 'Practice Session Feedback',
+                      learnerAnswer: selectedAnswer,
+                      isPro,
+                      aiEvaluationResult,
+                      currentIndex,
+                    }}
+                  />
+                </div>
               </div>
             </div>
           )}

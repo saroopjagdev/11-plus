@@ -154,16 +154,16 @@ export default async function DashboardPage({
         />
       )}
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-6 lg:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-black text-slate-900 mb-1">Welcome back, {children?.[0]?.name || 'Explorer'}! 👋</h1>
-                <p className="text-slate-500 font-medium">Ready to boost those 11+ scores today?</p>
+            <header className="flex items-center justify-between gap-4 pl-12 lg:pl-0">
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-3xl font-black text-slate-900 mb-1 truncate">Welcome back, {children?.[0]?.name || 'Explorer'}! 👋</h1>
+                <p className="text-slate-500 font-medium text-sm sm:text-base">Ready to boost those 11+ scores today?</p>
               </div>
               {children?.[0] && (
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border border-slate-100 shadow-sm shrink-0">
                    <Star className="h-4 w-4 text-amber-500 fill-current" />
                    <span className="text-sm font-bold text-slate-700">{children[0].total_points} XP</span>
                 </div>
