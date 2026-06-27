@@ -35,10 +35,11 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <Sidebar 
-        userEmail={user.email} 
-        subscriptionStatus={profile?.subscription_status || 'free'} 
+      <Sidebar
+        userEmail={user.email}
+        subscriptionStatus={profile?.subscription_status || 'free'}
         stripeCustomerId={profile?.stripe_customer_id}
+        lifetimeAccess={profile?.lifetime_access}
         childName={primaryChild?.name}
         xp={primaryChild?.xp}
         level={primaryChild?.level}

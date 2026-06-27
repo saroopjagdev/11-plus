@@ -30,6 +30,7 @@ interface SidebarProps {
   userEmail?: string
   subscriptionStatus?: string
   stripeCustomerId?: string | null
+  lifetimeAccess?: boolean | null
   childName?: string
   xp?: number
   level?: number
@@ -48,6 +49,7 @@ export function Sidebar({
   userEmail,
   subscriptionStatus,
   stripeCustomerId,
+  lifetimeAccess,
   childName,
   xp,
   level,
@@ -59,6 +61,7 @@ export function Sidebar({
   const profile = {
     subscription_status: subscriptionStatus,
     stripe_customer_id: stripeCustomerId,
+    lifetime_access: lifetimeAccess,
   }
   const isPro = hasProAccess(profile)
   const canOpenBilling = canManageBilling(profile)
