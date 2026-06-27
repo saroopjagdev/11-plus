@@ -156,7 +156,7 @@ export default async function SignupPage({
                 <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-500 text-center">
                   {isRateLimited
                     ? 'We recently sent a confirmation email. Please wait a few minutes before requesting another.'
-                    : 'Once you&apos;ve confirmed, return here and sign in with the same email and password.'}
+                    : "Once you've confirmed, return here and sign in with the same email and password."}
                 </div>
               </div>
 

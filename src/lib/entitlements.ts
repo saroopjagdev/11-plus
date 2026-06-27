@@ -45,6 +45,8 @@ export function canManageBilling(profile: SubscriptionProfileLike | null | undef
 export function getSubscriptionPlanLabel(
   profile: SubscriptionProfileLike | null | undefined
 ) {
+  if (profile?.lifetime_access) return 'Lifetime Pro'
+
   const status = normalizeAppSubscriptionStatus(profile?.subscription_status)
 
   switch (status) {
@@ -64,6 +66,8 @@ export function getSubscriptionPlanLabel(
 export function getSubscriptionCallout(
   profile: SubscriptionProfileLike | null | undefined
 ) {
+  if (profile?.lifetime_access) return 'You have lifetime Pro access with full access to Mocks and AI analysis.'
+
   const status = normalizeAppSubscriptionStatus(profile?.subscription_status)
 
   switch (status) {

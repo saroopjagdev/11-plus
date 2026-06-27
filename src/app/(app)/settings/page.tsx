@@ -80,6 +80,9 @@ export default async function SettingsPage() {
                         {normalizedStatus === 'trialing' && (
                           <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-wider">7-Day Trial</span>
                         )}
+                        {profile?.lifetime_access && (
+                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase tracking-wider">Lifetime</span>
+                        )}
                      </div>
                   </div>
                </div>
