@@ -170,6 +170,20 @@ export default async function DashboardPage({
               )}
             </header>
 
+            {/* Mock Exam shortcut — visible on mobile where the sidebar card is buried */}
+            {profileHasAccess && (
+              <Link
+                href="/practice/mock/Mixed"
+                className="flex items-center justify-between bg-indigo-600 text-white rounded-2xl px-6 py-4 lg:hidden hover:bg-indigo-500 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <ClipboardCheck className="h-5 w-5" />
+                  <span className="font-black text-sm">Start a Mock Exam</span>
+                </div>
+                <ChevronRight className="h-5 w-5 opacity-70" />
+              </Link>
+            )}
+
             {/* Today's Mission & Roadmap */}
             <div className="space-y-6">
                {recommendations.length > 0 && (
