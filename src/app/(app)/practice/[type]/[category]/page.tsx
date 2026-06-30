@@ -7,6 +7,7 @@ import { ArrowLeft, Lock, Clock, Target, Play } from 'lucide-react'
 import { MockSimulator } from '@/components/MockSimulator'
 import { cn } from '@/lib/utils'
 import { shuffleArray } from '@/lib/random'
+import { pickStartingDifficulty, type Difficulty } from '@/lib/adaptive'
 
 interface PageProps {
   params: Promise<{
@@ -25,6 +26,7 @@ type MockQuestion = {
   topic: string
   type?: string
   difficulty?: 'Easy' | 'Medium' | 'Hard'
+  explanation?: string
   passage?: {
     title: string
     content: string
@@ -388,6 +390,8 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
   }
 
   let shuffled: MockQuestion[] = []
+  let adaptivePool: MockQuestion[] | undefined
+  let startingDifficulty: Difficulty = 'Medium'
 
   if (type === 'mock') {
     const poolSize = Math.max(limit * 2, 30)
@@ -434,11 +438,17 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
 
     shuffled = balancedQuestions
   } else {
-    const { data: questions, error } = await query.limit(limit)
-    console.log('Questions found:', questions?.length || 0)
+    // Pull a larger pool from the topic, not just the first `limit` rows.
+    // Without this, Postgres returns the same first N rows every time and we
+    // only ever reshuffle the *same* questions — so each "new set" looks
+    // identical. Fetching the whole topic pool and sampling from it means
+    // different sessions draw genuinely different questions.
+    const POOL_CAP = 300
+    const { data: pool, error } = await query.limit(POOL_CAP)
+    console.log('Questions found:', pool?.length || 0)
     if (error) console.error('Query Error:', error)
 
-    if (error || !questions || questions.length === 0) {
+    if (error || !pool || pool.length === 0) {
       console.log('Redirecting to dashboard due to 0 questions found for:', decodedCategory)
       const backHref = type === 'topic'
         ? `/practice/topic/${encodeURIComponent(decodedCategory)}`
@@ -446,7 +456,53 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
       return <NoQuestionsState category={decodedCategory} backHref={backHref} />
     }
 
-    shuffled = shuffleArray(questions as MockQuestion[])
+    // Dedupe by id so the same row can never appear twice in one set, then
+    // randomly sample down to the requested length.
+    const seen = new Set<string>()
+    const uniquePool = (pool as MockQuestion[]).filter((q) => {
+      if (seen.has(q.id)) return false
+      seen.add(q.id)
+      return true
+    })
+
+    shuffled = shuffleArray(uniquePool).slice(0, limit)
+
+    // Adaptive difficulty: for standard topic MCQ practice (not a fixed
+    // difficulty, not written mode), serve questions that match the child's
+    // level and adapt as they go, instead of a flat random set. We seed the
+    // starting level from their mastery in this topic, falling back to their
+    // diagnostic baseline.
+    const adaptiveEligible =
+      type === 'topic' && mode !== 'written' && (!diffParam || diffParam === 'Mixed')
+
+    if (adaptiveEligible && childId) {
+      const [{ data: topicMasteryRow }, { data: latestDiagnostic }] = await Promise.all([
+        supabase
+          .from('topic_mastery')
+          .select('accuracy, questions_answered')
+          .eq('child_id', childId)
+          .ilike('topic', decodedCategory)
+          .maybeSingle(),
+        supabase
+          .from('diagnostic_results')
+          .select('score')
+          .eq('child_id', childId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ])
+
+      const diagnosticPct =
+        typeof latestDiagnostic?.score === 'number' ? (latestDiagnostic.score / 20) * 100 : null
+
+      startingDifficulty = pickStartingDifficulty({
+        masteryAccuracy: topicMasteryRow?.accuracy,
+        masteryAnswered: topicMasteryRow?.questions_answered,
+        diagnosticPct,
+      })
+
+      adaptivePool = uniquePool
+    }
   }
 
   return (
@@ -459,11 +515,14 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
           isPro={isPro}
         />
       ) : (
-        <PracticeSession 
-          questions={shuffled} 
-          timeLimit={undefined} 
+        <PracticeSession
+          questions={shuffled}
+          timeLimit={undefined}
           childId={childId}
           isPro={isPro}
+          adaptivePool={adaptivePool}
+          startingDifficulty={startingDifficulty}
+          sessionLength={limit}
         />
       )}
     </div>

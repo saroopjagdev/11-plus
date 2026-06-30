@@ -15,6 +15,9 @@ interface AiExplanationProps {
   childId?: string | null
   sessionId?: string | null
   isPro?: boolean
+  // When the question already ships with a verified explanation, show it
+  // instantly instead of making a live AI call.
+  presetExplanation?: string | null
 }
 
 export function AiExplanation({
@@ -25,15 +28,23 @@ export function AiExplanation({
   childId,
   sessionId,
   isPro = false,
+  presetExplanation,
 }: AiExplanationProps) {
-  const [explanation, setExplanation] = useState<string | null>(null)
+  const [explanation, setExplanation] = useState<string | null>(presetExplanation || null)
   const [answerReview, setAnswerReview] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!presetExplanation)
   const [feedbackGiven, setFeedbackGiven] = useState(false)
   const [errorHeader, setErrorHeader] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
+    // Pre-generated explanation: render immediately, no network call.
+    if (presetExplanation) {
+      setExplanation(presetExplanation)
+      setLoading(false)
+      return
+    }
+
     async function fetchExplanation() {
       try {
         const res = await fetch('/api/explain', {
@@ -57,7 +68,7 @@ export function AiExplanation({
       }
     }
     fetchExplanation()
-  }, [learnerAnswer, questionId])
+  }, [learnerAnswer, questionId, presetExplanation])
 
   const handleFeedback = async (isHelpful: boolean) => {
     setFeedbackGiven(true)

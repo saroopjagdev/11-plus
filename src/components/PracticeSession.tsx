@@ -14,6 +14,7 @@ import { EXAM_TIPS } from '@/lib/constants/exam_tips'
 import { cn } from '@/lib/utils'
 import { Lock } from 'lucide-react'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
+import { pickQuestion, nextTargetDifficulty, type Difficulty } from '@/lib/adaptive'
 
 interface Question {
   id: string
@@ -24,6 +25,7 @@ interface Question {
   topic: string
   type?: string
   difficulty?: 'Easy' | 'Medium' | 'Hard'
+  explanation?: string
   passage_id?: string
   passage?: { title: string; content: string }
 }
@@ -33,9 +35,35 @@ interface PracticeSessionProps {
   timeLimit?: number // in minutes
   childId?: string
   isPro?: boolean
+  // Adaptive mode: when an adaptivePool is supplied, questions are chosen on
+  // the fly to match the child's level instead of stepping through a fixed
+  // list. `questions` is still used as the non-adaptive fallback so every
+  // other caller keeps working unchanged.
+  adaptivePool?: Question[]
+  startingDifficulty?: Difficulty
+  sessionLength?: number
 }
 
-export function PracticeSession({ questions, timeLimit, childId, isPro = false }: PracticeSessionProps) {
+export function PracticeSession({ questions, timeLimit, childId, isPro = false, adaptivePool, startingDifficulty = 'Medium', sessionLength }: PracticeSessionProps) {
+  const adaptive = !!(adaptivePool && adaptivePool.length > 0)
+
+  // In adaptive mode we build the served list one question at a time. We seed
+  // it with a first question at the starting difficulty; subsequent questions
+  // are appended by handleNext based on live performance. We derive the
+  // "already used" set from `served` itself rather than a parallel ref, so the
+  // two can never drift out of sync.
+  const targetDifficultyRef = useRef<Difficulty>(startingDifficulty)
+
+  const [served, setServed] = useState<Question[]>(() => {
+    if (!adaptive) return questions
+    const first = pickQuestion(adaptivePool!, new Set<string>(), startingDifficulty) as Question | null
+    return first ? [first] : []
+  })
+
+  const totalCount = adaptive
+    ? Math.min(sessionLength ?? questions.length, adaptivePool!.length)
+    : questions.length
+  const activeQuestions = adaptive ? served : questions
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
@@ -57,7 +85,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
   const [sessionStartedAt] = useState(() => new Date().toISOString())
   const hasLoggedSessionRef = useRef(false)
 
-  const currentQuestion = questions[currentIndex]
+  const currentQuestion = activeQuestions[currentIndex]
   const currentTip = EXAM_TIPS.find(t => t.subject === currentQuestion.subject) || EXAM_TIPS[0]
 
   const [newStreak, setNewStreak] = useState<number | null>(null)
@@ -111,7 +139,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
     return () => clearInterval(timer)
   }, [timeLeft, isFinished])
 
-  const progress = ((currentIndex + 1) / questions.length) * 100
+  const progress = ((currentIndex + 1) / totalCount) * 100
 
   const handleSelect = (answer: string) => {
     if (showFeedback) return
@@ -163,13 +191,45 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
     setShowFeedback(true)
   }
 
+  const advance = () => {
+    setCurrentIndex(currentIndex + 1)
+    setSelectedAnswer(null)
+    setShowFeedback(false)
+    setAiEvaluationResult(null)
+    setQuestionStartTime(Date.now())
+  }
+
   const handleNext = () => {
+    if (adaptive) {
+      // Session ends once we've served the requested number of questions
+      // (or the pool runs dry).
+      if (currentIndex + 1 >= totalCount) {
+        setIsFinished(true)
+        return
+      }
+
+      // `attempts` already includes the question just answered, so the rolling
+      // window reflects current performance. Nudge difficulty, then draw the
+      // next question to match.
+      const recentResults = attempts.map((a) => a.isCorrect)
+      const nextDifficulty = nextTargetDifficulty(targetDifficultyRef.current, recentResults)
+      targetDifficultyRef.current = nextDifficulty
+
+      // Derive used ids from what's already been served — always in sync.
+      const usedIds = new Set(served.map((q) => q.id))
+      const nextQuestion = pickQuestion(adaptivePool!, usedIds, nextDifficulty) as Question | null
+      if (!nextQuestion) {
+        setIsFinished(true)
+        return
+      }
+
+      setServed((prev) => [...prev, nextQuestion])
+      advance()
+      return
+    }
+
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1)
-      setSelectedAnswer(null)
-      setShowFeedback(false)
-      setAiEvaluationResult(null)
-      setQuestionStartTime(Date.now())
+      advance()
     } else {
       setIsFinished(true)
     }
@@ -196,7 +256,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
           )}
           
           <div className="text-7xl font-black text-indigo-600 mb-8">
-            {score} <span className="text-slate-300 text-4xl">/ {totalPossibleMarks || questions.length}</span>
+            {score} <span className="text-slate-300 text-4xl">/ {totalPossibleMarks || activeQuestions.length}</span>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mt-2">Total Marks Earned</p>
           </div>
 
@@ -233,7 +293,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
                 pageLabel: 'Practice Session Complete',
                 score,
                 totalPossibleMarks,
-                questionCount: questions.length,
+                questionCount: activeQuestions.length,
                 isPro,
               }}
             />
@@ -245,7 +305,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
 
   return (
     <>
-    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden relative">
+    <div className="h-[100dvh] flex flex-col bg-slate-50 overflow-hidden relative">
       {/* Header & Progress - Fixed at Top */}
       <div className="bg-slate-50 border-b border-slate-100 px-6 pt-6 pb-2 shrink-0">
         <div className="max-w-7xl mx-auto w-full">
@@ -263,6 +323,18 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
                 <span className="text-slate-400 text-xs font-bold uppercase tracking-tight">
                   {currentQuestion.topic}
                 </span>
+                {adaptive && currentQuestion.difficulty && (
+                  <span
+                    className={cn(
+                      'px-2 py-0.5 text-[9px] font-bold rounded-md uppercase tracking-wide',
+                      currentQuestion.difficulty === 'Easy' && 'bg-emerald-100 text-emerald-700',
+                      currentQuestion.difficulty === 'Medium' && 'bg-amber-100 text-amber-700',
+                      currentQuestion.difficulty === 'Hard' && 'bg-rose-100 text-rose-700'
+                    )}
+                  >
+                    {currentQuestion.difficulty}
+                  </span>
+                )}
                 {currentQuestion.type === 'written' && (
                   <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded-md uppercase tracking-wide">
                     3 Marks
@@ -283,7 +355,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
               <div className="flex-1">
                  <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                     <span>Progress</span>
-                    <span>{currentIndex + 1} / {questions.length}</span>
+                    <span>{currentIndex + 1} / {totalCount}</span>
                  </div>
                  <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                    <motion.div
@@ -449,7 +521,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
                   onClick={handleNext}
                   className="w-full flex items-center justify-center gap-3 px-8 py-5 bg-indigo-600 text-white font-black rounded-[2rem] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 group"
                 >
-                  {currentIndex < questions.length - 1 ? 'Next Question' : 'Finish Session'}
+                  {currentIndex + 1 < totalCount ? 'Next Question' : 'Finish Session'}
                   <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <div className="flex gap-3">
@@ -530,12 +602,13 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false }
 
       <AnimatePresence>
         {showExplanation && (
-          <AiExplanation 
-            questionId={currentQuestion.id} 
+          <AiExplanation
+            questionId={currentQuestion.id}
             learnerAnswer={selectedAnswer}
             childId={childId}
             isPro={isPro}
-            onClose={() => setShowExplanation(false)} 
+            presetExplanation={currentQuestion.explanation}
+            onClose={() => setShowExplanation(false)}
           />
         )}
         {showUpsell && (

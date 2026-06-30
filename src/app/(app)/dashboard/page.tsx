@@ -116,9 +116,12 @@ export default async function DashboardPage({
 
   ;(todayAttempts || []).forEach((attempt: {
     is_correct?: boolean | null
-    questions?: { topic?: string | null }[] | null
+    // Supabase returns the joined question as an object for a to-one FK, but can
+    // return an array in other shapes. Handle both so the topic is never lost.
+    questions?: { topic?: string | null } | { topic?: string | null }[] | null
   }) => {
-    const topic = normalizeTopic(attempt.questions?.[0]?.topic)
+    const joined = Array.isArray(attempt.questions) ? attempt.questions[0] : attempt.questions
+    const topic = normalizeTopic(joined?.topic)
     if (!topic) return
 
     const existing = topicAttemptCounts.get(topic) || { attempts: 0, correct: 0 }
@@ -138,8 +141,9 @@ export default async function DashboardPage({
       return Boolean(progress && progress.attempts >= MISSION_COMPLETION_MIN_ATTEMPTS && progress.correct > 0)
     })
 
-  const missionsComplete = recommendations.length > 0 && recommendations.every(rec => completedTopics.includes(rec.topic))
-  const completedMissionCount = recommendations.filter((rec) => completedTopics.includes(rec.topic)).length
+  const completedTopicSet = new Set(completedTopics)
+  const missionsComplete = recommendations.length > 0 && recommendations.every(rec => completedTopicSet.has(normalizeTopic(rec.topic)))
+  const completedMissionCount = recommendations.filter((rec) => completedTopicSet.has(normalizeTopic(rec.topic))).length
 
   return (
     <div className="min-h-screen bg-slate-50">

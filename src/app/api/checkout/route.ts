@@ -19,7 +19,7 @@ export async function POST() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('referred_by, stripe_customer_id, subscription_status')
+      .select('referred_by, stripe_customer_id, subscription_status, lifetime_access')
       .eq('id', user.id)
       .single()
 

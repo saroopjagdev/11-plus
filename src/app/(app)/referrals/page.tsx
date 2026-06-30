@@ -13,7 +13,7 @@ export default async function ReferralsPage() {
 
   let profile = await supabase
     .from('profiles')
-    .select('referral_code, referral_count, pending_referral_credits, subscription_status, email')
+    .select('referral_code, referral_count, pending_referral_credits, subscription_status, lifetime_access, email')
     .eq('id', user.id)
     .single()
     .then(res => res.data)
