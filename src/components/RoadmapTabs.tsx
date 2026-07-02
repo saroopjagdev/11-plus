@@ -70,7 +70,7 @@ export function RoadmapTabs({ mastery, curriculum, threshold, minQuestions, isPr
                 ? [
                     {
                       label: 'Arithmetic',
-                      href: '/practice/topic/Arithmetic',
+                      href: '/practice/topic/Arithmetic',  // Arithmetic has no special chars — no encoding needed
                       locked: false,
                       mastered: isTopicMastered(getTopicRecord(mastery, 'Arithmetic')),
                     },
@@ -80,7 +80,7 @@ export function RoadmapTabs({ mastery, curriculum, threshold, minQuestions, isPr
                         const topicRecord = getTopicRecord(mastery, l.topic)
                         return {
                           label: l.topic,
-                          href: `/practice/topic/${l.topic}`,
+                          href: `/practice/topic/${encodeURIComponent(l.topic)}`,
                           locked: !isTopicUnlocked(l.topic, mastery, curriculum),
                           mastered: isTopicMastered(topicRecord),
                           prerequisite: l.prerequisite
@@ -93,7 +93,7 @@ export function RoadmapTabs({ mastery, curriculum, threshold, minQuestions, isPr
                       const topicRecord = getTopicRecord(mastery, l.topic)
                       return {
                         label: l.topic,
-                        href: `/practice/topic/${l.topic}`,
+                        href: `/practice/topic/${encodeURIComponent(l.topic)}`,
                         locked: !isTopicUnlocked(l.topic, mastery, curriculum),
                         mastered: isTopicMastered(topicRecord),
                         prerequisite: l.prerequisite

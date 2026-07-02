@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +17,18 @@ interface QuestionCardProps {
   compact?: boolean
 }
 
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  const copy = [...arr]
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  for (let i = copy.length - 1; i > 0; i--) {
+    hash = (hash * 1664525 + 1013904223) >>> 0
+    const j = hash % (i + 1);
+    [copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
+
 export function QuestionCard({
   question,
   selectedAnswer,
@@ -26,6 +38,11 @@ export function QuestionCard({
   correctAnswer,
   compact = false
 }: QuestionCardProps) {
+  const shuffledOptions = useMemo(
+    () => seededShuffle(question.options, question.question_text),
+    [question.question_text, question.options]
+  )
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <motion.div
@@ -50,7 +67,7 @@ export function QuestionCard({
         </h3>
 
         <div className={cn("grid", showFeedback ? (compact ? 'gap-1.5' : 'gap-2') : compact ? 'gap-2' : 'gap-3')}>
-          {question.options.map((option, index) => {
+          {shuffledOptions.map((option, index) => {
             const isSelected = selectedAnswer === option
             const isCorrect = showFeedback && option === correctAnswer
             const isWrong = showFeedback && isSelected && option !== correctAnswer

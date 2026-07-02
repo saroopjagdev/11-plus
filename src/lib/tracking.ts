@@ -26,6 +26,12 @@ const TOPIC_SUBJECT_OVERRIDES: Record<string, CanonicalSubject> = {
   'number series': 'Verbal Reasoning',
   'word completion': 'Verbal Reasoning',
   analogies: 'Verbal Reasoning',
+  'odd one out': 'Verbal Reasoning',
+  anagrams: 'Verbal Reasoning',
+  'compound words': 'Verbal Reasoning',
+  'move-a-letter': 'Verbal Reasoning',
+  'hidden words': 'Verbal Reasoning',
+  cloze: 'English',
 }
 
 const SUBJECT_NORMALIZATION: Record<string, CanonicalSubject> = {

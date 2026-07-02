@@ -22,11 +22,20 @@ export const CURRICULUM_LADDER: TopicPrerequisite[] = [
   { topic: 'Vocabulary', subject: 'English' },
   { topic: 'Comprehension', subject: 'English', prerequisite: 'Vocabulary' },
 
+  // ENGLISH LADDER (new topics)
+  { topic: 'Cloze', subject: 'English', prerequisite: 'Vocabulary' },
+
   // VERBAL REASONING LADDER
   { topic: 'Synonyms', subject: 'Verbal Reasoning' },
   { topic: 'Antonyms', subject: 'Verbal Reasoning' },
   { topic: 'Coding', subject: 'Verbal Reasoning', prerequisite: 'Synonyms' },
   { topic: 'Number Series', subject: 'Verbal Reasoning' },
+  { topic: 'Analogies', subject: 'Verbal Reasoning', prerequisite: 'Synonyms' },
+  { topic: 'Odd One Out', subject: 'Verbal Reasoning' },
+  { topic: 'Anagrams', subject: 'Verbal Reasoning' },
+  { topic: 'Compound Words', subject: 'Verbal Reasoning' },
+  { topic: 'Move-a-Letter', subject: 'Verbal Reasoning', prerequisite: 'Anagrams' },
+  { topic: 'Hidden Words', subject: 'Verbal Reasoning' },
 ]
 
 export const MASTERY_TIERS = [

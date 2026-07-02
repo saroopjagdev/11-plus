@@ -55,14 +55,17 @@ function takeBalancedQuestions(
   const targets = getMockDifficultyTargets(limit)
   const selected: MockQuestion[] = []
   const usedIds = new Set<string>()
+  const usedText = new Set<string>()
 
   const takeFromPool = (pool: MockQuestion[], count: number) => {
     for (const question of pool) {
       if (selected.length >= limit) break
       if (count <= 0) break
-      if (usedIds.has(question.id)) continue
+      const textKey = (question.question_text || '').trim().toLowerCase()
+      if (usedIds.has(question.id) || (textKey && usedText.has(textKey))) continue
       selected.push(question)
       usedIds.add(question.id)
+      if (textKey) usedText.add(textKey)
       count -= 1
     }
   }
@@ -77,8 +80,11 @@ function takeBalancedQuestions(
 
   for (const question of remaining) {
     if (selected.length >= limit) break
+    const textKey = (question.question_text || '').trim().toLowerCase()
+    if (textKey && usedText.has(textKey)) continue
     selected.push(question)
     usedIds.add(question.id)
+    if (textKey) usedText.add(textKey)
   }
 
   return shuffleArray(selected)
@@ -456,12 +462,17 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
       return <NoQuestionsState category={decodedCategory} backHref={backHref} />
     }
 
-    // Dedupe by id so the same row can never appear twice in one set, then
-    // randomly sample down to the requested length.
-    const seen = new Set<string>()
+    // Dedupe by id AND by question text, then randomly sample down to the
+    // requested length. The id check stops the same row appearing twice; the
+    // text check stops two *different* rows with identical wording (duplicate
+    // content that the old generator produced) landing in the same set.
+    const seenIds = new Set<string>()
+    const seenText = new Set<string>()
     const uniquePool = (pool as MockQuestion[]).filter((q) => {
-      if (seen.has(q.id)) return false
-      seen.add(q.id)
+      const textKey = (q.question_text || '').trim().toLowerCase()
+      if (seenIds.has(q.id) || (textKey && seenText.has(textKey))) return false
+      seenIds.add(q.id)
+      if (textKey) seenText.add(textKey)
       return true
     })
 
