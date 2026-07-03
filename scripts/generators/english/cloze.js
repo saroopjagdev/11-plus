@@ -7,6 +7,13 @@ const DATA = require('../../data/cloze');
 const SUBJECT = 'English';
 const TOPIC = 'Cloze';
 
+const STEMS = [
+  (s) => `Fill in the blank: "${s}"`,
+  (s) => `Choose the word that best completes this sentence: "${s}"`,
+  (s) => `Which word correctly completes this sentence: "${s}"`,
+  (s) => `Select the best word for the blank: "${s}"`,
+];
+
 function generate(difficulty) {
   const tier = DATA.filter((e) => e.difficulty === difficulty);
   const entry = pick(tier.length ? tier : DATA);
@@ -14,7 +21,7 @@ function generate(difficulty) {
 
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `Fill in the blank: "${entry.sentence}"`,
+    question_text: pick(STEMS)(entry.sentence),
     correct: entry.correct,
     distractors: entry.distractors,
     explanation: `"${entry.correct}" is the only option that makes sense in this sentence.`,

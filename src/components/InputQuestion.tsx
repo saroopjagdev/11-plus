@@ -8,6 +8,7 @@ interface InputQuestionProps {
   question: {
     question_text: string
     type?: string
+    max_marks?: number
   }
   selectedAnswer: string | null
   onSelect: (answer: string) => void
@@ -49,7 +50,9 @@ export function InputQuestion({
           "font-bold text-slate-800 leading-snug whitespace-pre-wrap transition-all",
           showFeedback ? "text-sm mb-3" : "text-lg sm:text-xl mb-4"
         )}>
-          {question.question_text} {question.type === 'written' && <span className="text-slate-400 font-medium">(3 marks)</span>}
+          {question.question_text} {question.type === 'written' && (
+            <span className="text-slate-400 font-medium">({question.max_marks ?? 3} mark{(question.max_marks ?? 3) === 1 ? '' : 's'})</span>
+          )}
         </h3>
 
         <div className="grid gap-3">

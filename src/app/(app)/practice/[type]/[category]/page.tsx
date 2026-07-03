@@ -47,11 +47,22 @@ function takeBalancedQuestions(
   easyQuestions: MockQuestion[],
   mediumQuestions: MockQuestion[],
   hardQuestions: MockQuestion[],
-  limit: number
+  limit: number,
+  historicIds?: Set<string>
 ) {
-  const shuffledEasy = shuffleArray(easyQuestions)
-  const shuffledMedium = shuffleArray(mediumQuestions)
-  const shuffledHard = shuffleArray(hardQuestions)
+  // Within each difficulty bucket, prefer questions this child hasn't seen
+  // before (any past session) — same rationale as the topic-practice path:
+  // a finite pool shouldn't feel stale just because it's finite.
+  const preferFresh = (pool: MockQuestion[]) => {
+    if (!historicIds || historicIds.size === 0) return shuffleArray(pool)
+    const fresh = pool.filter((q) => !historicIds.has(q.id))
+    const seen = pool.filter((q) => historicIds.has(q.id))
+    return [...shuffleArray(fresh), ...shuffleArray(seen)]
+  }
+
+  const shuffledEasy = preferFresh(easyQuestions)
+  const shuffledMedium = preferFresh(mediumQuestions)
+  const shuffledHard = preferFresh(hardQuestions)
   const targets = getMockDifficultyTargets(limit)
   const selected: MockQuestion[] = []
   const usedIds = new Set<string>()
@@ -398,6 +409,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
   let shuffled: MockQuestion[] = []
   let adaptivePool: MockQuestion[] | undefined
   let startingDifficulty: Difficulty = 'Medium'
+  let historicIds: string[] = []
 
   if (type === 'mock') {
     const poolSize = Math.max(limit * 2, 30)
@@ -430,11 +442,28 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
       return <NoQuestionsState category={decodedCategory} backHref="/practice/mock/Mixed" />
     }
 
+    const mockPoolIds = [
+      ...(easyPool.data || []),
+      ...(mediumPool.data || []),
+      ...(hardPool.data || []),
+    ].map((q) => (q as MockQuestion).id)
+
+    let mockHistoricIds: Set<string> | undefined
+    if (childId && mockPoolIds.length > 0) {
+      const { data: historicRows } = await supabase
+        .from('question_attempts')
+        .select('question_id')
+        .eq('child_id', childId)
+        .in('question_id', mockPoolIds)
+      mockHistoricIds = new Set((historicRows || []).map((r) => r.question_id))
+    }
+
     const balancedQuestions = takeBalancedQuestions(
       (easyPool.data || []) as MockQuestion[],
       (mediumPool.data || []) as MockQuestion[],
       (hardPool.data || []) as MockQuestion[],
-      limit
+      limit,
+      mockHistoricIds
     )
 
     if (balancedQuestions.length === 0) {
@@ -476,7 +505,35 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
       return true
     })
 
-    shuffled = shuffleArray(uniquePool).slice(0, limit)
+    // Recency-aware ordering: a topic pool of 30 feels infinite if a child
+    // never sees the same question twice before it's exhausted, and small if
+    // we keep re-serving their most recent ones. We look up which of these
+    // questions this child has answered before (any past session) and push
+    // never-seen questions to the front, with previously-seen ones ordered
+    // oldest-last-seen-first as the fallback once fresh supply runs out.
+    if (childId) {
+      const { data: historicRows } = await supabase
+        .from('question_attempts')
+        .select('question_id, created_at')
+        .eq('child_id', childId)
+        .in('question_id', uniquePool.map((q) => q.id))
+        .order('created_at', { ascending: false })
+
+      const lastSeenMap = new Map<string, string>()
+      for (const row of historicRows || []) {
+        if (!lastSeenMap.has(row.question_id)) lastSeenMap.set(row.question_id, row.created_at)
+      }
+      historicIds = [...lastSeenMap.keys()]
+
+      const unseen = uniquePool.filter((q) => !lastSeenMap.has(q.id))
+      const seenOldestFirst = uniquePool
+        .filter((q) => lastSeenMap.has(q.id))
+        .sort((a, b) => new Date(lastSeenMap.get(a.id)!).getTime() - new Date(lastSeenMap.get(b.id)!).getTime())
+
+      shuffled = [...shuffleArray(unseen), ...seenOldestFirst].slice(0, limit)
+    } else {
+      shuffled = shuffleArray(uniquePool).slice(0, limit)
+    }
 
     // Adaptive difficulty: for standard topic MCQ practice (not a fixed
     // difficulty, not written mode), serve questions that match the child's
@@ -534,6 +591,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
           adaptivePool={adaptivePool}
           startingDifficulty={startingDifficulty}
           sessionLength={limit}
+          historicIds={historicIds}
         />
       )}
     </div>

@@ -28,6 +28,7 @@ interface Question {
   explanation?: string
   passage_id?: string
   passage?: { title: string; content: string }
+  max_marks?: number
 }
 
 interface PracticeSessionProps {
@@ -42,10 +43,16 @@ interface PracticeSessionProps {
   adaptivePool?: Question[]
   startingDifficulty?: Difficulty
   sessionLength?: number
+  // Question IDs this child has answered before, in any past session — used
+  // to softly deprioritise repeats in adaptive mode so a small topic pool
+  // still feels fresh across many sessions rather than replaying recent
+  // questions before genuinely new ones.
+  historicIds?: string[]
 }
 
-export function PracticeSession({ questions, timeLimit, childId, isPro = false, adaptivePool, startingDifficulty = 'Medium', sessionLength }: PracticeSessionProps) {
+export function PracticeSession({ questions, timeLimit, childId, isPro = false, adaptivePool, startingDifficulty = 'Medium', sessionLength, historicIds }: PracticeSessionProps) {
   const adaptive = !!(adaptivePool && adaptivePool.length > 0)
+  const historicIdSet = useRef(new Set(historicIds ?? [])).current
 
   // In adaptive mode we build the served list one question at a time. We seed
   // it with a first question at the starting difficulty; subsequent questions
@@ -56,7 +63,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
 
   const [served, setServed] = useState<Question[]>(() => {
     if (!adaptive) return questions
-    const first = pickQuestion(adaptivePool!, new Set<string>(), startingDifficulty) as Question | null
+    const first = pickQuestion(adaptivePool!, new Set<string>(), startingDifficulty, historicIdSet) as Question | null
     return first ? [first] : []
   })
 
@@ -163,7 +170,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
         return
       } else {
         setIsEvaluating(true)
-        const result = await evaluateWrittenAnswer(currentQuestion.question_text, currentQuestion.correct_answer, selectedAnswer)
+        const result = await evaluateWrittenAnswer(currentQuestion.question_text, currentQuestion.correct_answer, selectedAnswer, currentQuestion.max_marks)
         earnedMarks = result.score
         maxMarks = result.maxMarks
         setAiEvaluationResult({ score: result.score, maxMarks: result.maxMarks, feedback: result.feedback })
@@ -217,7 +224,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
 
       // Derive used ids from what's already been served — always in sync.
       const usedIds = new Set(served.map((q) => q.id))
-      const nextQuestion = pickQuestion(adaptivePool!, usedIds, nextDifficulty) as Question | null
+      const nextQuestion = pickQuestion(adaptivePool!, usedIds, nextDifficulty, historicIdSet) as Question | null
       if (!nextQuestion) {
         setIsFinished(true)
         return

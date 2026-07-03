@@ -8,6 +8,13 @@ const DATA = require('../../data/vocabulary');
 const SUBJECT = 'English';
 const TOPIC = 'Vocabulary';
 
+const STEMS = [
+  (w) => `What does the word "${w}" mean?`,
+  (w) => `Which meaning best matches the word "${w}"?`,
+  (w) => `Choose the correct meaning of "${w}".`,
+  (w) => `Select the definition that matches "${w}".`,
+];
+
 function generate(difficulty) {
   const tier = DATA.filter((e) => e.difficulty === difficulty);
   const entry = pick(tier.length ? tier : DATA);
@@ -15,7 +22,7 @@ function generate(difficulty) {
 
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `What does the word "${entry.word}" mean?`,
+    question_text: pick(STEMS)(entry.word),
     correct: entry.meaning,
     distractors: entry.distractors,
     explanation: `"${entry.word}" means "${entry.meaning}".`,

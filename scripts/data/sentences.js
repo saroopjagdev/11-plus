@@ -131,4 +131,162 @@ module.exports = [
       pronounCase: "Between you and I, this is a secret.",
     },
   },
+
+  {
+    correct: "I have two brothers and one sister.",
+    difficulty: 'Easy',
+    errors: {
+      wrongCapital: "i have two brothers and one sister.",
+    },
+  },
+  {
+    correct: "The cat sat on the mat.",
+    difficulty: 'Easy',
+    errors: {
+      missingFullStop: "The cat sat on the mat",
+    },
+  },
+  {
+    correct: "Can you pass the salt, please?",
+    difficulty: 'Easy',
+    errors: {
+      missingQuestionMark: "Can you pass the salt, please.",
+    },
+  },
+  {
+    correct: "There is a spider on the wall.",
+    difficulty: 'Easy',
+    errors: {
+      // their/there confusion
+      theirThere: "Their is a spider on the wall.",
+    },
+  },
+  {
+    correct: "You're going to love this film.",
+    difficulty: 'Easy',
+    errors: {
+      // your/you're confusion
+      yourYoure: "Your going to love this film.",
+    },
+  },
+  {
+    correct: "They're bringing their dog to the park.",
+    difficulty: 'Medium',
+    errors: {
+      // they're/their confusion
+      theyreTheir: "Their bringing their dog to the park.",
+    },
+  },
+  {
+    correct: "I would have gone if I had known.",
+    difficulty: 'Medium',
+    errors: {
+      // "would of" is a genuine, common non-standard error for "would have".
+      wouldOf: "I would of gone if I had known.",
+    },
+  },
+  {
+    correct: "The books, which were overdue, were returned today.",
+    difficulty: 'Medium',
+    errors: {
+      missingCommaPair: "The books, which were overdue were returned today.",
+    },
+  },
+  {
+    correct: "Everybody needs to bring their own lunch.",
+    difficulty: 'Medium',
+    errors: {
+      subjectVerb: "Everybody need to bring their own lunch.",
+    },
+  },
+  {
+    correct: "The two friends walked to school together, chatting all the way.",
+    difficulty: 'Medium',
+    errors: {
+      // Comma splice: two independent clauses joined by only a comma.
+      commaSplice: "The two friends walked to school together, they chatted all the way.",
+    },
+  },
+  {
+    correct: "Had I known, I would have come earlier.",
+    difficulty: 'Hard',
+    errors: {
+      wouldOf: "Had I known, I would of come earlier.",
+    },
+  },
+  {
+    correct: "The committee, having discussed the matter thoroughly, reached a decision.",
+    difficulty: 'Hard',
+    errors: {
+      missingCommaPair: "The committee, having discussed the matter thoroughly reached a decision.",
+    },
+  },
+  {
+    correct: "Its sudden change of direction surprised everyone.",
+    difficulty: 'Hard',
+    errors: {
+      itsIts: "It's sudden change of direction surprised everyone.",
+    },
+  },
+  {
+    correct: "The evidence was compelling; the jury reached a verdict swiftly.",
+    difficulty: 'Hard',
+    errors: {
+      commaForSemicolon: "The evidence was compelling, the jury reached a verdict swiftly.",
+    },
+  },
+  {
+    correct: "Whom did you invite to the party?",
+    difficulty: 'Hard',
+    errors: {
+      // Formal object case: "whom" (object) vs "who" (subject).
+      whoWhom: "Who did you invite to the party?",
+    },
+  },
+
+  {
+    correct: "I don't want any more, thank you.",
+    difficulty: 'Easy',
+    errors: {
+      doubleNegative: "I don't want no more, thank you.",
+    },
+  },
+  {
+    correct: "She and I went to the shop.",
+    difficulty: 'Easy',
+    errors: {
+      pronounCase: "Her and me went to the shop.",
+    },
+  },
+  {
+    correct: "The weather was cold, so we wore coats.",
+    difficulty: 'Medium',
+    errors: {
+      // Comma splice: missing conjunction between two independent clauses.
+      commaSplice: "The weather was cold, we wore coats.",
+    },
+  },
+  {
+    correct: "Each of the students has a locker.",
+    difficulty: 'Medium',
+    errors: {
+      subjectVerb: "Each of the students have a locker.",
+    },
+  },
+  {
+    correct: "The reason he left was that he felt unwell.",
+    difficulty: 'Hard',
+    errors: {
+      // "reason...because" is redundant; the taught correct form is "reason...that".
+      reasonBecause: "The reason he left was because he felt unwell.",
+    },
+  },
+  {
+    correct: "Fewer people attended this year than last.",
+    difficulty: 'Hard',
+    errors: {
+      // fewer (countable) vs less (uncountable) — a commonly taught distinction.
+      fewerLess: "Less people attended this year than last.",
+    },
+  },
 ];

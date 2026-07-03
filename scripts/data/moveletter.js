@@ -20,4 +20,33 @@ module.exports = [
   { word: 'CRATE', remove: 'C', result: 'RATE', difficulty: 'Medium' },
   { word: 'GLOVE', remove: 'G', result: 'LOVE', difficulty: 'Hard' },
   { word: 'PRANK', remove: 'P', result: 'RANK', difficulty: 'Hard' },
+
+  // Additional first-letter removals (Easy). Each hand-checked so no other
+  // single-letter removal also leaves a common word.
+  { word: 'STONE', remove: 'S', result: 'TONE', difficulty: 'Easy' },
+  { word: 'BLAZE', remove: 'B', result: 'LAZE', difficulty: 'Easy' },
+  { word: 'SHARE', remove: 'S', result: 'HARE', difficulty: 'Easy' },
+  { word: 'CLIMB', remove: 'C', result: 'LIMB', difficulty: 'Easy' },
+  { word: 'CLUMP', remove: 'C', result: 'LUMP', difficulty: 'Easy' },
+  { word: 'FRANK', remove: 'F', result: 'RANK', difficulty: 'Easy' },
+
+  // Additional interior-letter removals (Medium / Hard)
+  { word: 'SPOIL', remove: 'P', result: 'SOIL', difficulty: 'Medium' },
+  { word: 'CHASE', remove: 'H', result: 'CASE', difficulty: 'Medium' },
+  { word: 'SLANT', remove: 'N', result: 'SLAT', difficulty: 'Hard' },
+  { word: 'STOMP', remove: 'M', result: 'STOP', difficulty: 'Hard' },
+  { word: 'CRANE', remove: 'R', result: 'CANE', difficulty: 'Hard' },
+  { word: 'CHIRP', remove: 'R', result: 'CHIP', difficulty: 'Hard' },
+
+  // Third wave — first-letter removals (Easy)
+  { word: 'TRICK', remove: 'T', result: 'RICK', difficulty: 'Easy' },
+  { word: 'SHINY', remove: 'Y', result: 'SHIN', difficulty: 'Easy' },
+  { word: 'CRUST', remove: 'C', result: 'RUST', difficulty: 'Easy' },
+  { word: 'GHOST', remove: 'G', result: 'HOST', difficulty: 'Easy' },
+  { word: 'STEAK', remove: 'S', result: 'TEAK', difficulty: 'Easy' },
+
+  // Third wave — interior removals (Medium / Hard)
+  { word: 'STING', remove: 'T', result: 'SING', difficulty: 'Medium' },
+  { word: 'CLASP', remove: 'S', result: 'CLAP', difficulty: 'Medium' },
+  { word: 'CRIME', remove: 'C', result: 'RIME', difficulty: 'Hard' },
 ];

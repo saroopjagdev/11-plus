@@ -158,7 +158,129 @@ async function generate(difficulty) {
   return [];
 }
 
-module.exports = { generate, TOPIC, SUBJECT };
+// ── written variant: one open-ended, evidence-based question per passage ──────
+
+async function generatePassageAndWrittenQuestion(difficulty) {
+  const grade = GRADE_LEVELS[difficulty];
+  const words = PASSAGE_WORDS[difficulty];
+
+  const prompt = `You are writing a UK 11+ exam comprehension exercise with a written-answer
+question (not multiple choice).
+
+Write a short passage of around ${words} words suitable for ${grade}.
+Use British English spellings throughout. The passage should be engaging — a
+story extract, description, or factual piece.
+
+Then write ONE written-answer question that requires the pupil to use evidence
+from the passage (e.g. "Using evidence from the passage, explain why..." or
+"What does the passage suggest about...").
+
+Decide a fixed total number of marks (1-3) based on how many distinct points a
+full-marks answer needs. Write the rubric as specific, checkable criteria whose
+mark values sum to that total.
+
+Respond as valid JSON only, no markdown fences:
+{
+  "title": "...",
+  "passage": "...",
+  "question_text": "...",
+  "max_marks": 2,
+  "rubric": "Award 1 mark if ... Award 1 further mark if ...",
+  "model_answer": "a complete answer that would score full marks, quoting the passage where relevant"
+}`;
+
+  const res = await client.chat.completions.create({
+    model: MODEL,
+    temperature: 0.6,
+    response_format: { type: 'json_object' },
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  return JSON.parse(res.choices[0].message.content);
+}
+
+async function verifyWrittenRubric(passage, questionText, rubric, maxMarks, modelAnswer) {
+  const prompt = `You are auditing a UK 11+ comprehension marking rubric before publication.
+
+PASSAGE:
+${passage}
+
+QUESTION: ${questionText}
+TOTAL MARKS: ${maxMarks}
+RUBRIC: ${rubric}
+MODEL ANSWER: ${modelAnswer}
+
+Check all of the following:
+1. The question can be fully answered using only the passage above.
+2. The rubric's criteria are specific and checkable, and require evidence from the passage.
+3. The rubric's mark values sum to exactly ${maxMarks}.
+4. The model answer, marked strictly against the rubric, would score full marks (${maxMarks}/${maxMarks}).
+
+Respond with ONLY the word PASS if all four checks succeed, or FAIL if any do not. Nothing else.`;
+
+  const res = await client.chat.completions.create({
+    model: MODEL,
+    temperature: 0,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  return res.choices[0].message.content.trim().toUpperCase().startsWith('PASS');
+}
+
+async function generateWritten(difficulty) {
+  const MAX_ATTEMPTS = 3;
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    let raw;
+    try {
+      raw = await generatePassageAndWrittenQuestion(difficulty);
+    } catch (e) {
+      continue;
+    }
+
+    const { title, passage, question_text, max_marks, rubric, model_answer } = raw;
+    if (!passage || !question_text || !rubric || !model_answer) continue;
+    if (!Number.isFinite(max_marks) || max_marks < 1 || max_marks > 3) continue;
+    if (!isCleanUKText(passage) || !isCleanUKText(question_text) || !isCleanUKText(rubric)) continue;
+    if (title && !isCleanUKText(title)) continue;
+
+    let verified;
+    try {
+      verified = await verifyWrittenRubric(passage, question_text, rubric, max_marks, model_answer);
+    } catch (e) {
+      continue;
+    }
+    if (!verified) continue;
+
+    let passageId = null;
+    if (supabase) {
+      const { data: passageRow, error: passageErr } = await supabase
+        .from('passages')
+        .insert({ title: title || 'Reading Passage', content: passage })
+        .select('id')
+        .single();
+      if (passageErr) continue;
+      passageId = passageRow.id;
+    }
+
+    return {
+      subject: SUBJECT,
+      topic: TOPIC,
+      difficulty,
+      passage_id: passageId,
+      question_text: String(question_text).trim(),
+      options: [],
+      correct_answer: String(rubric).trim(),
+      max_marks: Math.round(max_marks),
+      explanation: `Model answer: ${String(model_answer).trim()}`,
+      type: 'written',
+    };
+  }
+
+  return null;
+}
+
+module.exports = { generate, generateWritten, TOPIC, SUBJECT };
 
 if (require.main === module) {
   (async () => {

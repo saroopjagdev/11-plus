@@ -20,6 +20,7 @@ interface Question {
   subject: string
   topic: string
   type?: string
+  max_marks?: number
 }
 
 interface MockSimulatorProps {
@@ -91,7 +92,7 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
       } else {
         const isWritten = q.type === 'written' || !q.options || q.options.length === 0
         if (isWritten) {
-          const result = await evaluateWrittenAnswer(q.question_text, q.correct_answer, studentAnswer)
+          const result = await evaluateWrittenAnswer(q.question_text, q.correct_answer, studentAnswer, q.max_marks)
           isCorrect = result.score > 0
         } else {
           isCorrect = studentAnswer === q.correct_answer

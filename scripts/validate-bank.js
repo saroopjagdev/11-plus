@@ -28,7 +28,7 @@ async function main() {
   while (true) {
     const { data, error } = await supabase
       .from('questions')
-      .select('id, subject, topic, difficulty, question_text, options, correct_answer, explanation')
+      .select('id, subject, topic, difficulty, question_text, options, correct_answer, explanation, type, max_marks')
       .range(from, from + PAGE - 1);
     if (error) { console.error(error.message); process.exit(1); }
     if (!data || data.length === 0) break;
@@ -43,33 +43,51 @@ async function main() {
   const positionCounts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
   const bySubject = {};
 
+  let writtenCount = 0;
+
   for (const row of allRows) {
     const id = row.id;
     const opts = Array.isArray(row.options) ? row.options : [];
+    const isWritten = row.type === 'written';
 
-    // Option count
-    if (opts.length !== 5) {
-      issues.push(`[${id}] ${row.topic}: has ${opts.length} options (expected 5)`);
-    }
-
-    // Correct answer in options
-    const correctIdx = opts.indexOf(row.correct_answer);
-    if (correctIdx === -1) {
-      issues.push(`[${id}] ${row.topic}: correct_answer not in options`);
+    if (isWritten) {
+      writtenCount++;
+      // Written questions carry a rubric as correct_answer and no options —
+      // the MCQ-shaped checks below don't apply to them.
+      if (opts.length !== 0) {
+        issues.push(`[${id}] ${row.topic}: written question has ${opts.length} options (expected 0)`);
+      }
+      if (!row.correct_answer || row.correct_answer.trim().length < 5) {
+        issues.push(`[${id}] ${row.topic}: written question missing rubric`);
+      }
+      if (!Number.isFinite(row.max_marks) || row.max_marks < 1 || row.max_marks > 3) {
+        issues.push(`[${id}] ${row.topic}: written question has invalid max_marks (${row.max_marks})`);
+      }
     } else {
-      const letter = OPTION_LETTERS[correctIdx];
-      if (letter) positionCounts[letter]++;
+      // Option count
+      if (opts.length !== 5) {
+        issues.push(`[${id}] ${row.topic}: has ${opts.length} options (expected 5)`);
+      }
+
+      // Correct answer in options
+      const correctIdx = opts.indexOf(row.correct_answer);
+      if (correctIdx === -1) {
+        issues.push(`[${id}] ${row.topic}: correct_answer not in options`);
+      } else {
+        const letter = OPTION_LETTERS[correctIdx];
+        if (letter) positionCounts[letter]++;
+      }
+
+      // Duplicate options
+      const unique = new Set(opts);
+      if (unique.size !== opts.length) {
+        issues.push(`[${id}] ${row.topic}: duplicate options`);
+      }
     }
 
-    // Explanation present
+    // Explanation present (both types)
     if (!row.explanation || row.explanation.trim().length < 5) {
       issues.push(`[${id}] ${row.topic}: missing or empty explanation`);
-    }
-
-    // Duplicate options
-    const unique = new Set(opts);
-    if (unique.size !== opts.length) {
-      issues.push(`[${id}] ${row.topic}: duplicate options`);
     }
 
     // Track counts
@@ -88,7 +106,9 @@ async function main() {
     }
   }
 
-  console.log('\n=== CORRECT ANSWER POSITION DISTRIBUTION ===');
+  console.log(`\nWritten-answer questions: ${writtenCount}`);
+
+  console.log('\n=== CORRECT ANSWER POSITION DISTRIBUTION (MCQ only) ===');
   const total = Object.values(positionCounts).reduce((a, b) => a + b, 0);
   for (const [letter, count] of Object.entries(positionCounts)) {
     const pct = total ? ((count / total) * 100).toFixed(1) : '0.0';

@@ -1,11 +1,15 @@
 // Batch question generator — routes each topic to its dedicated generator.
-// Comprehension uses LLM; everything else is code-computed or data-driven.
+// Comprehension and written-answer questions use LLM (each with an
+// independent verifier pass); everything else is code-computed or
+// data-driven.
 //
 // Usage:
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... [OPENAI_API_KEY=...] node scripts/run-batch.js
 //
 // To run a subset: node scripts/run-batch.js --subject=Maths
 //                  node scripts/run-batch.js --topic=Fractions
+//                  node scripts/run-batch.js --mode=written   (written-answer only)
+//                  node scripts/run-batch.js --mode=mcq       (skip written-answer)
 
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
@@ -43,12 +47,17 @@ const englishGenerators = {
   Cloze:         require('./generators/english/cloze'),
 };
 
-// comprehension is async (LLM-backed), all others are sync
+// comprehension and written are async (LLM-backed), all others are sync
 const comprehensionGen = require('./generators/comprehension');
+const writtenGen = require('./generators/written');
 
 // ── config ────────────────────────────────────────────────────────────────────
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
-const PER_TOPIC_PER_DIFFICULTY = 30;  // 30 × 3 = 90 per topic; ~2.5k total across all
+// Templating (multiple question-stem phrasings per generator) roughly doubled
+// or tripled most topics' real ceilings, so this can now safely pull more per
+// difficulty than before without just re-hitting the same handful of rows.
+const PER_TOPIC_PER_DIFFICULTY = 50;  // 50 × 3 = 150 per topic; ~4k total across all
+const WRITTEN_PER_TOPIC_PER_DIFFICULTY = 10; // each costs 2 LLM calls (author + verifier)
 
 // ── curriculum list ───────────────────────────────────────────────────────────
 const TOPICS = [
@@ -58,6 +67,10 @@ const TOPICS = [
   { topic: 'Comprehension', subject: 'English', async: true },
 ];
 
+// Topics with a written-answer (free-text, rubric-graded) mode, in addition to
+// their MCQ mode above.
+const WRITTEN_TOPICS = ['Grammar', 'Vocabulary', 'Comprehension'];
+
 // ── cli flags ─────────────────────────────────────────────────────────────────
 const args = Object.fromEntries(
   process.argv.slice(2)
@@ -66,10 +79,16 @@ const args = Object.fromEntries(
 );
 const filterSubject = args.subject;
 const filterTopic   = args.topic;
+const filterMode    = args.mode; // 'mcq' | 'written' | undefined (both)
 
 const filteredTopics = TOPICS.filter(t => {
   if (filterSubject && t.subject !== filterSubject) return false;
   if (filterTopic && t.topic !== filterTopic) return false;
+  return true;
+});
+
+const filteredWrittenTopics = WRITTEN_TOPICS.filter(t => {
+  if (filterTopic && t !== filterTopic) return false;
   return true;
 });
 
@@ -96,7 +115,7 @@ async function upsertRows(rows) {
   if (!rows.length) return;
   const { error } = await supabase
     .from('questions')
-    .upsert(rows, { onConflict: 'question_text,correct_answer', ignoreDuplicates: true });
+    .upsert(rows, { onConflict: 'question_text,correct_answer,topic', ignoreDuplicates: true });
   if (error) console.error('  Upsert error:', error.message);
 }
 
@@ -104,44 +123,79 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ── main ──────────────────────────────────────────────────────────────────────
 async function run() {
-  const total = filteredTopics.length * DIFFICULTIES.length;
-  console.log(`Generating ${PER_TOPIC_PER_DIFFICULTY} questions per difficulty for ${filteredTopics.length} topic(s) — ${total} batches total.\n`);
+  const runMcq = filterMode !== 'written';
+  const runWritten = filterMode !== 'mcq';
+
+  const total = (runMcq ? filteredTopics.length : 0) * DIFFICULTIES.length
+    + (runWritten ? filteredWrittenTopics.length : 0) * DIFFICULTIES.length;
+  console.log(`${total} batches total.\n`);
 
   let done = 0;
 
-  for (const { topic, subject, async: isAsync } of filteredTopics) {
-    for (const difficulty of DIFFICULTIES) {
-      done++;
-      process.stdout.write(`[${done}/${total}] ${subject} / ${topic} / ${difficulty} ... `);
+  if (runMcq) {
+    for (const { topic, subject, async: isAsync } of filteredTopics) {
+      for (const difficulty of DIFFICULTIES) {
+        done++;
+        process.stdout.write(`[${done}/${total}] ${subject} / ${topic} / ${difficulty} ... `);
 
-      if (isAsync) {
-        // Comprehension: each call returns 4 questions for one passage
+        if (isAsync) {
+          // Comprehension: each call returns 4 questions for one passage
+          const rows = [];
+          let passes = 0;
+          while (rows.length < PER_TOPIC_PER_DIFFICULTY && passes < 30) {
+            passes++;
+            try {
+              const qs = await comprehensionGen.generate(difficulty);
+              rows.push(...qs);
+            } catch (e) {
+              process.stdout.write('(retry) ');
+            }
+            await sleep(500);
+          }
+          await upsertRows(rows.slice(0, PER_TOPIC_PER_DIFFICULTY));
+          console.log(`${rows.length} generated`);
+        } else {
+          const gen = getGenerator(topic, subject);
+          if (!gen) { console.log('NO GENERATOR'); continue; }
+
+          const rows = [];
+          let attempts = 0;
+          const maxAttempts = PER_TOPIC_PER_DIFFICULTY * 5;
+
+          while (rows.length < PER_TOPIC_PER_DIFFICULTY && attempts < maxAttempts) {
+            attempts++;
+            const q = gen.generate(difficulty);
+            if (q) rows.push(q);
+          }
+
+          await upsertRows(rows);
+          console.log(`${rows.length} generated (${attempts} attempts)`);
+        }
+      }
+    }
+  }
+
+  if (runWritten) {
+    for (const topic of filteredWrittenTopics) {
+      for (const difficulty of DIFFICULTIES) {
+        done++;
+        process.stdout.write(`[${done}/${total}] Written / ${topic} / ${difficulty} ... `);
+
         const rows = [];
-        let passes = 0;
-        while (rows.length < PER_TOPIC_PER_DIFFICULTY && passes < 30) {
-          passes++;
+        let attempts = 0;
+        const maxAttempts = WRITTEN_PER_TOPIC_PER_DIFFICULTY * 3;
+
+        while (rows.length < WRITTEN_PER_TOPIC_PER_DIFFICULTY && attempts < maxAttempts) {
+          attempts++;
           try {
-            const qs = await comprehensionGen.generate(difficulty);
-            rows.push(...qs);
+            const q = topic === 'Comprehension'
+              ? await comprehensionGen.generateWritten(difficulty)
+              : await writtenGen.generate(topic, difficulty);
+            if (q) rows.push(q);
           } catch (e) {
             process.stdout.write('(retry) ');
           }
           await sleep(500);
-        }
-        await upsertRows(rows.slice(0, PER_TOPIC_PER_DIFFICULTY));
-        console.log(`${rows.length} generated`);
-      } else {
-        const gen = getGenerator(topic, subject);
-        if (!gen) { console.log('NO GENERATOR'); continue; }
-
-        const rows = [];
-        let attempts = 0;
-        const maxAttempts = PER_TOPIC_PER_DIFFICULTY * 5;
-
-        while (rows.length < PER_TOPIC_PER_DIFFICULTY && attempts < maxAttempts) {
-          attempts++;
-          const q = gen.generate(difficulty);
-          if (q) rows.push(q);
         }
 
         await upsertRows(rows);

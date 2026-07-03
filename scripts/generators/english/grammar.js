@@ -11,6 +11,24 @@ const DATA = require('../../data/sentences');
 
 const SUBJECT = 'English';
 
+// Topic-specific phrasings. Different stems per topic also means the two
+// topics never collide on the DB's (question_text, correct_answer, topic)
+// uniqueness check even when they happen to share a correct sentence.
+const STEMS = {
+  Grammar: [
+    'Which of these sentences is correctly written?',
+    'Choose the sentence that has no grammar mistakes.',
+    'Select the grammatically correct sentence.',
+    'Which sentence is free from grammar errors?',
+  ],
+  Punctuation: [
+    'Which of these sentences is correctly punctuated?',
+    'Choose the sentence with no punctuation mistakes.',
+    'Select the correctly punctuated sentence.',
+    'Which sentence uses punctuation correctly?',
+  ],
+};
+
 function generate(difficulty, topic = 'Punctuation') {
   const tier = DATA.filter((e) => e.difficulty === difficulty);
   const pool = tier.length >= 5 ? tier : DATA;
@@ -24,9 +42,11 @@ function generate(difficulty, topic = 'Punctuation') {
     return pick(variants);
   });
 
+  const stems = STEMS[topic] || STEMS.Punctuation;
+
   return finalize({
     subject: SUBJECT, topic, difficulty,
-    question_text: `Which of these sentences is correctly written?`,
+    question_text: pick(stems),
     correct: correctEntry.correct,
     distractors,
     explanation: `"${correctEntry.correct}" has no errors. Each of the other sentences contains a genuine grammar or punctuation mistake.`,

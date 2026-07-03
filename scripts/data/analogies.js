@@ -14,4 +14,13 @@ module.exports = [
   { relation: 'degree (mild to strong)', pairs: [['warm', 'hot'], ['cool', 'cold'], ['stroll', 'run'], ['whisper', 'shout'], ['damp', 'soaked']], difficulty: 'Hard' },
   { relation: 'worker and place', pairs: [['teacher', 'school'], ['judge', 'court'], ['chef', 'kitchen'], ['actor', 'theatre'], ['sailor', 'ship']], difficulty: 'Hard' },
   { relation: 'part to whole', pairs: [['petal', 'flower'], ['chapter', 'book'], ['branch', 'tree'], ['key', 'keyboard'], ['wheel', 'car']], difficulty: 'Hard' },
+
+  { relation: 'colour of object', pairs: [['sky', 'blue'], ['grass', 'green'], ['sun', 'yellow'], ['blood', 'red'], ['snow', 'white']], difficulty: 'Easy' },
+  { relation: 'sound made by animal', pairs: [['dog', 'bark'], ['cat', 'meow'], ['cow', 'moo'], ['duck', 'quack'], ['lion', 'roar']], difficulty: 'Easy' },
+
+  { relation: 'number of sides', pairs: [['triangle', 'three'], ['square', 'four'], ['pentagon', 'five'], ['hexagon', 'six'], ['octagon', 'eight']], difficulty: 'Medium' },
+  { relation: 'occupation and product', pairs: [['baker', 'bread'], ['author', 'book'], ['sculptor', 'statue'], ['composer', 'music'], ['tailor', 'clothes']], difficulty: 'Medium' },
+
+  { relation: 'cause and effect', pairs: [['fire', 'smoke'], ['rain', 'flood'], ['earthquake', 'tremor'], ['drought', 'famine'], ['storm', 'damage']], difficulty: 'Hard' },
+  { relation: 'quantity and its unit', pairs: [['length', 'metre'], ['mass', 'kilogram'], ['time', 'second'], ['temperature', 'degree'], ['volume', 'litre']], difficulty: 'Hard' },
 ];

@@ -10,13 +10,20 @@ const { compounds, distractorPool } = require('../../data/words');
 const SUBJECT = 'Verbal Reasoning';
 const TOPIC = 'Compound Words';
 
+const STEMS = [
+  'Which of these is a compound word?',
+  'Choose the word that is made up of two smaller words.',
+  'Select the compound word from the options below.',
+  'Which option is formed by joining two whole words together?',
+];
+
 function generate(difficulty) {
   const [whole, first, second] = pick(compounds);
   const distractors = sample(distractorPool, 8);
 
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `Which of these is a compound word?`,
+    question_text: pick(STEMS),
     correct: whole,
     distractors,
     explanation: `"${whole}" is made of two smaller words: "${first}" + "${second}". The others are single words.`,

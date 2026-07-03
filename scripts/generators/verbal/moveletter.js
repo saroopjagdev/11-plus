@@ -9,6 +9,13 @@ const DATA = require('../../data/moveletter');
 const SUBJECT = 'Verbal Reasoning';
 const TOPIC = 'Move-a-Letter';
 
+const STEMS = [
+  (w) => `Which letter can be removed from ${w} to leave a new, real word?`,
+  (w) => `Remove one letter from ${w} to make a different real word. Which letter?`,
+  (w) => `If you take away one letter from ${w}, which letter leaves a real word behind?`,
+  (w) => `Which single letter, when removed from ${w}, still leaves a real word?`,
+];
+
 function generate(difficulty) {
   const tier = DATA.filter((e) => e.difficulty === difficulty);
   const pool = tier.length ? tier : DATA;
@@ -20,7 +27,7 @@ function generate(difficulty) {
 
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `Which letter can be removed from ${entry.word} to leave a new, real word?`,
+    question_text: pick(STEMS)(entry.word),
     correct: entry.remove,
     distractors,
     explanation: `Removing "${entry.remove}" from ${entry.word} leaves "${entry.result}". Removing any other letter does not make a word.`,

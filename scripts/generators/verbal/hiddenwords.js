@@ -10,6 +10,13 @@ const { hiddenWords } = require('../../data/words');
 const SUBJECT = 'Verbal Reasoning';
 const TOPIC = 'Hidden Words';
 
+const STEMS = [
+  (s) => `A small word is hidden across two neighbouring words in this sentence: "${s}" Which word is it?`,
+  (s) => `Look for a short word hidden where two words meet in this sentence: "${s}" What is it?`,
+  (s) => `A word is hiding across the boundary of two words in this sentence: "${s}" Can you find it?`,
+  (s) => `Somewhere in this sentence, a small word spans the join between two other words: "${s}" Which word is hidden?`,
+];
+
 // The sentence letter stream (spaces/punctuation removed, lower-cased).
 function stream(sentence) {
   return sentence.toLowerCase().replace(/[^a-z]/g, '');
@@ -27,7 +34,7 @@ function generate(difficulty) {
 
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `A small word is hidden across two neighbouring words in this sentence: "${entry.sentence}" Which word is it?`,
+    question_text: pick(STEMS)(entry.sentence),
     correct: entry.hidden,
     distractors,
     explanation: `Reading across the gap, the letters spell "${entry.hidden}" (hidden where two words meet). The other words do not appear in the sentence.`,

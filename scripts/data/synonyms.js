@@ -38,4 +38,40 @@ module.exports = [
   { word: 'serene', synonyms: ['calm', 'peaceful', 'tranquil'], difficulty: 'Hard' },
   { word: 'obstinate', synonyms: ['stubborn', 'inflexible', 'headstrong'], difficulty: 'Hard' },
   { word: 'eloquent', synonyms: ['articulate', 'fluent', 'expressive'], difficulty: 'Hard' },
+
+  // Easy — additional everyday words
+  { word: 'quiet', synonyms: ['hushed', 'silent', 'still'], difficulty: 'Easy' },
+  { word: 'clean', synonyms: ['tidy', 'spotless', 'neat'], difficulty: 'Easy' },
+  { word: 'strong', synonyms: ['powerful', 'tough', 'mighty'], difficulty: 'Easy' },
+  { word: 'funny', synonyms: ['amusing', 'comical', 'hilarious'], difficulty: 'Easy' },
+  { word: 'loud', synonyms: ['noisy', 'booming', 'deafening'], difficulty: 'Easy' },
+  { word: 'kind', synonyms: ['caring', 'gentle', 'considerate'], difficulty: 'Easy' },
+  { word: 'easy', synonyms: ['simple', 'effortless', 'straightforward'], difficulty: 'Easy' },
+  { word: 'old', synonyms: ['aged', 'elderly', 'antiquated'], difficulty: 'Easy' },
+  { word: 'right', synonyms: ['correct', 'accurate', 'proper'], difficulty: 'Easy' },
+  { word: 'wrong', synonyms: ['incorrect', 'mistaken', 'inaccurate'], difficulty: 'Easy' },
+
+  // Medium — additional mid-tier vocabulary
+  { word: 'cautious', synonyms: ['careful', 'wary', 'guarded'], difficulty: 'Medium' },
+  { word: 'generous', synonyms: ['charitable', 'giving', 'magnanimous'], difficulty: 'Medium' },
+  { word: 'peculiar', synonyms: ['odd', 'strange', 'curious'], difficulty: 'Medium' },
+  { word: 'punctual', synonyms: ['prompt', 'timely', 'exact'], difficulty: 'Medium' },
+  { word: 'transparent', synonyms: ['clear', 'see-through', 'translucent'], difficulty: 'Medium' },
+  { word: 'cunning', synonyms: ['crafty', 'sly', 'devious'], difficulty: 'Medium' },
+  { word: 'genuine', synonyms: ['authentic', 'real', 'sincere'], difficulty: 'Medium' },
+  { word: 'hesitant', synonyms: ['uncertain', 'wavering', 'doubtful'], difficulty: 'Medium' },
+  { word: 'brisk', synonyms: ['quick', 'lively', 'energetic'], difficulty: 'Medium' },
+  { word: 'modest', synonyms: ['humble', 'unassuming', 'reserved'], difficulty: 'Medium' },
+
+  // Hard — additional genuine 11+ vocabulary
+  { word: 'ambiguous', synonyms: ['unclear', 'vague', 'equivocal'], difficulty: 'Hard' },
+  { word: 'audacious', synonyms: ['bold', 'daring', 'brazen'], difficulty: 'Hard' },
+  { word: 'loquacious', synonyms: ['talkative', 'garrulous', 'wordy'], difficulty: 'Hard' },
+  { word: 'frugal', synonyms: ['thrifty', 'economical', 'sparing'], difficulty: 'Hard' },
+  { word: 'inevitable', synonyms: ['unavoidable', 'certain', 'inescapable'], difficulty: 'Hard' },
+  { word: 'pragmatic', synonyms: ['practical', 'sensible', 'realistic'], difficulty: 'Hard' },
+  { word: 'resilient', synonyms: ['tough', 'adaptable', 'hardy'], difficulty: 'Hard' },
+  { word: 'taciturn', synonyms: ['reserved', 'uncommunicative', 'reticent'], difficulty: 'Hard' },
+  { word: 'voracious', synonyms: ['ravenous', 'insatiable', 'greedy'], difficulty: 'Hard' },
+  { word: 'zealous', synonyms: ['enthusiastic', 'fervent', 'passionate'], difficulty: 'Hard' },
 ];

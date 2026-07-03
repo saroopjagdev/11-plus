@@ -15,4 +15,24 @@ module.exports = [
   { category: 'poetry devices', members: ['simile', 'metaphor', 'alliteration', 'personification'], outsiders: ['equation', 'quotient', 'remainder', 'fraction'], difficulty: 'Hard' },
   { category: 'emotions', members: ['jubilant', 'melancholy', 'anxious', 'content', 'furious'], outsiders: ['triangular', 'circular', 'spherical', 'oval'], difficulty: 'Hard' },
   { category: 'monarchy', members: ['sovereign', 'regent', 'monarch', 'heir', 'consort'], outsiders: ['tenant', 'labourer', 'merchant', 'peasant'], difficulty: 'Hard' },
+
+  { category: 'birds', members: ['robin', 'sparrow', 'eagle', 'swan', 'owl', 'heron'], outsiders: ['salmon', 'trout', 'shark', 'frog'], difficulty: 'Easy' },
+  { category: 'vegetables', members: ['carrot', 'potato', 'onion', 'cabbage', 'broccoli'], outsiders: ['apple', 'pear', 'plum', 'peach'], difficulty: 'Easy' },
+  { category: 'furniture', members: ['table', 'chair', 'sofa', 'wardrobe', 'shelf'], outsiders: ['pencil', 'ruler', 'crayon', 'eraser'], difficulty: 'Easy' },
+  { category: 'insects', members: ['ant', 'beetle', 'wasp', 'moth', 'cricket'], outsiders: ['spider', 'snail', 'worm', 'newt'], difficulty: 'Easy' },
+
+  { category: 'countries', members: ['France', 'Spain', 'Italy', 'Germany', 'Portugal'], outsiders: ['London', 'Paris', 'Madrid', 'Berlin'], difficulty: 'Medium' },
+  { category: 'planets', members: ['Mars', 'Venus', 'Jupiter', 'Saturn', 'Neptune'], outsiders: ['Moon', 'Sun', 'Comet', 'Asteroid'], difficulty: 'Medium' },
+  { category: 'rivers', members: ['Thames', 'Severn', 'Amazon', 'Nile', 'Danube'], outsiders: ['Everest', 'Sahara', 'Pacific', 'Andes'], difficulty: 'Medium' },
+  { category: 'shapes', members: ['hexagon', 'pentagon', 'octagon', 'triangle', 'rhombus'], outsiders: ['metre', 'litre', 'gram', 'degree'], difficulty: 'Medium' },
+
+  { category: 'gemstones', members: ['ruby', 'emerald', 'sapphire', 'topaz', 'amethyst'], outsiders: ['granite', 'marble', 'slate', 'basalt'], difficulty: 'Hard' },
+  { category: 'units of measurement', members: ['metre', 'litre', 'gram', 'kilogram', 'centimetre'], outsiders: ['thermometer', 'barometer', 'ruler', 'scale'], difficulty: 'Hard' },
+  { category: 'punctuation marks', members: ['comma', 'semicolon', 'apostrophe', 'hyphen', 'colon'], outsiders: ['noun', 'verb', 'adjective', 'adverb'], difficulty: 'Hard' },
+  { category: 'types of government', members: ['democracy', 'monarchy', 'republic', 'dictatorship', 'oligarchy'], outsiders: ['continent', 'peninsula', 'archipelago', 'plateau'], difficulty: 'Hard' },
+
+  { category: 'reptiles', members: ['snake', 'lizard', 'crocodile', 'tortoise', 'gecko'], outsiders: ['frog', 'toad', 'newt', 'salamander'], difficulty: 'Easy' },
+  { category: 'trees', members: ['oak', 'birch', 'willow', 'elm', 'beech'], outsiders: ['rose', 'tulip', 'daisy', 'lily'], difficulty: 'Easy' },
+  { category: 'oceans', members: ['Pacific', 'Atlantic', 'Indian', 'Arctic', 'Southern'], outsiders: ['Mediterranean', 'Caribbean', 'Baltic', 'Adriatic'], difficulty: 'Medium' },
+  { category: 'chemical elements', members: ['oxygen', 'hydrogen', 'nitrogen', 'carbon', 'helium'], outsiders: ['water', 'salt', 'sugar', 'rust'], difficulty: 'Hard' },
 ];

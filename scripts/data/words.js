@@ -13,6 +13,11 @@ const compounds = [
   ['toothbrush', 'tooth', 'brush'], ['fireplace', 'fire', 'place'], ['newspaper', 'news', 'paper'],
   ['bedroom', 'bed', 'room'], ['waterfall', 'water', 'fall'], ['cupboard', 'cup', 'board'],
   ['handbag', 'hand', 'bag'], ['starfish', 'star', 'fish'], ['rainforest', 'rain', 'forest'],
+  ['keyboard', 'key', 'board'], ['background', 'back', 'ground'], ['sunrise', 'sun', 'rise'],
+  ['snowman', 'snow', 'man'], ['bathroom', 'bath', 'room'], ['grandmother', 'grand', 'mother'],
+  ['thunderstorm', 'thunder', 'storm'], ['spaceship', 'space', 'ship'],
+  ['footprint', 'foot', 'print'], ['earthquake', 'earth', 'quake'], ['lighthouse', 'light', 'house'],
+  ['skateboard', 'skate', 'board'], ['wallpaper', 'wall', 'paper'], ['notebook', 'note', 'book'],
 ];
 
 const commonWords = {

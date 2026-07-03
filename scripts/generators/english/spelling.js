@@ -8,6 +8,17 @@ const DATA = require('../../data/spelling');
 const SUBJECT = 'English';
 const TOPIC = 'Spelling';
 
+// Multiple phrasings of the same instruction. Picking one per question means
+// the pool's real ceiling is (entries × stems), not just entries — a small
+// data file still produces plenty of genuinely distinct rows.
+const STEMS = [
+  'Which of these is spelled correctly?',
+  'Choose the correctly spelled word.',
+  'Select the word that is spelled correctly.',
+  'Which spelling is correct?',
+  'Pick the correct spelling from the options below.',
+];
+
 function generate(difficulty) {
   const tier = DATA.filter((e) => e.difficulty === difficulty);
   const entry = pick(tier.length ? tier : DATA);
@@ -16,7 +27,7 @@ function generate(difficulty) {
 
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `Which of these is spelled correctly?`,
+    question_text: pick(STEMS),
     correct: entry.correct,
     distractors,
     explanation: `"${entry.correct}" is the correct spelling. The other options are common misspellings.`,

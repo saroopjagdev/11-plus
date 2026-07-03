@@ -8,6 +8,13 @@ const DATA = require('../../data/categories');
 const SUBJECT = 'Verbal Reasoning';
 const TOPIC = 'Odd One Out';
 
+const STEMS = [
+  'Which word is the odd one out?',
+  'Which word does not belong with the others?',
+  "Choose the word that doesn't fit the group.",
+  'Select the odd one out.',
+];
+
 function generate(difficulty) {
   const tier = DATA.filter((e) => e.difficulty === difficulty);
   if (tier.length < 1) return null;
@@ -19,7 +26,7 @@ function generate(difficulty) {
 
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `Which word is the odd one out?`,
+    question_text: pick(STEMS),
     correct: outsider,
     distractors: members,
     explanation: `${members.join(', ')} are all ${cat.category}; "${outsider}" is not, so it is the odd one out.`,

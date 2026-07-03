@@ -99,11 +99,19 @@ export interface DifficultyTagged {
  * searching outward (target, then ±1, then ±2) when the preferred bucket is
  * exhausted. This keeps sessions flowing even when the bank is thin at one
  * level. Returns null only when every question has been used.
+ *
+ * `historicIds` (optional) is a soft deprioritisation, not a hard exclude —
+ * questions this child has answered before (in any past session). Within each
+ * difficulty bucket we prefer candidates NOT in that set, only falling back to
+ * historically-seen ones once the fresh supply in that bucket is exhausted.
+ * This is what keeps a small topic pool feeling fresh across many sessions
+ * instead of replaying the same recent handful.
  */
 export function pickQuestion<T extends DifficultyTagged>(
   pool: T[],
   usedIds: Set<string>,
-  target: Difficulty
+  target: Difficulty,
+  historicIds?: Set<string>
 ): T | null {
   const targetRank = RANK[target]
 
@@ -113,21 +121,25 @@ export function pickQuestion<T extends DifficultyTagged>(
     (a, b) => Math.abs(RANK[a] - targetRank) - Math.abs(RANK[b] - targetRank)
   )
 
+  const pickFrom = (candidates: T[]): T | null => {
+    if (candidates.length === 0) return null
+    const fresh = historicIds ? candidates.filter((q) => !historicIds.has(q.id)) : candidates
+    const chooseFrom = fresh.length > 0 ? fresh : candidates
+    // Randomise within the bucket so repeated sessions don't replay the same order.
+    return chooseFrom[Math.floor(Math.random() * chooseFrom.length)]
+  }
+
   for (const difficulty of order) {
     const candidates = pool.filter(
       (q) => !usedIds.has(q.id) && normaliseDifficulty(q.difficulty) === difficulty
     )
-    if (candidates.length > 0) {
-      // Randomise within the bucket so repeated sessions don't replay the same order.
-      return candidates[Math.floor(Math.random() * candidates.length)]
-    }
+    const picked = pickFrom(candidates)
+    if (picked) return picked
   }
 
   // No difficulty-tagged question left; fall back to any unused question.
   const anyLeft = pool.filter((q) => !usedIds.has(q.id))
-  if (anyLeft.length > 0) return anyLeft[Math.floor(Math.random() * anyLeft.length)]
-
-  return null
+  return pickFrom(anyLeft)
 }
 
 export function normaliseDifficulty(value: Difficulty | string | null | undefined): Difficulty {

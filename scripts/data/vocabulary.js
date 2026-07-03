@@ -18,4 +18,31 @@ module.exports = [
   { word: 'tenacious', meaning: 'holding on firmly; persistent', distractors: ['giving up easily', 'extremely fragile', 'brightly coloured', 'quietly nervous'], difficulty: 'Hard' },
   { word: 'candid', meaning: 'honest and straightforward', distractors: ['secretive and sly', 'nervous and shaky', 'slow and lazy', 'wealthy and generous'], difficulty: 'Hard' },
   { word: 'serene', meaning: 'calm and peaceful', distractors: ['noisy and chaotic', 'sharp and painful', 'rich and expensive', 'quick and clumsy'], difficulty: 'Hard' },
+
+  { word: 'brave', meaning: 'having courage', distractors: ['very tall', 'extremely fast', 'quite shy', 'always hungry'], difficulty: 'Easy' },
+  { word: 'enormous', meaning: 'very large', distractors: ['very small', 'quite fast', 'rather quiet', 'somewhat cold'], difficulty: 'Easy' },
+  { word: 'clumsy', meaning: 'lacking grace when moving', distractors: ['very neat', 'extremely clever', 'quite generous', 'rather polite'], difficulty: 'Easy' },
+  { word: 'furious', meaning: 'extremely angry', distractors: ['very sleepy', 'quite happy', 'somewhat confused', 'extremely proud'], difficulty: 'Easy' },
+  { word: 'damp', meaning: 'slightly wet', distractors: ['completely dry', 'very hot', 'extremely cold', 'rather loud'], difficulty: 'Easy' },
+
+  { word: 'cautious', meaning: 'careful to avoid danger', distractors: ['reckless and hasty', 'loud and cheerful', 'proud and vain', 'quick to anger'], difficulty: 'Medium' },
+  { word: 'generous', meaning: 'willing to give freely', distractors: ['unwilling to share', 'quick to complain', 'slow to react', 'easily frightened'], difficulty: 'Medium' },
+  { word: 'peculiar', meaning: 'strange or unusual', distractors: ['completely normal', 'very organised', 'extremely polite', 'well known'], difficulty: 'Medium' },
+  { word: 'diligent', meaning: 'hardworking and careful', distractors: ['lazy and careless', 'loud and rude', 'shy and quiet', 'proud and boastful'], difficulty: 'Medium' },
+  { word: 'transparent', meaning: 'able to be seen through', distractors: ['completely solid', 'very colourful', 'extremely heavy', 'rather rough'], difficulty: 'Medium' },
+
+  { word: 'ambiguous', meaning: 'open to more than one interpretation', distractors: ['perfectly clear', 'extremely rare', 'very old fashioned', 'well organised'], difficulty: 'Hard' },
+  { word: 'audacious', meaning: 'showing bold, sometimes reckless, confidence', distractors: ['shy and withdrawn', 'careful and cautious', 'quiet and reserved', 'slow and steady'], difficulty: 'Hard' },
+  { word: 'eloquent', meaning: 'fluent and persuasive in speech', distractors: ['unable to speak clearly', 'extremely shy', 'quick to anger', 'always silent'], difficulty: 'Hard' },
+  { word: 'frugal', meaning: 'careful not to waste money or resources', distractors: ['wasteful and extravagant', 'generous to a fault', 'careless with time', 'quick to spend'], difficulty: 'Hard' },
+  { word: 'inevitable', meaning: 'certain to happen', distractors: ['very unlikely', 'completely avoidable', 'rarely seen', 'easily changed'], difficulty: 'Hard' },
+
+  { word: 'gentle', meaning: 'mild and kind', distractors: ['very rough', 'extremely loud', 'quite dishonest', 'always late'], difficulty: 'Easy' },
+  { word: 'sturdy', meaning: 'strong and well-built', distractors: ['flimsy and weak', 'bright and colourful', 'quiet and shy', 'fast and clumsy'], difficulty: 'Easy' },
+
+  { word: 'thrifty', meaning: 'careful with money', distractors: ['wasteful with money', 'generous to strangers', 'careless with time', 'quick to anger'], difficulty: 'Medium' },
+  { word: 'vigilant', meaning: 'watchful and alert', distractors: ['careless and distracted', 'loud and boastful', 'shy and timid', 'slow and clumsy'], difficulty: 'Medium' },
+
+  { word: 'ephemeral', meaning: 'lasting for a very short time', distractors: ['lasting forever', 'extremely large', 'very expensive', 'well organised'], difficulty: 'Hard' },
+  { word: 'ubiquitous', meaning: 'found everywhere', distractors: ['very rare', 'difficult to find', 'poorly made', 'quickly forgotten'], difficulty: 'Hard' },
 ];
