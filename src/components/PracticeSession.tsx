@@ -318,7 +318,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
         <div className="max-w-7xl mx-auto w-full">
           <div className="flex flex-col gap-2">
             {!childId && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800">
                 Progress will not save until you add a child profile.
               </div>
             )}
@@ -392,8 +392,8 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
       {/* Main Question Area - Split scrollable panes */}
       <div className="flex-1 overflow-y-auto">
         <div className={cn(
-          "min-h-full max-w-7xl mx-auto flex gap-10 p-6 pt-8 pb-12",
-          currentQuestion.passage ? "flex-col lg:flex-row items-stretch" : "items-center justify-center"
+          "min-h-full max-w-7xl mx-auto flex gap-10 p-4 sm:p-6",
+          currentQuestion.passage ? "flex-col lg:flex-row items-stretch" : ""
         )}>
           {currentQuestion.passage && (
             <div className="lg:w-1/2 w-full bg-white p-8 rounded-3xl border border-slate-100 shadow-sm overflow-y-auto custom-scrollbar">
@@ -408,7 +408,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
 
           <div className={cn(
             "w-full transition-all duration-500 flex flex-col gap-1",
-            currentQuestion.passage ? "lg:w-1/2" : "max-w-4xl mx-auto items-center justify-center"
+            currentQuestion.passage ? "lg:w-1/2" : "max-w-4xl m-auto"
           )}>
             {sessionStreak >= 5 && !showFeedback && (
               <motion.div 

@@ -464,17 +464,17 @@ export function DiagnosticSession({ questions, childId, userEmail }: DiagnosticS
 
         {/* Main Question Area & Footer - Grouped tightly */}
         <div className={cn(
-          'flex-1 min-h-0 overflow-hidden px-6 grid items-stretch',
+          'flex-1 min-h-0 overflow-y-auto px-6 grid items-stretch',
           useCompactLayout ? 'pt-4 pb-3 gap-3' : 'pt-5 pb-4 gap-4'
         )} style={{ gridTemplateRows: 'minmax(0, 1fr) auto' }}>
-          <div className="max-w-4xl w-full min-h-0 flex items-center justify-center mx-auto">
+          <div className="max-w-4xl w-full min-h-0 flex mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98, y: -10 }}
-                className="w-full"
+                className="w-full m-auto"
               >
                 <QuestionCard
                   question={currentQuestion}
