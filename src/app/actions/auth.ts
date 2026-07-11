@@ -4,6 +4,16 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import type { EmailOtpType } from '@supabase/supabase-js'
+
+const VALID_OTP_TYPES: EmailOtpType[] = ['signup', 'invite', 'magiclink', 'recovery', 'email_change', 'email']
+
+// Only allow relative, single-slash paths as post-confirmation redirect targets
+// (guards against open-redirect via a crafted ?next= param).
+function safeNext(next: string | null | undefined) {
+  if (next && next.startsWith('/') && !next.startsWith('//')) return next
+  return '/dashboard'
+}
 
 function getEmailRedirectTo(next = '/dashboard', email?: string) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -369,6 +379,50 @@ export async function signUpAndCreateChild(formData: FormData) {
         ? 'This email is already registered and still waiting for confirmation. Use the resend option below if you need a fresh link.'
         : 'Check your email to continue.',
       existing: isRepeatedSignup,
+    })
+  )
+}
+
+/**
+ * Verifies an email-confirmation token. This runs ONLY on an explicit form
+ * POST (the user clicking "Confirm my email" on /auth/confirm) — never on a
+ * GET/HEAD page load. That's deliberate: mail security scanners (Microsoft
+ * Safe Links, etc.) prefetch links with GET/HEAD to check them, which would
+ * consume Supabase's single-use token before the human ever clicks. Scanners
+ * do not submit forms, so gating verification behind this POST keeps the token
+ * alive until the real user acts.
+ */
+export async function confirmEmailToken(formData: FormData) {
+  const supabase = await createClient()
+  const tokenHash = formData.get('token_hash') as string | null
+  const typeParam = formData.get('type') as string | null
+  const code = formData.get('code') as string | null
+  const email = (formData.get('email') as string | null) || undefined
+  const next = safeNext(formData.get('next') as string | null)
+
+  let verified = false
+
+  if (tokenHash && typeParam) {
+    const type = (VALID_OTP_TYPES.includes(typeParam as EmailOtpType)
+      ? typeParam
+      : 'email') as EmailOtpType
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+    verified = !error
+  } else if (code) {
+    // Legacy PKCE fallback for any older links still in inboxes.
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    verified = !error
+  }
+
+  if (verified) {
+    revalidatePath('/', 'layout')
+    redirect(next)
+  }
+
+  redirect(
+    buildSignupConfirmRedirect({
+      email,
+      error: 'This confirmation link is invalid or has expired. Please request a new one below.',
     })
   )
 }
