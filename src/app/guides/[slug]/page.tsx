@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -135,32 +136,60 @@ export default async function GuidePage({ params }: GuidePageProps) {
             )}
 
             <div className="mt-12 space-y-10">
-              {guide.sections.map((section) => (
-                <section key={section.title} className="rounded-[2rem] border border-slate-100 bg-slate-50 p-6 lg:p-8">
-                  <h2 className="text-2xl font-black tracking-tight text-slate-900">{section.title}</h2>
-                  <div className="mt-4 space-y-4">
-                    {section.paragraphs.map((paragraph) => (
-                      <p key={paragraph} className="leading-relaxed text-slate-600">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
-                  {section.bullets && (
-                    <ul className="mt-5 space-y-3">
-                      {section.bullets.map((bullet) => (
-                        <li key={bullet} className="flex items-start gap-3 text-slate-600">
-                          <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
-                          <span className="leading-relaxed">{bullet}</span>
-                        </li>
+              {guide.sections.map((section, index) => (
+                <Fragment key={section.title}>
+                  <section className="rounded-[2rem] border border-slate-100 bg-slate-50 p-6 lg:p-8">
+                    <h2 className="text-2xl font-black tracking-tight text-slate-900">{section.title}</h2>
+                    <div className="mt-4 space-y-4">
+                      {section.paragraphs.map((paragraph) => (
+                        <p key={paragraph} className="leading-relaxed text-slate-600">
+                          {paragraph}
+                        </p>
                       ))}
-                    </ul>
-                  )}
-                  {section.callout && (
-                    <div className="mt-5 rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-slate-700">
-                      {section.callout}
+                    </div>
+                    {section.bullets && (
+                      <ul className="mt-5 space-y-3">
+                        {section.bullets.map((bullet) => (
+                          <li key={bullet} className="flex items-start gap-3 text-slate-600">
+                            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+                            <span className="leading-relaxed">{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {section.callout && (
+                      <div className="mt-5 rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-slate-700">
+                        {section.callout}
+                      </div>
+                    )}
+                  </section>
+
+                  {index === Math.max(0, Math.floor(guide.sections.length / 2) - 1) && (
+                    <div className="rounded-[2rem] bg-slate-900 p-8 text-white lg:p-10">
+                      <h2 className="text-2xl font-black tracking-tight">
+                        See exactly where your child stands
+                      </h2>
+                      <p className="mt-3 max-w-2xl leading-relaxed text-slate-300">
+                        The free diagnostic pinpoints the weakest areas in minutes, so the advice on this page turns into a concrete plan rather than guesswork.
+                      </p>
+                      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                        <Link
+                          href="/diagnostic"
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-slate-900 transition-all hover:bg-slate-100"
+                        >
+                          {guide.primaryCtaLabel || 'Take the free diagnostic'}
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                        <Link
+                          href="/signup"
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-6 py-4 font-bold text-white transition-all hover:bg-white/10"
+                        >
+                          Create an account
+                        </Link>
+                      </div>
                     </div>
                   )}
-                </section>
+                </Fragment>
               ))}
             </div>
 
