@@ -7,7 +7,7 @@ import { ArrowLeft, Lock, Clock, Target, Play } from 'lucide-react'
 import { MockSimulator } from '@/components/MockSimulator'
 import { cn } from '@/lib/utils'
 import { shuffleArray } from '@/lib/random'
-import { pickStartingDifficulty, type Difficulty } from '@/lib/adaptive'
+import { pickStartingDifficulty, answerKey, type Difficulty } from '@/lib/adaptive'
 
 interface PageProps {
   params: Promise<{
@@ -43,6 +43,37 @@ function getMockDifficultyTargets(limit: number) {
   return { easy, medium, hard }
 }
 
+// Selects up to `limit` questions from an already-ordered pool (fresh/unseen
+// first), skipping same-entry repeats (see `answerKey`). Falls back to
+// allowing them — but never a literal same-row repeat — if a small topic
+// pool has fewer distinct entries than the requested session length, so a
+// short pool never means a shorter-than-requested session.
+function selectWithEntryDedup(orderedPool: MockQuestion[], limit: number) {
+  const selected: MockQuestion[] = []
+  const usedIds = new Set<string>()
+  const usedAnswerKeys = new Set<string>()
+
+  for (const question of orderedPool) {
+    if (selected.length >= limit) break
+    const aKey = answerKey(question)
+    if (aKey && usedAnswerKeys.has(aKey)) continue
+    selected.push(question)
+    usedIds.add(question.id)
+    if (aKey) usedAnswerKeys.add(aKey)
+  }
+
+  if (selected.length < limit) {
+    for (const question of orderedPool) {
+      if (selected.length >= limit) break
+      if (usedIds.has(question.id)) continue
+      selected.push(question)
+      usedIds.add(question.id)
+    }
+  }
+
+  return selected
+}
+
 function takeBalancedQuestions(
   easyQuestions: MockQuestion[],
   mediumQuestions: MockQuestion[],
@@ -67,16 +98,23 @@ function takeBalancedQuestions(
   const selected: MockQuestion[] = []
   const usedIds = new Set<string>()
   const usedText = new Set<string>()
+  const usedAnswerKeys = new Set<string>()
 
   const takeFromPool = (pool: MockQuestion[], count: number) => {
     for (const question of pool) {
       if (selected.length >= limit) break
       if (count <= 0) break
       const textKey = (question.question_text || '').trim().toLowerCase()
-      if (usedIds.has(question.id) || (textKey && usedText.has(textKey))) continue
+      const aKey = answerKey(question)
+      if (
+        usedIds.has(question.id) ||
+        (textKey && usedText.has(textKey)) ||
+        (aKey && usedAnswerKeys.has(aKey))
+      ) continue
       selected.push(question)
       usedIds.add(question.id)
       if (textKey) usedText.add(textKey)
+      if (aKey) usedAnswerKeys.add(aKey)
       count -= 1
     }
   }
@@ -92,10 +130,25 @@ function takeBalancedQuestions(
   for (const question of remaining) {
     if (selected.length >= limit) break
     const textKey = (question.question_text || '').trim().toLowerCase()
-    if (textKey && usedText.has(textKey)) continue
+    const aKey = answerKey(question)
+    if ((textKey && usedText.has(textKey)) || (aKey && usedAnswerKeys.has(aKey))) continue
     selected.push(question)
     usedIds.add(question.id)
     if (textKey) usedText.add(textKey)
+    if (aKey) usedAnswerKeys.add(aKey)
+  }
+
+  // Final safety net: a mock's combined pool is large enough that this
+  // should rarely fire, but if excluding same-entry repeats left us short of
+  // `limit`, top up from whatever's left rather than serving a
+  // shorter-than-requested paper. Still never repeats the same row twice.
+  if (selected.length < limit) {
+    for (const question of remaining) {
+      if (selected.length >= limit) break
+      if (usedIds.has(question.id)) continue
+      selected.push(question)
+      usedIds.add(question.id)
+    }
   }
 
   return shuffleArray(selected)
@@ -415,25 +468,52 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
     const poolSize = Math.max(limit * 2, 30)
     const subjectFilter = decodedCategory !== 'Mixed' ? decodedCategory : null
     const selectClause = '*, passage:passages(*)'
+    // Real subject values in the DB — 'Mixed' isn't one of them, it means "all
+    // of these". Used to explicitly balance a Mixed mock across subjects.
+    const ALL_SUBJECTS = ['Maths', 'English', 'Verbal Reasoning', 'Non-Verbal Reasoning']
 
-    const buildDifficultyQuery = (difficultyName: 'Easy' | 'Medium' | 'Hard') => {
-      let difficultyQuery = supabase
+    const runQuery = (difficultyName: 'Easy' | 'Medium' | 'Hard', subject: string | undefined, take: number) => {
+      let q = supabase
         .from('questions')
         .select(selectClause)
         .eq('difficulty', difficultyName)
-        .limit(poolSize)
 
-      if (subjectFilter) {
-        difficultyQuery = difficultyQuery.ilike('subject', subjectFilter)
+      if (subject) {
+        q = q.ilike('subject', subject)
       }
 
-      return difficultyQuery
+      // `id` is a random uuid_generate_v4(), so ordering by it turns "first N
+      // rows Postgres feels like returning" (which in practice tracks
+      // insertion order — i.e. whichever subject/topic was generated first)
+      // into an unbiased sample. Without this, a fixed .limit() with no order
+      // silently favours whatever was inserted first.
+      return q.order('id', { ascending: true }).limit(take)
+    }
+
+    // Fetch one difficulty bucket. For a single-subject mock this is one
+    // query; for 'Mixed' we deliberately query each real subject separately
+    // and merge, so a subject with fewer rows (or one that happens to sort
+    // later) can't be crowded out the way a single combined query allowed —
+    // that's exactly how a "Mixed" mock was collapsing to pure Maths.
+    const buildDifficultyPool = async (difficultyName: 'Easy' | 'Medium' | 'Hard') => {
+      if (subjectFilter) {
+        const { data, error } = await runQuery(difficultyName, subjectFilter, poolSize)
+        return { data: (data || []) as MockQuestion[], error }
+      }
+
+      const perSubjectSize = Math.max(Math.ceil(poolSize / ALL_SUBJECTS.length), 10)
+      const results = await Promise.all(
+        ALL_SUBJECTS.map((subject) => runQuery(difficultyName, subject, perSubjectSize))
+      )
+      const error = results.find((r) => r.error)?.error
+      const data = results.flatMap((r) => (r.data || []) as MockQuestion[])
+      return { data, error }
     }
 
     const [easyPool, mediumPool, hardPool] = await Promise.all([
-      buildDifficultyQuery('Easy'),
-      buildDifficultyQuery('Medium'),
-      buildDifficultyQuery('Hard'),
+      buildDifficultyPool('Easy'),
+      buildDifficultyPool('Medium'),
+      buildDifficultyPool('Hard'),
     ])
 
     const mockError = easyPool.error || mediumPool.error || hardPool.error
@@ -478,8 +558,16 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
     // only ever reshuffle the *same* questions — so each "new set" looks
     // identical. Fetching the whole topic pool and sampling from it means
     // different sessions draw genuinely different questions.
+    //
+    // `.order('id')` matters just as much as the larger cap: `id` is a random
+    // uuid_generate_v4(), so without an explicit order Postgres tends to
+    // return rows in roughly insertion order, and once a topic/subject pool
+    // exceeds POOL_CAP that silently means "whichever sub-generator or topic
+    // happened to be generated first" rather than a representative sample —
+    // e.g. a cross-topic "Maths" drill skewing hard toward whichever topic
+    // was seeded earliest instead of a genuine mix.
     const POOL_CAP = 300
-    const { data: pool, error } = await query.limit(POOL_CAP)
+    const { data: pool, error } = await query.order('id', { ascending: true }).limit(POOL_CAP)
     console.log('Questions found:', pool?.length || 0)
     if (error) console.error('Query Error:', error)
 
@@ -530,9 +618,9 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
         .filter((q) => lastSeenMap.has(q.id))
         .sort((a, b) => new Date(lastSeenMap.get(a.id)!).getTime() - new Date(lastSeenMap.get(b.id)!).getTime())
 
-      shuffled = [...shuffleArray(unseen), ...seenOldestFirst].slice(0, limit)
+      shuffled = selectWithEntryDedup([...shuffleArray(unseen), ...seenOldestFirst], limit)
     } else {
-      shuffled = shuffleArray(uniquePool).slice(0, limit)
+      shuffled = selectWithEntryDedup(shuffleArray(uniquePool), limit)
     }
 
     // Adaptive difficulty: for standard topic MCQ practice (not a fixed

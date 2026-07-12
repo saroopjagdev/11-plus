@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { CURRICULUM_LADDER } from '@/lib/constants/curriculum'
 import { shuffleArray } from '@/lib/random'
+import { answerKey } from '@/lib/adaptive'
 
 interface DiagnosticQuestion {
   id: string
@@ -62,11 +63,27 @@ export default async function DiagnosticPage() {
     supabase.from('questions').select('*').in('topic', easyTopics).eq('difficulty', 'Easy').eq('type', 'mcq').is('passage_id', null),
     supabase.from('questions').select('*').in('topic', mediumTopics).eq('difficulty', 'Medium').eq('type', 'mcq').is('passage_id', null),
     supabase.from('questions').select('*').in('topic', hardTopics).eq('difficulty', 'Hard').eq('type', 'mcq').is('passage_id', null),
-    supabase.from('questions').select('*').eq('difficulty', 'Hard').eq('type', 'mcq').neq('topic', 'Comprehension').is('passage_id', null).limit(40) // Extra pool for variety and filling gaps
+    // .order('id') before .limit(): id is a random uuid, so this is an unbiased
+    // sample rather than "whichever topic was generated first" (Postgres has
+    // no obligation to return rows in any particular order without ORDER BY).
+    supabase.from('questions').select('*').eq('difficulty', 'Hard').eq('type', 'mcq').neq('topic', 'Comprehension').is('passage_id', null).order('id', { ascending: true }).limit(40) // Extra pool for variety and filling gaps
   ])
 
   const selectedQuestions: DiagnosticQuestion[] = []
   const usedIds = new Set<string>()
+  // Same-entry guard: a Hard-tier gap-filler (step 4 below) draws from every
+  // Hard topic unrestricted, so without this it can silently reintroduce a
+  // different-phrasing row of the same underlying entry (same topic +
+  // correct_answer) already picked for that topic in step 3 — the exact
+  // "same question again" bug, just inside the diagnostic instead of a
+  // regular practice session.
+  const usedAnswerKeys = new Set<string>()
+  const addSelected = (q: DiagnosticQuestion) => {
+    selectedQuestions.push(q)
+    usedIds.add(q.id)
+    const key = answerKey(q)
+    if (key) usedAnswerKeys.add(key)
+  }
   const easyData = shuffleArray((easyPool.data || []).filter(hasRenderableDiagnosticShape))
   const mediumData = shuffleArray((mediumPool.data || []).filter(hasRenderableDiagnosticShape))
   const hardData = shuffleArray((hardPool.data || []).filter(hasRenderableDiagnosticShape))
@@ -78,37 +95,39 @@ export default async function DiagnosticPage() {
   // 1. Pick one Easy per easyTopic
   easyTopics.forEach(topic => {
     const q = easyData.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
-    if (q) {
-      selectedQuestions.push(q)
-      usedIds.add(q.id)
-    }
+    if (q) addSelected(q)
   })
 
   // 2. Pick one Medium per mediumTopic
   mediumTopics.forEach(topic => {
     const q = mediumData.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
-    if (q) {
-      selectedQuestions.push(q)
-      usedIds.add(q.id)
-    }
+    if (q) addSelected(q)
   })
 
   // 3. Pick one Hard per hardTopic
   hardTopics.forEach(topic => {
     const q = hardData.find(q => q.topic === topic && !usedIds.has(q.id) && isValidQuestion(q))
-    if (q) {
-      selectedQuestions.push(q)
-      usedIds.add(q.id)
-    }
+    if (q) addSelected(q)
   })
 
-  // 4. Fill to 20 questions with Hard questions (prioritize topic variety)
-  const remainingHard = extraHardData.filter(q => !usedIds.has(q.id) && isValidQuestion(q))
-  while (selectedQuestions.length < 20 && remainingHard.length > 0) {
-    const q = remainingHard.shift()
-    if (q) {
-      selectedQuestions.push(q)
-      usedIds.add(q.id)
+  // 4. Fill to 20 questions with Hard questions (prioritize topic variety).
+  // Exclude same-entry rows first (a different stem testing the same
+  // sentence/word already picked in step 3); only fall back to allowing one
+  // if the pool is genuinely short, same principle as practice sessions.
+  const remainingHardFresh = extraHardData.filter(q => {
+    if (usedIds.has(q.id) || !isValidQuestion(q)) return false
+    const key = answerKey(q)
+    return !key || !usedAnswerKeys.has(key)
+  })
+  while (selectedQuestions.length < 20 && remainingHardFresh.length > 0) {
+    const q = remainingHardFresh.shift()
+    if (q) addSelected(q)
+  }
+  if (selectedQuestions.length < 20) {
+    const remainingHardAny = extraHardData.filter(q => !usedIds.has(q.id) && isValidQuestion(q))
+    while (selectedQuestions.length < 20 && remainingHardAny.length > 0) {
+      const q = remainingHardAny.shift()
+      if (q) addSelected(q)
     }
   }
 
@@ -120,13 +139,14 @@ export default async function DiagnosticPage() {
       .eq('type', 'mcq')
       .neq('topic', 'Comprehension')
       .is('passage_id', null)
+      .order('id', { ascending: true })
       .limit(60)
 
     shuffleArray((fallback || []).filter(hasRenderableDiagnosticShape)).forEach(q => {
-      if (selectedQuestions.length < 20 && !usedIds.has(q.id) && isValidQuestion(q)) {
-        selectedQuestions.push(q)
-        usedIds.add(q.id)
-      }
+      if (selectedQuestions.length >= 20 || usedIds.has(q.id) || !isValidQuestion(q)) return
+      const key = answerKey(q)
+      if (key && usedAnswerKeys.has(key)) return
+      addSelected(q)
     })
   }
 

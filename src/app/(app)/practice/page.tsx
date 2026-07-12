@@ -34,8 +34,7 @@ export default async function PracticePage() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 text-center px-4">
         <h1 className="text-2xl font-bold text-slate-800 mb-4">No questions found!</h1>
         <p className="text-slate-500 mb-8">
-          Make sure to run the seed route first: 
-          <code className="bg-slate-200 px-2 py-1 rounded ml-1">/api/admin/seed</code>
+          The question bank is empty. Run <code className="bg-slate-200 px-2 py-1 rounded">node scripts/run-batch.js</code> to generate questions.
         </p>
         <a 
           href="/dashboard" 

@@ -92,6 +92,26 @@ export function nextTargetDifficulty(current: Difficulty, recentResults: boolean
 export interface DifficultyTagged {
   id: string
   difficulty?: Difficulty | string | null
+  topic?: string
+  correct_answer?: string | null
+}
+
+/**
+ * Identifies the *underlying entry* a question was generated from, not just
+ * the row. Templated generators (vocabulary, grammar/punctuation, spelling,
+ * cloze, etc.) can produce several DB rows for the same entry — same
+ * correct_answer, different question_text stem — so two rows can pass an
+ * id-based used-check while still reading as "the same question again" to a
+ * child (e.g. "What does 'gentle' mean?" and "Choose the meaning of
+ * 'gentle'." are different rows testing the same word). Keying on
+ * (topic, correct_answer) catches that. For procedurally-generated subjects
+ * like Maths a coincidental shared answer just costs a little pool
+ * diversity, which is a far smaller problem than the repeat itself.
+ */
+export function answerKey(question: { topic?: string; correct_answer?: string | null }): string | null {
+  const answer = (question.correct_answer || '').trim().toLowerCase()
+  if (!answer || !question.topic) return null
+  return `${question.topic}::${answer}`
 }
 
 /**
@@ -106,12 +126,19 @@ export interface DifficultyTagged {
  * historically-seen ones once the fresh supply in that bucket is exhausted.
  * This is what keeps a small topic pool feeling fresh across many sessions
  * instead of replaying the same recent handful.
+ *
+ * `usedAnswerKeys` (optional) excludes same-entry repeats *within this
+ * session* — see `answerKey`. This is checked before the historicIds
+ * preference and only relaxed if every candidate in the bucket would
+ * otherwise be a same-entry repeat, since avoiding a repeat within one
+ * sitting matters more than the cross-session freshness preference.
  */
 export function pickQuestion<T extends DifficultyTagged>(
   pool: T[],
   usedIds: Set<string>,
   target: Difficulty,
-  historicIds?: Set<string>
+  historicIds?: Set<string>,
+  usedAnswerKeys?: Set<string>
 ): T | null {
   const targetRank = RANK[target]
 
@@ -123,8 +150,17 @@ export function pickQuestion<T extends DifficultyTagged>(
 
   const pickFrom = (candidates: T[]): T | null => {
     if (candidates.length === 0) return null
-    const fresh = historicIds ? candidates.filter((q) => !historicIds.has(q.id)) : candidates
-    const chooseFrom = fresh.length > 0 ? fresh : candidates
+
+    const entryFresh = usedAnswerKeys
+      ? candidates.filter((q) => {
+          const key = answerKey(q)
+          return !key || !usedAnswerKeys.has(key)
+        })
+      : candidates
+    const base = entryFresh.length > 0 ? entryFresh : candidates
+
+    const fresh = historicIds ? base.filter((q) => !historicIds.has(q.id)) : base
+    const chooseFrom = fresh.length > 0 ? fresh : base
     // Randomise within the bucket so repeated sessions don't replay the same order.
     return chooseFrom[Math.floor(Math.random() * chooseFrom.length)]
   }

@@ -14,7 +14,7 @@ import { EXAM_TIPS } from '@/lib/constants/exam_tips'
 import { cn } from '@/lib/utils'
 import { Lock } from 'lucide-react'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
-import { pickQuestion, nextTargetDifficulty, type Difficulty } from '@/lib/adaptive'
+import { pickQuestion, nextTargetDifficulty, answerKey, type Difficulty } from '@/lib/adaptive'
 
 interface Question {
   id: string
@@ -63,7 +63,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
 
   const [served, setServed] = useState<Question[]>(() => {
     if (!adaptive) return questions
-    const first = pickQuestion(adaptivePool!, new Set<string>(), startingDifficulty, historicIdSet) as Question | null
+    const first = pickQuestion(adaptivePool!, new Set<string>(), startingDifficulty, historicIdSet, new Set<string>()) as Question | null
     return first ? [first] : []
   })
 
@@ -222,9 +222,14 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
       const nextDifficulty = nextTargetDifficulty(targetDifficultyRef.current, recentResults)
       targetDifficultyRef.current = nextDifficulty
 
-      // Derive used ids from what's already been served — always in sync.
+      // Derive used ids (and same-entry answer keys) from what's already been
+      // served — always in sync, and stops a different-stem/same-answer row
+      // from reading as a repeat of a question already asked this session.
       const usedIds = new Set(served.map((q) => q.id))
-      const nextQuestion = pickQuestion(adaptivePool!, usedIds, nextDifficulty, historicIdSet) as Question | null
+      const usedAnswerKeys = new Set(
+        served.map((q) => answerKey(q)).filter((key): key is string => Boolean(key))
+      )
+      const nextQuestion = pickQuestion(adaptivePool!, usedIds, nextDifficulty, historicIdSet, usedAnswerKeys) as Question | null
       if (!nextQuestion) {
         setIsFinished(true)
         return
