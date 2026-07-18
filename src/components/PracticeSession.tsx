@@ -96,6 +96,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
   const currentTip = EXAM_TIPS.find(t => t.subject === currentQuestion.subject) || EXAM_TIPS[0]
 
   const [newStreak, setNewStreak] = useState<number | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isFinished && childId && !hasLoggedSessionRef.current) {
@@ -108,7 +109,7 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
         origin: { y: 0.6 },
         colors: ['#4f46e5', '#8b5cf6', '#10b981']
       })
-      
+
       logPracticeSession({
         childId,
         score,
@@ -123,6 +124,11 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
       }).then(res => {
         if (res.success) {
           setNewStreak(res.newStreak)
+        } else {
+          // Saving failed (e.g. attempts couldn't be recorded) — say so
+          // rather than letting the child believe this counted when the
+          // dashboard/mission tracker will never see it.
+          setSaveError(res.error || "This session couldn't be saved. Please try it again.")
         }
       })
     }
@@ -266,7 +272,13 @@ export function PracticeSession({ questions, timeLimit, childId, isPro = false, 
               This session was not saved because no child profile is attached yet.
             </div>
           )}
-          
+
+          {saveError && (
+            <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+              {saveError}
+            </div>
+          )}
+
           <div className="text-7xl font-black text-indigo-600 mb-8">
             {score} <span className="text-slate-300 text-4xl">/ {totalPossibleMarks || activeQuestions.length}</span>
             <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mt-2">Total Marks Earned</p>

@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Sparkles, Target, ShieldCheck, Check, HelpCircle, BookOpen, Clock } from 'lucide-react'
+import { ArrowRight, Sparkles, Target, ShieldCheck, Check, HelpCircle, BookOpen, Clock, Quote } from 'lucide-react'
 import { OnboardingPlanner } from '@/components/OnboardingPlanner'
 
 const featuredGuides = [
@@ -362,6 +362,35 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="bg-slate-50 py-40 overflow-hidden">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-full mb-8">
+            <Sparkles className="h-4 w-4 text-indigo-600" />
+            <span className="text-xs font-bold text-indigo-700 uppercase tracking-widest leading-none">What Parents Say</span>
+          </div>
+          <h2 className="text-5xl font-black text-slate-900 mb-16 tracking-tight">
+            Real results, from real families.
+          </h2>
+
+          <div className="relative">
+            <div className="absolute -inset-10 bg-indigo-100 rounded-full blur-[120px] opacity-30 pointer-events-none" />
+            <div className="relative bg-white p-10 lg:p-14 rounded-[3rem] border border-slate-100 shadow-2xl">
+              <Quote className="h-10 w-10 text-indigo-200 mx-auto mb-6" />
+              <p className="text-2xl lg:text-3xl font-bold text-slate-900 leading-snug tracking-tight mb-8">
+                &ldquo;This has helped my daughter a lot since we started. It has sharpened her problem solving skills and helped her improve her speed and accuracy.&rdquo;
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <div className="h-11 w-11 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-full flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-100">
+                  I
+                </div>
+                <span className="font-bold text-slate-900">Ibeawuchi U.</span>
               </div>
             </div>
           </div>

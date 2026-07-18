@@ -21,9 +21,10 @@ interface DailyMissionProps {
   isComplete?: boolean
   completedTopics?: string[]
   isPro: boolean
+  mockDoneToday?: boolean
 }
 
-export function DailyMission({ recommendations, childName, isComplete, completedTopics = [], isPro }: DailyMissionProps) {
+export function DailyMission({ recommendations, childName, isComplete, completedTopics = [], isPro, mockDoneToday = false }: DailyMissionProps) {
   const missionIcons = {
     warmup: <Zap className="h-5 w-5 text-amber-400 fill-current" />,
     focus: <Target className="h-5 w-5 text-indigo-400" />,
@@ -66,16 +67,22 @@ export function DailyMission({ recommendations, childName, isComplete, completed
             <div className="flex-1 p-8 bg-white/5 rounded-[2rem] border border-white/10 backdrop-blur-sm relative overflow-hidden group">
                <div className="relative z-10">
                   <div className="flex items-center gap-2 text-indigo-400 font-black text-[10px] uppercase tracking-widest mb-4">
-                     <Lock className="h-3 w-3" /> {isPro ? 'Elite Guidance' : 'Pro Upgrade'}
+                     {isPro && mockDoneToday ? (
+                       <><CheckCircle2 className="h-3 w-3 text-emerald-400" /> Done for today</>
+                     ) : (
+                       <><Lock className="h-3 w-3" /> {isPro ? 'Elite Guidance' : 'Pro Upgrade'}</>
+                     )}
                   </div>
                   <h3 className="text-2xl font-black mb-2">Simulate an Exam</h3>
                   <p className="text-slate-400 text-sm mb-8 max-w-sm">
                     {isPro
-                      ? 'Missions are done, but exam stamina is built in mocks. Try a 40-question timed simulation in your weakest subject.'
+                      ? mockDoneToday
+                        ? "You've already sat a mock exam today — nice work. You can take another one any time if you want extra stamina practice."
+                        : 'Missions are done, but exam stamina is built in mocks. Try a 40-question timed simulation in your weakest subject.'
                       : "You have finished today's mission. Upgrade to unlock full mock exams and build timed exam stamina with longer papers."}
                   </p>
                   <Link href={isPro ? "/practice/mock/Mixed" : "/pricing"} className="inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-900 rounded-2xl font-bold text-sm hover:bg-indigo-50 transition-all shadow-xl shadow-white/5">
-                     {isPro ? 'Start Full Mock Exam' : 'Unlock Full Mock Exams'}
+                     {isPro ? (mockDoneToday ? 'Take Another Mock' : 'Start Full Mock Exam') : 'Unlock Full Mock Exams'}
                      <ChevronRight className="h-4 w-4" />
                   </Link>
                </div>

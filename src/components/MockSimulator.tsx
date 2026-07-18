@@ -11,6 +11,7 @@ import { Clock, Flag, ChevronRight, ChevronLeft, AlertCircle, CheckCircle2, XCir
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
+import { cn } from '@/lib/utils'
 
 interface Question {
   id: string
@@ -21,6 +22,7 @@ interface Question {
   topic: string
   type?: string
   max_marks?: number
+  passage?: { title: string; content: string }
 }
 
 interface MockSimulatorProps {
@@ -53,6 +55,7 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
   const [explanationAnswer, setExplanationAnswer] = useState<string | null>(null)
   const [showUpsell, setShowUpsell] = useState(false)
   const [upsellFeature, setUpsellFeature] = useState({ name: '', desc: '' })
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [sessionStartedAt] = useState(() => new Date().toISOString())
   const questionViewStartedAtRef = useRef<number | null>(null)
   const questionTimeSpentRef = useRef<Record<string, number>>({})
@@ -112,7 +115,7 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
     }
 
     if (childId) {
-      await logPracticeSession({
+      const res = await logPracticeSession({
         childId,
         score: totalScore,
         attempts: finalAttempts,
@@ -120,6 +123,12 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
         startedAt: sessionStartedAt,
         completedAt: new Date().toISOString(),
       })
+      if (!res.success) {
+        // Saving failed (e.g. attempts couldn't be recorded) — say so rather
+        // than letting the results screen imply this mock counted toward
+        // progress the dashboard will never actually see.
+        setSaveError(res.error || "This mock couldn't be saved. Please try it again.")
+      }
     }
 
     setResults({
@@ -212,7 +221,13 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
                  This mock was not saved because no child profile is attached yet.
                </div>
              )}
-             
+
+             {saveError && (
+               <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+                 {saveError}
+               </div>
+             )}
+
              <div className="inline-block relative">
                <svg className="w-48 h-48 transform -rotate-90">
                  <circle cx="96" cy="96" r="80" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100" />
@@ -376,33 +391,48 @@ export function MockSimulator({ questions, timeLimit, childId, isPro = false }: 
           </div>
         )}
         <div className="flex-1 p-4 md:p-8 flex items-center justify-center">
-          <div className="w-full max-w-3xl">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="w-full"
-              >
-                {isWritten ? (
-                  <InputQuestion
-                    question={currentQuestion}
-                    selectedAnswer={answers[currentQuestion.id] || ''}
-                    onSelect={handleSelectAnswer}
-                    disabled={false}
-                  />
-                ) : (
-                  <QuestionCard
-                    question={currentQuestion}
-                    selectedAnswer={answers[currentQuestion.id] || null}
-                    onSelect={handleSelectAnswer}
-                    disabled={false}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
+          <div className={cn(
+            "w-full",
+            currentQuestion.passage ? "max-w-6xl flex flex-col lg:flex-row gap-8 items-stretch" : "max-w-3xl"
+          )}>
+            {currentQuestion.passage && (
+              <div className="lg:w-1/2 w-full bg-white p-8 rounded-3xl border border-slate-100 shadow-sm overflow-y-auto custom-scrollbar max-h-[45vh] lg:max-h-[65vh]">
+                <h3 className="text-xl font-black text-slate-900 mb-4 tracking-tight">{currentQuestion.passage.title}</h3>
+                <div className="text-slate-600 leading-relaxed space-y-4">
+                  {currentQuestion.passage.content.split('\n').map((para, i) => (
+                    <p key={i} className="text-sm font-medium">{para}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className={cn("w-full", currentQuestion.passage && "lg:w-1/2")}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentIndex}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full"
+                >
+                  {isWritten ? (
+                    <InputQuestion
+                      question={currentQuestion}
+                      selectedAnswer={answers[currentQuestion.id] || ''}
+                      onSelect={handleSelectAnswer}
+                      disabled={false}
+                    />
+                  ) : (
+                    <QuestionCard
+                      question={currentQuestion}
+                      selectedAnswer={answers[currentQuestion.id] || null}
+                      onSelect={handleSelectAnswer}
+                      disabled={false}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 

@@ -70,7 +70,21 @@ export async function logPracticeSession({
     throw new Error(sessionError.message)
   }
 
-  // 2. Log Individual Attempts
+  // 2. Log Individual Attempts.
+  // Postgres batch inserts are all-or-nothing: a single bad row (e.g. a
+  // question_id that no longer exists because the bank was regenerated,
+  // or any other one-row constraint issue) previously killed the ENTIRE
+  // session's worth of attempts, and the failure was only console.error'd —
+  // never surfaced — so the client still reported success while the
+  // dashboard's completion tracking, mastery, and recency-aware question
+  // serving all silently saw nothing for that session. That's the direct
+  // cause of "completed a mission, it said I hadn't" and "got served the
+  // same questions again": the record it depends on never landed.
+  //
+  // Fix: try the fast bulk path first; on any failure, fall back to
+  // inserting rows one at a time so a single bad row can't take the rest
+  // down with it, and track exactly which ones actually persisted so
+  // mastery is never computed from phantom data.
   const attemptsToInsert = attempts.map(attempt => ({
     session_id: session?.id || '',
     child_id: childId,
@@ -80,14 +94,41 @@ export async function logPracticeSession({
     time_taken_seconds: attempt.timeTakenSeconds || 0
   }))
 
-  const { error: attemptsError } = await supabase
+  let persistedQuestionIds = new Set<string>()
+
+  const { error: bulkAttemptsError } = await supabase
     .from('question_attempts')
     .insert(attemptsToInsert)
 
-  if (attemptsError) console.error('Error logging attempts:', attemptsError)
+  if (!bulkAttemptsError) {
+    persistedQuestionIds = new Set(attemptsToInsert.map((row) => row.question_id))
+  } else {
+    console.error('Bulk attempt insert failed, falling back to per-row insert:', bulkAttemptsError)
+    for (const row of attemptsToInsert) {
+      const { error: rowError } = await supabase.from('question_attempts').insert(row)
+      if (rowError) {
+        console.error('Failed to log individual attempt:', row.question_id, rowError)
+      } else {
+        persistedQuestionIds.add(row.question_id)
+      }
+    }
+  }
 
-  // 3. Update Topic Mastery from real attempt metadata
-  const uniqueQuestionIds = Array.from(new Set(attempts.map((attempt) => attempt.questionId)))
+  const persistedAttempts = attempts.filter((attempt) => persistedQuestionIds.has(attempt.questionId))
+
+  if (attempts.length > 0 && persistedAttempts.length === 0) {
+    // Nothing we can honestly credit — don't award XP/streak or touch
+    // mastery for a session that has no attempt record behind it, and tell
+    // the client so it can ask the child to redo it instead of celebrating
+    // a session the rest of the app will never see as done.
+    return {
+      success: false,
+      error: 'We could not save your answers this time. Please try this session again.',
+    }
+  }
+
+  // 3. Update Topic Mastery from real attempt metadata (persisted attempts only)
+  const uniqueQuestionIds = Array.from(new Set(persistedAttempts.map((attempt) => attempt.questionId)))
   const { data: questions, error: questionsError } = await supabase
     .from('questions')
     .select('id, subject, topic')
@@ -110,7 +151,7 @@ export async function logPracticeSession({
       }
     >()
 
-    for (const attempt of attempts) {
+    for (const attempt of persistedAttempts) {
       const meta = questionMap.get(attempt.questionId)
       if (!meta || !meta.topic) continue
 
@@ -239,12 +280,14 @@ export async function logPracticeSession({
   revalidatePath('/leaderboard')
   revalidatePath('/parent/dashboard')
   
-  return { 
-    success: true, 
-    newStreak, 
+  return {
+    success: true,
+    newStreak,
     xpGained,
     newXP,
     newLevel,
-    isLevelUp
+    isLevelUp,
+    attemptsLogged: persistedAttempts.length,
+    attemptsTotal: attempts.length,
   }
 }

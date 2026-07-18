@@ -75,20 +75,44 @@ export default async function DashboardPage({
     }
   }
 
-  const { data: masteryData } = childId 
+  const { data: masteryData } = childId
     ? await supabase.from('topic_mastery').select('*').eq('child_id', childId)
     : { data: [] }
-  
+
   const mastery = masteryData || []
 
   const { data: diagnostic } = childId
     ? await supabase.from('diagnostic_results').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(1).maybeSingle()
     : { data: null }
 
-  const recommendations = childId ? await getStudentRecommendations(supabase, childId) : []
-
   // 3. Check for Mission Completion (only count 'practice' sessions today)
   const today = new Date().toISOString().split('T')[0]
+
+  // Today's 3 missions are pinned once computed, not recalculated on every
+  // render. getStudentRecommendations() picks topics from *live*
+  // topic_mastery (e.g. "current weakest topic"), and completing a mission
+  // changes that very data — so recomputing fresh on each visit could swap
+  // a slot to a different topic mid-day, making a genuinely-completed
+  // mission look undone (it's checking attempts against the new topic, not
+  // the one the child actually just practised).
+  const pinnedChild = children?.[0]
+  const hasPinnedMissionsToday =
+    pinnedChild?.daily_mission_date === today &&
+    Array.isArray(pinnedChild?.daily_mission_topics) &&
+    pinnedChild.daily_mission_topics.length > 0
+
+  let recommendations: Awaited<ReturnType<typeof getStudentRecommendations>> = []
+  if (hasPinnedMissionsToday) {
+    recommendations = pinnedChild.daily_mission_topics
+  } else if (childId) {
+    recommendations = await getStudentRecommendations(supabase, childId)
+    if (recommendations.length > 0) {
+      await supabase
+        .from('children')
+        .update({ daily_mission_date: today, daily_mission_topics: recommendations })
+        .eq('id', childId)
+    }
+  }
   const { data: todaySessions } = childId
     ? await supabase
         .from('sessions')
@@ -97,6 +121,21 @@ export default async function DashboardPage({
         .eq('type', 'practice')
         .gte('completed_at', today)
     : { data: [] }
+
+  // Used to stop the post-mission "Simulate an Exam" bonus card from
+  // re-offering a mock the child already sat today — previously it showed
+  // unconditionally any time missions were complete, with no memory of
+  // whether that bonus had already been used, which read as the app
+  // forgetting a mock they'd just finished.
+  const { count: todayMockCount } = childId
+    ? await supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('child_id', childId)
+        .eq('type', 'mock')
+        .gte('completed_at', today)
+    : { count: 0 }
+  const mockDoneToday = Boolean(todayMockCount && todayMockCount > 0)
 
   const todaySessionIds = todaySessions?.map((session) => session.id).filter(Boolean) || []
   const { data: todayAttempts } = childId && todaySessionIds.length > 0
@@ -201,12 +240,13 @@ export default async function DashboardPage({
                          {missionsComplete ? "Target Reached! ✨" : `${Math.min(100, Math.round((completedMissionCount / (recommendations.length || 3)) * 100))}% toward goal`}
                       </span>
                    </div>
-                   <DailyMission 
-                     recommendations={recommendations} 
-                     childName={children?.[0]?.name || 'Student'} 
+                   <DailyMission
+                     recommendations={recommendations}
+                     childName={children?.[0]?.name || 'Student'}
                      isComplete={missionsComplete}
                       completedTopics={completedTopics}
                       isPro={profileHasAccess}
+                      mockDoneToday={mockDoneToday}
                     />
                  </div>
                )}
