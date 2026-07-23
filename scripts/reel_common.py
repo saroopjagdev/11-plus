@@ -152,6 +152,21 @@ def download_r2_object(client: BaseClient, bucket: str, key: str, destination: P
         client.download_fileobj(bucket, key, fh)
 
 
+def generate_presigned_url(client: BaseClient, bucket: str, key: str, *, expires_in: int = 3600) -> str:
+    """Public, time-limited GET URL for an R2 object.
+
+    Facebook's video endpoint accepts a direct file upload, but Instagram's
+    Graph API (`/media` with `media_type=REELS`) requires a `video_url` it
+    fetches from itself, so the rendered reel needs to be reachable over
+    HTTP(S) rather than posted as multipart form data.
+    """
+    return client.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": bucket, "Key": key},
+        ExpiresIn=expires_in,
+    )
+
+
 def retry(
     operation: Callable[[], Any],
     *,

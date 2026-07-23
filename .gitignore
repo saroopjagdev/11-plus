@@ -42,3 +42,8 @@ next-env.d.ts
 
 fb_reels.csv
 fb_reels.txt
+
+# python
+__pycache__/
+*.pyc
+scratch/

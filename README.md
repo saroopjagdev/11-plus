@@ -1,25 +1,34 @@
 # Ace11Plus
 
-This repository contains the Ace11Plus web app and a small Facebook reel posting automation.
+This repository contains the Ace11Plus web app and a small reel posting automation for Facebook, Instagram, and YouTube.
 
-## Facebook Reel Automation
+## Reel Automation
 
 The reel automation is intentionally simple:
 
 - `scripts/upload_assets.py`
   Uploads local `.mp4` reels and `.mp3` music from your Windows laptop to Cloudflare R2.
 - `scripts/post_reel.py`
-  Selects random reels from R2, optionally bakes in random music with `ffmpeg`, and posts them to your Facebook Page.
+  Selects random reels from R2, optionally bakes in random music with `ffmpeg`, and posts them to your Facebook Page, Instagram account, and YouTube channel.
+- `scripts/social_instagram.py`
+  Posts the same rendered reel to Instagram as a Reel via the Graph API.
+- `scripts/social_youtube.py`
+  Posts the same rendered reel to YouTube as a Short via the YouTube Data API.
+- `scripts/youtube_auth_setup.py`
+  One-time interactive script (run locally, never in CI) that mints the YouTube refresh token.
 - `.github/workflows/post-reel.yml`
   Runs the posting script twice daily and also supports manual runs.
 
-This automation is **Facebook only**. It does not include Instagram, TikTok, YouTube, scraping, browser automation, or group posting.
+All three platforms post the **same rendered video** — there's still only one content source (your own reels in R2), not separate pipelines per platform. Instagram and YouTube are each optional: leave their environment variables unset and `post_reel.py` skips that platform with a log line, still posting to the others. This automation does not include TikTok, scraping, browser automation, or group posting — it only publishes your own produced content.
 
 ## Files
 
 - [scripts/upload_assets.py](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/upload_assets.py)
 - [scripts/post_reel.py](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/post_reel.py)
 - [scripts/reel_common.py](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/reel_common.py)
+- [scripts/social_instagram.py](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/social_instagram.py)
+- [scripts/social_youtube.py](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/social_youtube.py)
+- [scripts/youtube_auth_setup.py](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/youtube_auth_setup.py)
 - [requirements.txt](/C:/Users/ssjag/OneDrive/Programming/11-plus/requirements.txt)
 - [captions.txt](/C:/Users/ssjag/OneDrive/Programming/11-plus/captions.txt)
 - [config.example.env](/C:/Users/ssjag/OneDrive/Programming/11-plus/config.example.env)
@@ -36,6 +45,7 @@ FACEBOOK_USER_ACCESS_TOKEN=
 FACEBOOK_APP_ID=
 FACEBOOK_APP_SECRET=
 FACEBOOK_TOKEN_CACHE_PATH=scratch/facebook_tokens.json
+FACEBOOK_TOKEN_R2_KEY=state/facebook_tokens.json
 CAPTIONS_FILE_PATH=captions.txt
 FIXED_CAPTION=
 GRAPH_API_VERSION=v19.0
@@ -48,6 +58,23 @@ R2_REELS_PREFIX=reels/
 R2_MUSIC_PREFIX=music/
 LOCAL_REELS_DIR=C:\Users\ssjag\OneDrive\Ace11Plus\reels
 LOCAL_MUSIC_DIR=C:\Users\ssjag\OneDrive\Ace11Plus\music
+
+# Optional — Instagram (own, independent Facebook Developer App — not the
+# same credentials as the FACEBOOK_* app above)
+INSTAGRAM_USER_ID=
+INSTAGRAM_PAGE_ACCESS_TOKEN=
+INSTAGRAM_USER_ACCESS_TOKEN=
+INSTAGRAM_APP_ID=
+INSTAGRAM_APP_SECRET=
+INSTAGRAM_PAGE_ID=
+INSTAGRAM_TOKEN_CACHE_PATH=scratch/instagram_tokens.json
+INSTAGRAM_TOKEN_R2_KEY=state/instagram_tokens.json
+
+# Optional — YouTube
+YOUTUBE_CLIENT_ID=
+YOUTUBE_CLIENT_SECRET=
+YOUTUBE_REFRESH_TOKEN=
+YOUTUBE_PRIVACY_STATUS=public
 ```
 
 ## Local Setup
@@ -69,12 +96,53 @@ For Facebook auth, the script now supports two modes:
   - `FACEBOOK_APP_ID`
   - `FACEBOOK_APP_SECRET`
   - the script refreshes the long-lived user token when needed and fetches the Page token dynamically
+  - the refreshed token is synced to R2 (`FACEBOOK_TOKEN_R2_KEY`), not just the local `FACEBOOK_TOKEN_CACHE_PATH` file, so it survives across separate GitHub Actions runs instead of being silently discarded when the runner is torn down
 - fallback:
   - `FACEBOOK_PAGE_ACCESS_TOKEN`
   - if this is set, the script uses it directly
 
 For captions, the script looks for [captions.txt](/C:/Users/ssjag/OneDrive/Programming/11-plus/captions.txt) by default.
 You can override that with `CAPTIONS_FILE_PATH` if needed.
+
+## Instagram Setup (optional)
+
+Instagram posting authenticates through its **own, independent Facebook Developer App** — not the same App/token used for Facebook Page posting above. Two ways to configure it:
+
+**Simple (recommended to start)** — set a Page access token directly, no auto-refresh:
+
+1. Link your Instagram Business/Creator account to a Facebook Page (Meta Business Suite → Settings → Linked Accounts).
+2. In the [Graph API Explorer](https://developers.facebook.com/tools/explorer/), select your Instagram app, get a Page access token for that linked Page.
+3. Find the Instagram Business Account ID: `GET /{page-id}?fields=instagram_business_account` — copy the `id` from the response.
+4. Set `INSTAGRAM_USER_ID` to that id, and `INSTAGRAM_PAGE_ACCESS_TOKEN` to the Page token from step 2.
+
+This token isn't refreshed automatically — Facebook Page tokens derived from a long-lived user token typically last ~60 days, so you'll need to regenerate it periodically unless you use the auto-refreshing mode below.
+
+**Auto-refreshing (optional upgrade)** — same long-lived-token-refresh + R2-persistence machinery as Facebook, running independently for the Instagram app:
+
+1. Instead of `INSTAGRAM_PAGE_ACCESS_TOKEN`, set `INSTAGRAM_USER_ACCESS_TOKEN` (a long-lived user token for the Instagram app), `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, and `INSTAGRAM_PAGE_ID` (the Page linked to the Instagram account, under this app).
+2. `post_reel.py` will refresh this token automatically and sync it to R2 (`INSTAGRAM_TOKEN_R2_KEY`), the same way it does for Facebook.
+
+Leave `INSTAGRAM_USER_ID` blank and `post_reel.py` skips Instagram, still posting to Facebook (and YouTube, if configured).
+
+## YouTube Setup (optional)
+
+YouTube uses Google's own OAuth2, not the Facebook Graph API, so it needs a one-time interactive authorization to mint a refresh token — after that, `post_reel.py` refreshes its short-lived access token automatically on every run, the same "authorize once, run headlessly forever" shape as the existing Facebook long-lived user token.
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create a project (or reuse one) and enable the **YouTube Data API v3**.
+2. Configure the OAuth consent screen (External is fine — you don't need Google's app review just to authorize your own channel).
+3. Create OAuth 2.0 credentials of type **Desktop app**. Note the Client ID and Client Secret.
+4. Set `YOUTUBE_CLIENT_ID` and `YOUTUBE_CLIENT_SECRET` in your local environment.
+5. Run the one-time setup script, which opens a browser for you to sign in and grant consent:
+
+```bash
+python scripts/youtube_auth_setup.py
+```
+
+6. Save the printed refresh token as `YOUTUBE_REFRESH_TOKEN`, both locally and as a GitHub secret.
+
+Leave any of `YOUTUBE_CLIENT_ID` / `YOUTUBE_CLIENT_SECRET` / `YOUTUBE_REFRESH_TOKEN` unset and `post_reel.py` skips YouTube, still posting to Facebook (and Instagram, if configured).
+
+`YOUTUBE_PRIVACY_STATUS` controls the upload visibility (`public`, `unlisted`, or `private`) and defaults to `public`.
 
 ## Upload Local Assets to R2
 
@@ -117,8 +185,8 @@ This will:
 - choose random assets
 - download them locally
 - render the final MP4 with `ffmpeg`
-- print what would be uploaded
-- skip the Facebook upload
+- print what would be uploaded, and to which platforms are configured (Facebook, plus Instagram/YouTube if their environment variables are set)
+- skip the actual upload to any platform
 
 Real post:
 
@@ -182,11 +250,15 @@ For each reel:
 - applies low-volume background music around `0.16` to `0.20`
 - adds short fade in and fade out
 - chooses one random caption from `captions.txt` for each upload
-- uploads the final MP4 to `/{page-id}/videos`
+- uploads the final MP4 to Facebook (`/{page-id}/videos`), then — if configured — the same file to Instagram (as a Reel) and YouTube (as a Short)
 - falls back to `FIXED_CAPTION` only if the caption pool is unavailable
 - waits 60 to 120 seconds between posts in the same run
 
 If no music is available, the script logs a warning and posts the original reel without added music.
+
+Instagram and YouTube post the identical final video Facebook received — there's no separate per-platform rendering. Each platform is attempted independently: if Instagram or YouTube fails (bad token, API error, etc.) it's logged and the run still tries the remaining platform(s) rather than aborting, though the run exits non-zero afterward so a partial failure is still visible in GitHub Actions. A Facebook failure still aborts the run immediately, since it's the platform every run has always required.
+
+Instagram specifically uploads the rendered file to a temporary `processed/` key in R2, generates a short-lived presigned URL (Instagram's Graph API fetches videos by URL rather than accepting a direct file upload like Facebook), and deletes that temporary copy again once publishing finishes or definitively fails.
 
 ## GitHub Actions
 
@@ -213,8 +285,21 @@ Set these GitHub Secrets:
 - `R2_BUCKET_NAME`
 - `R2_ENDPOINT_URL`
 
-`POSTS_PER_RUN` is set to `1` in the workflow so each scheduled run creates one Facebook post.
-`GRAPH_API_VERSION`, `R2_REELS_PREFIX`, and `R2_MUSIC_PREFIX` are set to safe defaults in the script/workflow.
+Optional — only needed for Instagram posting (see [Instagram Setup](#instagram-setup-optional)):
+
+- `INSTAGRAM_USER_ID`
+- `INSTAGRAM_PAGE_ID` (only if it differs from `FACEBOOK_PAGE_ID`)
+
+Optional — only needed for YouTube posting (see [YouTube Setup](#youtube-setup-optional)):
+
+- `YOUTUBE_CLIENT_ID`
+- `YOUTUBE_CLIENT_SECRET`
+- `YOUTUBE_REFRESH_TOKEN`
+
+Leaving the Instagram or YouTube secrets unset is safe — `post_reel.py` logs that the platform is disabled and continues posting to the others.
+
+`POSTS_PER_RUN` is set to `1` in the workflow so each scheduled run creates one post per enabled platform.
+`GRAPH_API_VERSION`, `R2_REELS_PREFIX`, `R2_MUSIC_PREFIX`, and `YOUTUBE_PRIVACY_STATUS` are set to safe defaults in the script/workflow.
 
 Important:
 
@@ -235,6 +320,9 @@ They also:
 
 - exit cleanly if no reels are found
 - warn and continue if no music is found
-- retry small Facebook network/server upload errors
+- retry small Facebook/Instagram network/server upload errors
 - log major steps for easier debugging
-- refresh and cache the Facebook long-lived user token when app credentials are configured
+- refresh and cache the Facebook long-lived user token when app credentials are configured, syncing the refreshed token to R2 (`FACEBOOK_TOKEN_R2_KEY`) as well as the local cache path, so a refresh isn't silently lost between separate GitHub Actions runs
+- refresh the YouTube access token automatically from the stored refresh token on every run
+- skip Instagram or YouTube individually (logging why) rather than failing the run when their credentials aren't configured
+- log an Instagram or YouTube posting failure and still attempt the remaining platform(s), but exit non-zero at the end of the run so a partial failure is visible in GitHub Actions

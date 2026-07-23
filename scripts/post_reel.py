@@ -12,6 +12,8 @@ from typing import Any
 
 import requests
 
+from botocore.client import BaseClient
+
 from reel_common import (
     choose_random_subset,
     create_r2_client,
@@ -27,7 +29,10 @@ from reel_common import (
     random_sleep_between,
     retry,
     run_command,
+    upload_file_to_r2,
 )
+from social_instagram import post_reel_to_instagram
+from social_youtube import post_reel_to_youtube
 
 
 DEFAULT_GRAPH_API_VERSION = "v19.0"
@@ -51,17 +56,42 @@ class TokenManager:
         app_secret: str | None,
         user_access_token: str | None,
         token_cache_path: Path,
+        r2_client: BaseClient | None = None,
+        r2_bucket: str | None = None,
+        r2_key: str | None = None,
+        platform_label: str = "Facebook",
     ) -> None:
         self.graph_api_version = graph_api_version
         self.app_id = app_id
         self.app_secret = app_secret
         self.initial_user_token = user_access_token
         self.token_cache_path = token_cache_path
+        # Refreshed tokens are also synced to R2 (when configured), not just
+        # written to token_cache_path. GitHub Actions runners are ephemeral —
+        # a local-only cache means a refreshed token is silently discarded at
+        # the end of every run, and the next run falls back to the original
+        # (eventually-expiring) user access token secret instead of the one
+        # actually refreshed 7 days ago.
+        self.r2_client = r2_client
+        self.r2_bucket = r2_bucket
+        self.r2_key = r2_key
+        # Purely cosmetic — distinguishes this instance's log lines when a
+        # second, independent TokenManager is used for a different platform's
+        # own Facebook Developer App (e.g. Instagram running under a separate
+        # app from the one used for Facebook Page posting).
+        self.platform_label = platform_label
         self.tokens: dict[str, Any] | None = None
 
     def _load_tokens(self) -> dict[str, Any]:
         if self.tokens is not None:
             return self.tokens
+
+        if not self.token_cache_path.exists() and self.r2_client and self.r2_bucket and self.r2_key:
+            try:
+                download_r2_object(self.r2_client, self.r2_bucket, self.r2_key, self.token_cache_path)
+                logger.info("Restored %s token cache from R2: %s", self.platform_label, self.r2_key)
+            except Exception as exc:  # noqa: BLE001
+                logger.info("No %s token cache in R2 yet (%s): %s", self.platform_label, self.r2_key, exc)
 
         if self.token_cache_path.exists():
             try:
@@ -72,7 +102,8 @@ class TokenManager:
 
         if not self.initial_user_token:
             raise ValueError(
-                "Missing Facebook token configuration. Set FACEBOOK_PAGE_ACCESS_TOKEN or FACEBOOK_USER_ACCESS_TOKEN."
+                f"Missing {self.platform_label} token configuration: no cached token, no R2 cache, "
+                "and no initial user access token was provided."
             )
 
         self.tokens = {
@@ -87,11 +118,24 @@ class TokenManager:
         self.token_cache_path.parent.mkdir(parents=True, exist_ok=True)
         self.token_cache_path.write_text(json.dumps(self.tokens, indent=2), encoding="utf-8")
 
+        if self.r2_client and self.r2_bucket and self.r2_key:
+            try:
+                upload_file_to_r2(
+                    self.r2_client,
+                    self.r2_bucket,
+                    self.r2_key,
+                    self.token_cache_path,
+                    content_type="application/json",
+                )
+                logger.info("Synced refreshed %s token cache to R2: %s", self.platform_label, self.r2_key)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not sync %s token cache to R2 (%s): %s", self.platform_label, self.r2_key, exc)
+
     def get_user_token(self) -> str:
         tokens = self._load_tokens()
         user_token = tokens.get("user_token")
         if not user_token:
-            raise ValueError("No Facebook user token available.")
+            raise ValueError(f"No {self.platform_label} user token available.")
 
         if not self.app_id or not self.app_secret:
             return user_token
@@ -102,7 +146,7 @@ class TokenManager:
             tokens = self._load_tokens()
             user_token = tokens.get("user_token")
             if not user_token:
-                raise ValueError("Facebook user token refresh did not return a usable token.")
+                raise ValueError(f"{self.platform_label} user token refresh did not return a usable token.")
 
         return str(user_token)
 
@@ -110,12 +154,12 @@ class TokenManager:
         tokens = self._load_tokens()
         user_token = tokens.get("user_token")
         if not user_token:
-            raise ValueError("Cannot refresh Facebook user token because none is configured.")
+            raise ValueError(f"Cannot refresh {self.platform_label} user token because none is configured.")
         if not self.app_id or not self.app_secret:
-            logger.info("Skipping Facebook user token refresh because app credentials are not configured.")
+            logger.info("Skipping %s user token refresh because app credentials are not configured.", self.platform_label)
             return
 
-        logger.info("Refreshing Facebook long-lived user access token.")
+        logger.info("Refreshing %s long-lived user access token.", self.platform_label)
         response = requests.get(
             f"https://graph.facebook.com/{self.graph_api_version}/oauth/access_token",
             params={
@@ -128,12 +172,12 @@ class TokenManager:
         )
         payload = response.json()
         if response.status_code >= 400 or "access_token" not in payload:
-            raise RuntimeError(f"Failed to refresh Facebook user token: {payload}")
+            raise RuntimeError(f"Failed to refresh {self.platform_label} user token: {payload}")
 
         tokens["user_token"] = payload["access_token"]
         tokens["last_refresh"] = time.time()
         self._save_tokens()
-        logger.info("Facebook user token refreshed and cached.")
+        logger.info("%s user token refreshed and cached.", self.platform_label)
 
     def get_page_token(self, page_id: str) -> str:
         user_token = self.get_user_token()
@@ -314,6 +358,40 @@ def main() -> int:
         app_id = get_env("FACEBOOK_APP_ID", "", required=False).strip() or None
         app_secret = get_env("FACEBOOK_APP_SECRET", "", required=False).strip() or None
         token_cache_path = Path(get_env("FACEBOOK_TOKEN_CACHE_PATH", "scratch/facebook_tokens.json"))
+        # Persists refreshed Facebook tokens to R2 so they survive across
+        # ephemeral GitHub Actions runs (see TokenManager for why).
+        token_cache_r2_key = get_env("FACEBOOK_TOKEN_R2_KEY", "state/facebook_tokens.json")
+
+        # Instagram — optional, and authenticated via its own, independent
+        # Facebook Developer App (a separate App ID/Secret/user token from
+        # the one used for Facebook Page posting above) — not a reuse of the
+        # Facebook credentials. Same two auth modes as Facebook:
+        #   preferred: INSTAGRAM_USER_ACCESS_TOKEN + INSTAGRAM_APP_ID +
+        #              INSTAGRAM_APP_SECRET + INSTAGRAM_PAGE_ID, refreshed
+        #              and R2-persisted the same way as the Facebook token.
+        #   fallback:  INSTAGRAM_PAGE_ACCESS_TOKEN used directly.
+        instagram_user_id = get_env("INSTAGRAM_USER_ID", "", required=False).strip() or None
+        instagram_direct_page_access_token = (
+            get_env("INSTAGRAM_PAGE_ACCESS_TOKEN", "", required=False).strip() or None
+        )
+        instagram_user_access_token = (
+            get_env("INSTAGRAM_USER_ACCESS_TOKEN", "", required=False).strip() or None
+        )
+        instagram_app_id = get_env("INSTAGRAM_APP_ID", "", required=False).strip() or None
+        instagram_app_secret = get_env("INSTAGRAM_APP_SECRET", "", required=False).strip() or None
+        instagram_page_id = get_env("INSTAGRAM_PAGE_ID", "", required=False).strip() or None
+        instagram_token_cache_path = Path(
+            get_env("INSTAGRAM_TOKEN_CACHE_PATH", "scratch/instagram_tokens.json")
+        )
+        instagram_token_r2_key = get_env("INSTAGRAM_TOKEN_R2_KEY", "state/instagram_tokens.json")
+
+        # YouTube — optional. All three must be set together (minted once via
+        # scripts/youtube_auth_setup.py) or YouTube posting is skipped.
+        youtube_client_id = get_env("YOUTUBE_CLIENT_ID", "", required=False).strip() or None
+        youtube_client_secret = get_env("YOUTUBE_CLIENT_SECRET", "", required=False).strip() or None
+        youtube_refresh_token = get_env("YOUTUBE_REFRESH_TOKEN", "", required=False).strip() or None
+        youtube_privacy_status = get_env("YOUTUBE_PRIVACY_STATUS", "public")
+
         client = create_r2_client()
         ensure_binary("ffmpeg")
         ensure_binary("ffprobe")
@@ -324,10 +402,39 @@ def main() -> int:
             app_secret=app_secret,
             user_access_token=user_access_token,
             token_cache_path=token_cache_path,
+            r2_client=client,
+            r2_bucket=bucket,
+            r2_key=token_cache_r2_key,
         )
+
+        instagram_token_manager: TokenManager | None = None
+        if instagram_user_id and not instagram_direct_page_access_token:
+            instagram_token_manager = TokenManager(
+                graph_api_version=graph_api_version,
+                app_id=instagram_app_id,
+                app_secret=instagram_app_secret,
+                user_access_token=instagram_user_access_token,
+                token_cache_path=instagram_token_cache_path,
+                r2_client=client,
+                r2_bucket=bucket,
+                r2_key=instagram_token_r2_key,
+                platform_label="Instagram",
+            )
     except Exception as exc:  # noqa: BLE001
         logger.error("%s", exc)
         return 1
+
+    instagram_enabled = bool(
+        instagram_user_id
+        and (instagram_direct_page_access_token or (instagram_user_access_token and instagram_page_id))
+    )
+    youtube_enabled = bool(youtube_client_id and youtube_client_secret and youtube_refresh_token)
+    logger.info(
+        "Platforms enabled — Facebook: yes, Instagram: %s, YouTube: %s",
+        "yes" if instagram_enabled else "no (INSTAGRAM_USER_ID not set)",
+        "yes" if youtube_enabled else "no (YOUTUBE_CLIENT_ID/SECRET/REFRESH_TOKEN not fully set)",
+    )
+    any_platform_failed = False
 
     reel_keys = list_r2_keys(client, bucket, reels_prefix, ".mp4")
     if not reel_keys:
@@ -383,11 +490,13 @@ def main() -> int:
 
                 if args.dry_run:
                     logger.info(
-                        "[DRY RUN] Would upload %s with caption=%r from reel=%s music=%s",
+                        "[DRY RUN] Would upload %s with caption=%r from reel=%s music=%s to Facebook%s%s",
                         output_path,
                         selected_caption,
                         job.reel_key,
                         job.music_key,
+                        ", Instagram" if instagram_enabled else "",
+                        ", YouTube" if youtube_enabled else "",
                     )
                 else:
                     upload_token = direct_page_access_token
@@ -406,13 +515,54 @@ def main() -> int:
                     )
                     logger.info("Posted reel successfully. Facebook response: %s", response)
 
+                    # Instagram and YouTube are attempted independently of
+                    # each other and of Facebook above: one platform being
+                    # down or misconfigured shouldn't stop the reel from
+                    # reaching the others. Failures are logged and recorded
+                    # via any_platform_failed (so the run still exits
+                    # non-zero for visibility in CI) rather than raised.
+                    if instagram_enabled:
+                        try:
+                            if instagram_direct_page_access_token:
+                                ig_token = instagram_direct_page_access_token
+                            else:
+                                assert instagram_token_manager is not None
+                                assert instagram_page_id is not None
+                                ig_token = instagram_token_manager.get_page_token(instagram_page_id)
+                            post_reel_to_instagram(
+                                r2_client=client,
+                                bucket=bucket,
+                                output_path=output_path,
+                                ig_user_id=instagram_user_id,
+                                access_token=ig_token,
+                                graph_api_version=graph_api_version,
+                                caption=selected_caption,
+                            )
+                        except Exception as exc:  # noqa: BLE001
+                            logger.error("Instagram post failed for %s: %s", job.reel_key, exc)
+                            any_platform_failed = True
+
+                    if youtube_enabled:
+                        try:
+                            post_reel_to_youtube(
+                                output_path=output_path,
+                                client_id=youtube_client_id,
+                                client_secret=youtube_client_secret,
+                                refresh_token=youtube_refresh_token,
+                                caption=selected_caption,
+                                privacy_status=youtube_privacy_status,
+                            )
+                        except Exception as exc:  # noqa: BLE001
+                            logger.error("YouTube post failed for %s: %s", job.reel_key, exc)
+                            any_platform_failed = True
+
                 if index < len(jobs):
                     random_sleep_between(60, 120)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Failed to process %s: %s", job.reel_key, exc)
                 return 1
 
-    return 0
+    return 1 if any_platform_failed else 0
 
 
 if __name__ == "__main__":

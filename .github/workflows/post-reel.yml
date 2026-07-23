@@ -1,4 +1,4 @@
-name: Post Facebook Reel
+name: Post Reel (Facebook, Instagram, YouTube)
 
 on:
   workflow_dispatch:
@@ -29,6 +29,23 @@ jobs:
       R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
       R2_REELS_PREFIX: reels/
       R2_MUSIC_PREFIX: music/
+      # Instagram — own, independent Facebook app. Leave INSTAGRAM_USER_ID
+      # unset/empty to skip Instagram posting. Set either
+      # INSTAGRAM_PAGE_ACCESS_TOKEN directly, or the
+      # INSTAGRAM_USER_ACCESS_TOKEN/APP_ID/APP_SECRET/PAGE_ID group for
+      # auto-refresh — see README.md.
+      INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+      INSTAGRAM_PAGE_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_PAGE_ACCESS_TOKEN }}
+      INSTAGRAM_USER_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_USER_ACCESS_TOKEN }}
+      INSTAGRAM_APP_ID: ${{ secrets.INSTAGRAM_APP_ID }}
+      INSTAGRAM_APP_SECRET: ${{ secrets.INSTAGRAM_APP_SECRET }}
+      INSTAGRAM_PAGE_ID: ${{ secrets.INSTAGRAM_PAGE_ID }}
+      INSTAGRAM_TOKEN_CACHE_PATH: scratch/instagram_tokens.json
+      # YouTube — leave these secrets unset/empty to skip YouTube posting.
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      YOUTUBE_PRIVACY_STATUS: public
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
