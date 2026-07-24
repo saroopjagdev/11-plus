@@ -3,9 +3,17 @@
 const { pick, sample } = require('../lib/random');
 const { finalize } = require('../lib/assemble');
 const DATA = require('../../data/antonyms');
+const EXPLANATIONS = require('../../data/antonym-explanations');
 
 const SUBJECT = 'Verbal Reasoning';
 const TOPIC = 'Antonyms';
+
+const STEMS = [
+  (w) => `Which word means the opposite of ${w.toUpperCase()}?`,
+  (w) => `Choose the word most opposite in meaning to ${w.toUpperCase()}.`,
+  (w) => `Select an antonym for ${w.toUpperCase()}.`,
+  (w) => `Which of these words is most nearly opposite to ${w.toUpperCase()}?`,
+];
 
 function generate(difficulty) {
   const tier = DATA.filter((e) => e.difficulty === difficulty);
@@ -29,12 +37,14 @@ function generate(difficulty) {
   }
   const distractors = sample([...new Set(candidatePool)], 8);
 
+  const richExplanation = EXPLANATIONS[`${entry.word.toLowerCase()}:${correct.toLowerCase()}`];
+
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `Which word means the opposite of ${entry.word.toUpperCase()}?`,
+    question_text: pick(STEMS)(entry.word),
     correct,
     distractors,
-    explanation: `"${correct}" is the opposite of "${entry.word}".`,
+    explanation: richExplanation || `"${correct}" is the opposite of "${entry.word}".`,
   });
 }
 

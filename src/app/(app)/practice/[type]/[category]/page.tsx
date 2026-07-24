@@ -566,7 +566,10 @@ export default async function PracticeSessionPage({ params, searchParams }: Page
     // happened to be generated first" rather than a representative sample —
     // e.g. a cross-topic "Maths" drill skewing hard toward whichever topic
     // was seeded earliest instead of a genuine mix.
-    const POOL_CAP = 300
+    // Vocabulary/Synonyms/Antonyms pool expansions pushed some topics past
+    // the old 300 cap (Synonyms 362, Antonyms 320 as of the expansion that
+    // added this comment) — 500 gives headroom above current maximums.
+    const POOL_CAP = 500
     const { data: pool, error } = await query.order('id', { ascending: true }).limit(POOL_CAP)
     console.log('Questions found:', pool?.length || 0)
     if (error) console.error('Query Error:', error)

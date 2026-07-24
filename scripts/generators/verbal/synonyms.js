@@ -5,9 +5,17 @@
 const { pick, sample } = require('../lib/random');
 const { finalize } = require('../lib/assemble');
 const DATA = require('../../data/synonyms');
+const EXPLANATIONS = require('../../data/synonym-explanations');
 
 const SUBJECT = 'Verbal Reasoning';
 const TOPIC = 'Synonyms';
+
+const STEMS = [
+  (w) => `Which word means the same as ${w.toUpperCase()}?`,
+  (w) => `Choose the word closest in meaning to ${w.toUpperCase()}.`,
+  (w) => `Select a synonym for ${w.toUpperCase()}.`,
+  (w) => `Which of these words is closest to ${w.toUpperCase()} in meaning?`,
+];
 
 function generate(difficulty) {
   const tier = DATA.filter((e) => e.difficulty === difficulty);
@@ -32,12 +40,14 @@ function generate(difficulty) {
   }
   const distractors = sample([...new Set(candidatePool)], 8);
 
+  const richExplanation = EXPLANATIONS[`${entry.word.toLowerCase()}:${correct.toLowerCase()}`];
+
   return finalize({
     subject: SUBJECT, topic: TOPIC, difficulty,
-    question_text: `Which word means the same as ${entry.word.toUpperCase()}?`,
+    question_text: pick(STEMS)(entry.word),
     correct,
     distractors,
-    explanation: `"${correct}" means the same as "${entry.word}".`,
+    explanation: richExplanation || `"${correct}" means the same as "${entry.word}".`,
   });
 }
 
