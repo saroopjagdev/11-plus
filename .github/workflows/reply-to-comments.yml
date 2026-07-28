@@ -1,0 +1,47 @@
+name: Reply to Instagram Comments
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub Actions cron uses UTC. Runs every 2 hours so a RESOURCE comment
+    # gets a DM reply promptly rather than waiting for the next reel post.
+    - cron: "0 */2 * * *"
+
+jobs:
+  reply-to-comments:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GRAPH_API_VERSION: v19.0
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+      # Same Instagram app credentials used for reel posting — needs
+      # instagram_manage_comments + instagram_manage_messages permissions
+      # in addition to whatever's already granted. See README.md's
+      # "Comment-to-DM Setup" section.
+      INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+      INSTAGRAM_PAGE_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_PAGE_ACCESS_TOKEN }}
+      INSTAGRAM_USER_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_USER_ACCESS_TOKEN }}
+      INSTAGRAM_APP_ID: ${{ secrets.INSTAGRAM_APP_ID }}
+      INSTAGRAM_APP_SECRET: ${{ secrets.INSTAGRAM_APP_SECRET }}
+      INSTAGRAM_PAGE_ID: ${{ secrets.INSTAGRAM_PAGE_ID }}
+      INSTAGRAM_TOKEN_CACHE_PATH: scratch/instagram_tokens.json
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Reply to comments
+        run: python scripts/reply_to_comments.py

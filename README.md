@@ -16,8 +16,14 @@ The reel automation is intentionally simple:
   Posts the same rendered reel to YouTube as a Short via the YouTube Data API.
 - `scripts/youtube_auth_setup.py`
   One-time interactive script (run locally, never in CI) that mints the YouTube refresh token.
+- `scripts/reply_to_comments.py`
+  Checks comments on Instagram posts from the last 24 hours for the trigger word `RESOURCE`, and DMs the commenter a resource link via Meta's private-reply API. Keeps a record of who's already been DMd so nobody gets messaged twice.
+- `scripts/instagram_comments.py`
+  Instagram comment-reading and private-reply-sending helpers used by `reply_to_comments.py`.
 - `.github/workflows/post-reel.yml`
   Runs the posting script twice daily and also supports manual runs.
+- `.github/workflows/reply-to-comments.yml`
+  Runs the comment-reply script every 2 hours and also supports manual runs.
 
 All three platforms post the **same rendered video** — there's still only one content source (your own reels in R2), not separate pipelines per platform. Instagram and YouTube are each optional: leave their environment variables unset and `post_reel.py` skips that platform with a log line, still posting to the others. This automation does not include TikTok, scraping, browser automation, or group posting — it only publishes your own produced content.
 
@@ -69,6 +75,10 @@ INSTAGRAM_APP_SECRET=
 INSTAGRAM_PAGE_ID=
 INSTAGRAM_TOKEN_CACHE_PATH=scratch/instagram_tokens.json
 INSTAGRAM_TOKEN_R2_KEY=state/instagram_tokens.json
+
+# Optional — Comment-to-DM automation (reuses INSTAGRAM_* above)
+INSTAGRAM_COMMENTS_LOOKBACK_HOURS=24
+INSTAGRAM_DM_RECORD_R2_KEY=state/instagram_dmd_commenters.json
 
 # Optional — YouTube
 YOUTUBE_CLIENT_ID=
@@ -123,6 +133,24 @@ This token isn't refreshed automatically — Facebook Page tokens derived from a
 2. `post_reel.py` will refresh this token automatically and sync it to R2 (`INSTAGRAM_TOKEN_R2_KEY`), the same way it does for Facebook.
 
 Leave `INSTAGRAM_USER_ID` blank and `post_reel.py` skips Instagram, still posting to Facebook (and YouTube, if configured).
+
+## Comment-to-DM Setup (optional)
+
+`scripts/reply_to_comments.py` checks comments on Instagram posts from the last 24 hours, and for any comment containing the word `RESOURCE` (case insensitive), sends the commenter a DM with a link to the free diagnostic tool — using Meta's official ["private reply to a comment"](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/private-replies) endpoint (`/{comment-id}/private_replies`), the supported, policy-compliant way to turn a public comment into a DM. It reuses the same `INSTAGRAM_*` credentials already configured above.
+
+**This needs additional Meta permissions** beyond what reel posting already uses:
+
+1. In the [Graph API Explorer](https://developers.facebook.com/tools/explorer/), with your Instagram app selected, click **"Get User Access Token"** again and make sure `instagram_manage_comments` and `instagram_manage_messages` are both checked in the permissions list, alongside whatever's already granted for posting.
+2. If you're using the auto-refreshing auth mode (`INSTAGRAM_USER_ACCESS_TOKEN`), replace it with the freshly-authorized long-lived token — the old one won't have these scopes.
+3. If you're using the simple mode (`INSTAGRAM_PAGE_ACCESS_TOKEN`), regenerate a Page token from the re-authorized user token the same way as the original Instagram setup.
+
+Behavior:
+
+- runs on its own schedule (`.github/workflows/reply-to-comments.yml`, every 2 hours), independent of reel posting, so a comment gets a reply within a couple of hours rather than waiting for the next twice-daily reel run
+- only looks at posts from the last `INSTAGRAM_COMMENTS_LOOKBACK_HOURS` hours (default 24) — a comment on an older post won't be picked up
+- the trigger word and DM message are hardcoded constants at the top of `reply_to_comments.py` (`TRIGGER_WORD`, `DM_MESSAGE`) — edit the file directly to change them
+- keeps a record of who's already been DMd (keyed by Instagram-scoped user id, falling back to username) in R2 at `INSTAGRAM_DM_RECORD_R2_KEY`, so the same commenter is never messaged twice, even across separate posts or runs
+- `python scripts/reply_to_comments.py --dry-run` lists which comments would trigger a DM without sending anything or updating the record
 
 ## YouTube Setup (optional)
 
