@@ -164,6 +164,39 @@ def download_r2_object(client: BaseClient, bucket: str, key: str, destination: P
         raise
 
 
+def supabase_insert_rows(
+    *,
+    supabase_url: str,
+    service_role_key: str,
+    table: str,
+    rows: list[dict[str, Any]],
+) -> None:
+    """Bulk-inserts rows into a Supabase table via PostgREST, using the
+    service role key (bypasses RLS — safe here because this is
+    server-to-server automation writing to an internal-only table, not
+    handling any user-supplied input).
+
+    Deliberately a raw `requests` call rather than the `supabase-py` SDK —
+    every other external API in this repo (Graph API, R2) is called
+    directly via requests, and this would otherwise be the only place
+    introducing a second HTTP client / error-handling shape.
+    """
+    endpoint = f"{supabase_url.rstrip('/')}/rest/v1/{table}"
+    response = requests.post(
+        endpoint,
+        headers={
+            "apikey": service_role_key,
+            "Authorization": f"Bearer {service_role_key}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+        },
+        json=rows,
+        timeout=30,
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(f"Supabase insert into {table} failed: {response.text}")
+
+
 def generate_presigned_url(client: BaseClient, bucket: str, key: str, *, expires_in: int = 3600) -> str:
     """Public, time-limited GET URL for an R2 object.
 

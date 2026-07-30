@@ -19,11 +19,17 @@ The reel automation is intentionally simple:
 - `scripts/reply_to_comments.py`
   Checks comments on Instagram posts from the last 24 hours for the trigger word `RESOURCE`, and DMs the commenter a resource link via Meta's private-reply API. Keeps a record of who's already been DMd so nobody gets messaged twice.
 - `scripts/instagram_comments.py`
-  Instagram comment-reading and private-reply-sending helpers used by `reply_to_comments.py`.
+  Instagram comment-reading and private-reply-sending helpers used by `reply_to_comments.py` and `collect_insights.py`.
+- `scripts/collect_insights.py`
+  Pulls per-post Instagram Insights metrics (reach, saves, shares, comments, likes, total interactions) and stores them in Supabase for trend analysis.
+- `scripts/instagram_insights.py`
+  Instagram Insights-fetching helper used by `collect_insights.py`.
 - `.github/workflows/post-reel.yml`
   Runs the posting script twice daily and also supports manual runs.
 - `.github/workflows/reply-to-comments.yml`
-  Runs the comment-reply script every 2 hours and also supports manual runs.
+  Runs the comment-reply script every 15 minutes and also supports manual runs.
+- `.github/workflows/collect-insights.yml`
+  Runs the Insights-collection script daily and also supports manual runs (with an optional backfill-days input).
 
 All three platforms post the **same rendered video** — there's still only one content source (your own reels in R2), not separate pipelines per platform. Instagram and YouTube are each optional: leave their environment variables unset and `post_reel.py` skips that platform with a log line, still posting to the others. This automation does not include TikTok, scraping, browser automation, or group posting — it only publishes your own produced content.
 
@@ -79,6 +85,14 @@ INSTAGRAM_TOKEN_R2_KEY=state/instagram_tokens.json
 # Optional — Comment-to-DM automation (reuses INSTAGRAM_* above)
 INSTAGRAM_COMMENTS_LOOKBACK_HOURS=24
 INSTAGRAM_DM_RECORD_R2_KEY=state/instagram_dmd_commenters.json
+
+# Optional — Insights collection (reuses INSTAGRAM_* above; also needs
+# SUPABASE_URL, or falls back to NEXT_PUBLIC_SUPABASE_URL, and
+# SUPABASE_SERVICE_ROLE_KEY)
+INSTAGRAM_INSIGHTS_MIN_AGE_HOURS=24
+INSTAGRAM_INSIGHTS_MAX_AGE_HOURS=168
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 
 # Optional — YouTube
 YOUTUBE_CLIENT_ID=
@@ -146,11 +160,31 @@ Leave `INSTAGRAM_USER_ID` blank and `post_reel.py` skips Instagram, still postin
 
 Behavior:
 
-- runs on its own schedule (`.github/workflows/reply-to-comments.yml`, every 2 hours), independent of reel posting, so a comment gets a reply within a couple of hours rather than waiting for the next twice-daily reel run
+- runs on its own schedule (`.github/workflows/reply-to-comments.yml`, every 15 minutes), independent of reel posting, so a comment gets a reply quickly rather than waiting for the next twice-daily reel run — GitHub's scheduled-workflow cron is best-effort, so expect some jitter, not exact 15-minute timing
 - only looks at posts from the last `INSTAGRAM_COMMENTS_LOOKBACK_HOURS` hours (default 24) — a comment on an older post won't be picked up
 - the trigger word and DM message are hardcoded constants at the top of `reply_to_comments.py` (`TRIGGER_WORD`, `DM_MESSAGE`) — edit the file directly to change them
 - keeps a record of who's already been DMd (keyed by Instagram-scoped user id, falling back to username) in R2 at `INSTAGRAM_DM_RECORD_R2_KEY`, so the same commenter is never messaged twice, even across separate posts or runs
 - `python scripts/reply_to_comments.py --dry-run` lists which comments would trigger a DM without sending anything or updating the record
+
+## Insights Setup (optional)
+
+`scripts/collect_insights.py` pulls per-post performance metrics (reach, saves, shares, comments, likes, total interactions) from Instagram's Insights API and stores them in Supabase (`instagram_media_insights`) so content strategy can be based on what's actually earning reach/saves/shares — the signals that matter most for Reels distribution — rather than guessed.
+
+**This needs another Meta permission**, distinct from the comments/DM ones above:
+
+1. In the [Graph API Explorer](https://developers.facebook.com/tools/explorer/), with your Instagram app selected, click **"Get User Access Token"** again and make sure `instagram_manage_insights` is checked, alongside whatever's already granted.
+2. Replace `INSTAGRAM_USER_ACCESS_TOKEN` (or regenerate `INSTAGRAM_PAGE_ACCESS_TOKEN`) the same way as for the Comment-to-DM setup above — the old token won't have this scope either.
+3. Apply the migration: run [scripts/instagram-insights-migration.sql](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/instagram-insights-migration.sql) manually via the Supabase SQL editor (no automated migration runner exists in this repo).
+4. Add `SUPABASE_URL` (or rely on the `NEXT_PUBLIC_SUPABASE_URL` fallback already used elsewhere) and `SUPABASE_SERVICE_ROLE_KEY` as GitHub Actions secrets — neither existing workflow currently has Supabase access.
+5. Once the above are in place, run a one-off backfill so you're not starting from zero: `python scripts/collect_insights.py --backfill-days 30` (or trigger `.github/workflows/collect-insights.yml` manually from the Actions tab with the `backfill_days` input set).
+
+Behavior:
+
+- runs daily (`.github/workflows/collect-insights.yml`, `0 6 * * *` UTC) — Insights numbers need time to stabilize after posting, so more-frequent collection wouldn't add useful signal
+- only collects for posts between `INSTAGRAM_INSIGHTS_MIN_AGE_HOURS` (default 24) and `INSTAGRAM_INSIGHTS_MAX_AGE_HOURS` (default 168/7 days) old, so numbers have had time to settle but the window stays bounded
+- re-collecting the same post's metrics on a later day is intentional, not a duplicate — that's how a trend gets built; only exact duplicate rows (same media, metric, and collection timestamp) are prevented
+- `instagram_media_insights` is a narrow (long) table — one row per post/metric/collection-run — rather than fixed columns per metric, so it keeps working if Meta adds or retires a metric later
+- `python scripts/collect_insights.py --dry-run` prints what would be collected without writing to Supabase
 
 ## YouTube Setup (optional)
 
@@ -265,6 +299,8 @@ To edit or add captions:
 2. Edit an existing caption block or append a new one
 3. Separate each caption block with a line containing `---`
 4. Save the file
+
+**Caption SEO**: when writing new captions, work at least one specific, searchable term into the body text — e.g. "verbal reasoning," "non-verbal reasoning," "GL Assessment," "CEM exam," "grammar school entrance exam," "comprehension," "maths reasoning" — rather than relying on hashtags alone. Caption text semantics are a real Explore/Search ranking signal, not just decoration; hashtag-only targeting under-delivers.
 
 ## Posting Behavior
 

@@ -1,17 +1,20 @@
-name: Reply to Instagram Comments
+name: Collect Instagram Insights
 
 on:
   workflow_dispatch:
+    inputs:
+      backfill_days:
+        description: "Optional: widen the lookback window to N days for a one-off historical backfill"
+        required: false
+        type: string
   schedule:
-    # GitHub Actions cron uses UTC. Runs every 15 minutes so a RESOURCE
-    # comment gets a DM reply quickly — response latency meaningfully
-    # affects DM conversion. Note: GitHub's scheduled-workflow cron is
-    # best-effort, not exact — expect some jitter under load, not
-    # fire-on-the-dot every 15 minutes.
-    - cron: "*/15 * * * *"
+    # GitHub Actions cron uses UTC. Once daily — Insights numbers need time
+    # to stabilize after posting, so more-frequent collection wouldn't add
+    # useful signal, just more (identical-ish) rows.
+    - cron: "0 6 * * *"
 
 jobs:
-  reply-to-comments:
+  collect-insights:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -21,10 +24,11 @@ jobs:
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
       R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
-      # Same Instagram app credentials used for reel posting — needs
-      # instagram_manage_comments + instagram_manage_messages permissions
-      # in addition to whatever's already granted. See README.md's
-      # "Comment-to-DM Setup" section.
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # Same Instagram app credentials used elsewhere — needs
+      # instagram_manage_insights in addition to whatever's already
+      # granted. See README.md's "Insights Setup" section.
       INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
       INSTAGRAM_PAGE_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_PAGE_ACCESS_TOKEN }}
       INSTAGRAM_USER_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_USER_ACCESS_TOKEN }}
@@ -46,5 +50,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Reply to comments
-        run: python scripts/reply_to_comments.py
+      - name: Collect insights
+        run: |
+          if [ -n "${{ inputs.backfill_days }}" ]; then
+            python scripts/collect_insights.py --backfill-days "${{ inputs.backfill_days }}"
+          else
+            python scripts/collect_insights.py
+          fi

@@ -35,10 +35,13 @@ from social_youtube import post_reel_to_youtube
 DEFAULT_GRAPH_API_VERSION = "v19.0"
 DEFAULT_POSTS_PER_RUN = 1
 DEFAULT_CAPTIONS_PATH = "captions.txt"
-# Appended to the Instagram caption only — the RESOURCE-comment-to-DM
+# Prepended to the Instagram caption only — the RESOURCE-comment-to-DM
 # automation (scripts/reply_to_comments.py) only reacts to Instagram
-# comments, so the call-to-action only makes sense there.
-INSTAGRAM_RESOURCE_CTA = "\n\n💬 Comment RESOURCE and we'll DM you our free 11+ diagnostic tool!"
+# comments, so the call-to-action only makes sense there. Placed at the
+# start (not appended) so it's visible before Instagram truncates the
+# caption behind "... more", rather than buried where most viewers won't
+# see it.
+INSTAGRAM_RESOURCE_CTA = "💬 Comment RESOURCE and we'll DM you our free 11+ diagnostic tool!\n\n"
 
 
 @dataclass
@@ -388,7 +391,7 @@ def main() -> int:
                                 ig_user_id=instagram_user_id,
                                 access_token=ig_token,
                                 graph_api_version=graph_api_version,
-                                caption=selected_caption + INSTAGRAM_RESOURCE_CTA,
+                                caption=INSTAGRAM_RESOURCE_CTA + selected_caption,
                             )
                         except Exception as exc:  # noqa: BLE001
                             logger.error("Instagram post failed for %s: %s", job.reel_key, exc)
