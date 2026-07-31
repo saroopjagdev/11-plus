@@ -24,7 +24,10 @@ jobs:
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
       R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      # collect_insights.py falls back to NEXT_PUBLIC_SUPABASE_URL if
+      # SUPABASE_URL isn't set — using that here since it's the one already
+      # configured as a secret (same value used by the Next.js app).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       # Same Instagram app credentials used elsewhere — needs
       # instagram_manage_insights in addition to whatever's already
