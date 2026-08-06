@@ -209,13 +209,21 @@ def render_reel(
         f"[0:v]scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,"
         f"crop={WIDTH}:{HEIGHT},setsar=1[bg]"
     ]
+    # `between(t,start,end)` is inclusive at both ends, so two adjacent
+    # cards' windows would both be "true" for the single frame that lands
+    # exactly on a shared boundary (e.g. card 0's [0,3] and card 1's [3,8]
+    # both include t=3) — a one-frame double-exposure flicker at every
+    # transition. Shave a hair off each window's end to make it effectively
+    # half-open ([start, end)) and avoid the overlap.
+    BOUNDARY_EPSILON = 1 / 30
     current_label = "bg"
     cursor = 0.0
     for index, card in enumerate(cards):
         start, end = cursor, cursor + card.duration
+        window_end = end if index == len(cards) - 1 else end - BOUNDARY_EPSILON
         out_label = f"v{index}"
         filter_parts.append(
-            f"[{current_label}][{index + 1}:v]overlay=enable='between(t,{start},{end})'[{out_label}]"
+            f"[{current_label}][{index + 1}:v]overlay=enable='between(t,{start},{window_end})'[{out_label}]"
         )
         current_label = out_label
         cursor = end
