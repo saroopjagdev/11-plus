@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import random
 import shutil
 import sys
@@ -23,6 +24,7 @@ from reel_common import (
     list_r2_keys,
     load_env_files,
     logger,
+    r2_object_exists,
     random_sleep_between,
     retry,
     run_command,
@@ -78,6 +80,56 @@ def select_caption(captions: list[str], fallback_caption: str) -> tuple[str, int
         selected_index = random.randrange(len(captions))
         return captions[selected_index], selected_index + 1
     return fallback_caption, None
+
+
+def load_reel_metadata(client: Any, bucket: str, reel_key: str) -> dict[str, Any] | None:
+    """Reels produced by scripts/generate_reel.py may have a JSON metadata
+    sidecar at `{reel_key}.json` in R2, containing the real content used
+    (word/meaning/example, or tip hook/body) — this lets the caption match
+    the video instead of being a random pick from captions.txt. Hand-made
+    reels have no sidecar; this returns None for those, and the caller
+    falls back to the existing random-caption behaviour unchanged.
+    """
+    sidecar_key = f"{reel_key}.json"
+    if not r2_object_exists(client, bucket, sidecar_key):
+        return None
+
+    with create_temp_dir() as temp_dir_name:
+        temp_path = Path(temp_dir_name) / "metadata.json"
+        try:
+            download_r2_object(client, bucket, sidecar_key, temp_path)
+            return json.loads(temp_path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not load reel metadata sidecar %s: %s", sidecar_key, exc)
+            return None
+
+
+def build_caption_from_metadata(metadata: dict[str, Any]) -> str | None:
+    template = metadata.get("template")
+
+    if template == "vocab":
+        word = str(metadata.get("word", "")).strip()
+        meaning = str(metadata.get("meaning", "")).strip()
+        example = str(metadata.get("example_sentence", "")).strip()
+        if not word or not meaning:
+            return None
+        parts = [f"Word of the Day: {word.upper()} — {meaning}."]
+        if example:
+            parts.append(f'\n\nExample: "{example}"')
+        parts.append("\n\n#11Plus #Vocabulary #WordOfTheDay #GrammarSchool #11PlusPreparation")
+        return "".join(parts)
+
+    if template == "tip":
+        hook = str(metadata.get("hook", "")).strip()
+        body = str(metadata.get("body", "")).strip()
+        if not body:
+            return None
+        parts = [f"{hook}\n\n"] if hook else []
+        parts.append(body)
+        parts.append("\n\n#11Plus #11PlusTips #11PlusPreparation #GrammarSchool")
+        return "".join(parts)
+
+    return None
 
 
 def is_retryable_upload_error(error: Exception) -> bool:
@@ -312,11 +364,21 @@ def main() -> int:
             music_path = temp_dir / Path(job.music_key).name if job.music_key else None
 
             try:
-                selected_caption, selected_caption_index = select_caption(captions, fallback_caption)
-                if selected_caption_index is not None:
-                    logger.info("Selected caption index: %s", selected_caption_index)
+                reel_metadata = load_reel_metadata(client, bucket, job.reel_key)
+                generated_caption = build_caption_from_metadata(reel_metadata) if reel_metadata else None
+
+                if generated_caption:
+                    selected_caption = generated_caption
+                    logger.info(
+                        "Using content-matched caption from generated-reel metadata (template=%s)",
+                        reel_metadata.get("template"),
+                    )
                 else:
-                    logger.info("Caption pool unavailable. Falling back to FIXED_CAPTION.")
+                    selected_caption, selected_caption_index = select_caption(captions, fallback_caption)
+                    if selected_caption_index is not None:
+                        logger.info("Selected caption index: %s", selected_caption_index)
+                    else:
+                        logger.info("Caption pool unavailable. Falling back to FIXED_CAPTION.")
 
                 retry(
                     lambda: download_r2_object(client, bucket, job.reel_key, reel_path),

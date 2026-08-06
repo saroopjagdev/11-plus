@@ -22,8 +22,43 @@ class UploadSummary:
     failed: int = 0
 
 
+# Each entry is one local-dir -> R2-prefix upload lane. `required=False`
+# lanes (backgrounds) are skipped with a log line rather than failing the
+# whole run if their env var isn't set yet — reels/music stay required
+# since the rest of the pipeline can't function without them.
+ASSET_TYPES = [
+    {
+        "name": "reels",
+        "env_dir": "LOCAL_REELS_DIR",
+        "env_prefix": "R2_REELS_PREFIX",
+        "default_prefix": "reels/",
+        "pattern": "*.mp4",
+        "content_type": "video/mp4",
+        "required": True,
+    },
+    {
+        "name": "music",
+        "env_dir": "LOCAL_MUSIC_DIR",
+        "env_prefix": "R2_MUSIC_PREFIX",
+        "default_prefix": "music/",
+        "pattern": "*.mp3",
+        "content_type": "audio/mpeg",
+        "required": True,
+    },
+    {
+        "name": "backgrounds",
+        "env_dir": "LOCAL_BACKGROUNDS_DIR",
+        "env_prefix": "R2_BACKGROUNDS_PREFIX",
+        "default_prefix": "backgrounds/",
+        "pattern": "*.mp4",
+        "content_type": "video/mp4",
+        "required": False,
+    },
+]
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Upload local reel and music assets to Cloudflare R2.")
+    parser = argparse.ArgumentParser(description="Upload local reel, music, and background assets to Cloudflare R2.")
     parser.add_argument("--force", action="store_true", help="Upload even if the key already exists in R2.")
     parser.add_argument("--dry-run", action="store_true", help="Print what would upload without writing to R2.")
     return parser.parse_args()
@@ -77,52 +112,55 @@ def main() -> int:
 
     try:
         bucket = get_env("R2_BUCKET_NAME", required=True)
-        reels_dir = Path(get_env("LOCAL_REELS_DIR", required=True))
-        music_dir = Path(get_env("LOCAL_MUSIC_DIR", required=True))
         client = create_r2_client()
     except Exception as exc:  # noqa: BLE001
         logger.error("%s", exc)
         return 1
 
-    if not reels_dir.exists():
-        logger.error("Local reels directory does not exist: %s", reels_dir)
-        return 1
+    summaries: dict[str, UploadSummary] = {}
 
-    if not music_dir.exists():
-        logger.error("Local music directory does not exist: %s", music_dir)
-        return 1
+    for asset_type in ASSET_TYPES:
+        name = asset_type["name"]
+        raw_dir = get_env(asset_type["env_dir"], "", required=False).strip()
+        prefix = get_env(asset_type["env_prefix"], asset_type["default_prefix"])
 
-    reels_summary = upload_directory(
-        client=client,
-        bucket=bucket,
-        local_dir=reels_dir,
-        pattern="*.mp4",
-        prefix="reels/",
-        content_type="video/mp4",
-        force=args.force,
-        dry_run=args.dry_run,
-    )
-    music_summary = upload_directory(
-        client=client,
-        bucket=bucket,
-        local_dir=music_dir,
-        pattern="*.mp3",
-        prefix="music/",
-        content_type="audio/mpeg",
-        force=args.force,
-        dry_run=args.dry_run,
-    )
+        if not raw_dir:
+            if asset_type["required"]:
+                logger.error("Missing required environment variable: %s", asset_type["env_dir"])
+                return 1
+            logger.info("%s not set — skipping %s upload.", asset_type["env_dir"], name)
+            continue
 
-    logger.info(
-        "Upload complete. reels(uploaded=%s skipped=%s failed=%s) music(uploaded=%s skipped=%s failed=%s)",
-        reels_summary.uploaded,
-        reels_summary.skipped,
-        reels_summary.failed,
-        music_summary.uploaded,
-        music_summary.skipped,
-        music_summary.failed,
-    )
-    return 0 if reels_summary.failed == 0 and music_summary.failed == 0 else 1
+        local_dir = Path(raw_dir)
+        if not local_dir.exists():
+            if asset_type["required"]:
+                logger.error("Local %s directory does not exist: %s", name, local_dir)
+                return 1
+            logger.info("Local %s directory does not exist (%s) — skipping.", name, local_dir)
+            continue
+
+        summaries[name] = upload_directory(
+            client=client,
+            bucket=bucket,
+            local_dir=local_dir,
+            pattern=asset_type["pattern"],
+            prefix=prefix,
+            content_type=asset_type["content_type"],
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+
+    for name, summary in summaries.items():
+        logger.info(
+            "%s: uploaded=%s skipped=%s failed=%s",
+            name,
+            summary.uploaded,
+            summary.skipped,
+            summary.failed,
+        )
+
+    any_failed = any(summary.failed > 0 for summary in summaries.values())
+    return 1 if any_failed else 0
 
 
 if __name__ == "__main__":

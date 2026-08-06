@@ -24,6 +24,12 @@ The reel automation is intentionally simple:
   Pulls per-post Instagram Insights metrics (reach, saves, shares, comments, likes, total interactions) and stores them in Supabase for trend analysis.
 - `scripts/instagram_insights.py`
   Instagram Insights-fetching helper used by `collect_insights.py`.
+- `scripts/generate_reel.py`
+  Generates a reel — background video loop + timed text-card overlays + music — replacing manual Canva production. Uploads to R2 `reels/` with a content-template-prefixed filename plus a JSON metadata sidecar.
+- `scripts/vocab_content.py`
+  Pulls a random Vocabulary word (word/meaning/example sentence) from Supabase to source "Word of the Day" reel content.
+- `scripts/tip_content.py`
+  Two-pass LLM author+verify pipeline that generates a short, specific 11+ prep tip for reels not sourced from the question bank.
 - `.github/workflows/post-reel.yml`
   Runs the posting script twice daily and also supports manual runs.
 - `.github/workflows/reply-to-comments.yml`
@@ -68,8 +74,10 @@ R2_BUCKET_NAME=
 R2_ENDPOINT_URL=
 R2_REELS_PREFIX=reels/
 R2_MUSIC_PREFIX=music/
+R2_BACKGROUNDS_PREFIX=backgrounds/
 LOCAL_REELS_DIR=C:\Users\ssjag\OneDrive\Ace11Plus\reels
 LOCAL_MUSIC_DIR=C:\Users\ssjag\OneDrive\Ace11Plus\music
+LOCAL_BACKGROUNDS_DIR=C:\Users\ssjag\OneDrive\Ace11Plus\backgrounds
 
 # Optional — Instagram (own, independent Facebook Developer App — not the
 # same credentials as the FACEBOOK_* app above)
@@ -93,6 +101,9 @@ INSTAGRAM_INSIGHTS_MIN_AGE_HOURS=24
 INSTAGRAM_INSIGHTS_MAX_AGE_HOURS=168
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
+
+# Optional — Reel generation (reuses R2_*/Supabase credentials above)
+OPENAI_API_KEY=
 
 # Optional — YouTube
 YOUTUBE_CLIENT_ID=
@@ -230,8 +241,43 @@ Behavior:
 
 - uploads `*.mp4` from `LOCAL_REELS_DIR` to `reels/`
 - uploads `*.mp3` from `LOCAL_MUSIC_DIR` to `music/`
+- uploads `*.mp4` from `LOCAL_BACKGROUNDS_DIR` to `backgrounds/` (optional — skipped with a log line if `LOCAL_BACKGROUNDS_DIR` isn't set, doesn't fail the run)
 - keeps original filenames
 - skips existing R2 keys unless `--force` is used
+
+## Reel Generation Setup (optional)
+
+`scripts/generate_reel.py` replaces manual Canva production: it composites a background video loop (from `backgrounds/`) with timed, animated text-card overlays and background music (from `music/`), then uploads the finished reel straight into `reels/` — `post_reel.py` picks it up automatically like any other reel, no changes needed there.
+
+1. **Get some background video loops.** Short (10-20s), vertical (9:16) or easily croppable clips — stock footage, screen recordings, whatever fits your brand. Drop them in `LOCAL_BACKGROUNDS_DIR` and run `python scripts/upload_assets.py`.
+2. **Set `OPENAI_API_KEY`** — used for the LLM-generated tip content (`scripts/tip_content.py`). Not needed if you only ever use `--template vocab`.
+3. Nothing else to set up — Vocabulary content is pulled from the same Supabase `questions` table already used by the main app, via the `NEXT_PUBLIC_SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` credentials already configured for Insights collection above.
+
+Usage:
+
+```bash
+# Preview without uploading
+python scripts/generate_reel.py --dry-run
+
+# Generate for real (random 50/50 between "word of the day" and an LLM tip)
+python scripts/generate_reel.py
+
+# Force a specific content template
+python scripts/generate_reel.py --template vocab
+python scripts/generate_reel.py --template tip
+```
+
+Behavior:
+
+- output is forced to 1080×1920 (9:16) regardless of the background loop's original dimensions/aspect ratio — the background is scaled and cropped to fill, not letterboxed
+- each reel is a sequence of text cards (hook → content → [example, for vocab] → CTA), timed with ffmpeg `overlay` filters over the looped/cropped background, matching the existing bold-text-over-background tip/quote style
+- the CTA card ("Comment RESOURCE and we'll DM you our free 11+ diagnostic tool!") matches `post_reel.py`'s `INSTAGRAM_RESOURCE_CTA`, so the video and caption reinforce the same funnel
+- uploaded filenames are prefixed with their content template (`vocab__<word>__<timestamp>.mp4` or `tip__<slug>__<timestamp>.mp4`) — this is assigned automatically by the generator, nothing to rename by hand
+- a JSON metadata sidecar (`<same filename>.json`) is uploaded alongside each reel; `post_reel.py` uses it to build a caption that actually matches the reel's content instead of a random pick from `captions.txt`. Reels without a sidecar (hand-made ones, or anything uploaded the old way) are unaffected — they keep using the existing random-caption behaviour
+- vocabulary content only pulls Vocabulary questions that have a non-null `example_sentence` (i.e. already backfilled with sentence context)
+- tip content is LLM-generated with an independent verifier pass (same author+verify quality-gate pattern used for the question bank) — rejects generic filler advice, retries up to 4 times before failing the run
+
+Not yet built: using Insights performance data (`instagram_media_insights`) to bias which content template gets generated more often — currently a flat 50/50 split. Worth revisiting once there's a few weeks of vocab-vs-tip performance data to compare.
 
 ## Test Posting Locally
 

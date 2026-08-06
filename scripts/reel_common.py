@@ -197,6 +197,33 @@ def supabase_insert_rows(
         raise RuntimeError(f"Supabase insert into {table} failed: {response.text}")
 
 
+def supabase_select_rows(
+    *,
+    supabase_url: str,
+    service_role_key: str,
+    table: str,
+    params: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
+    """Reads rows from a Supabase table via PostgREST, using the service
+    role key (bypasses RLS — same server-to-server rationale as
+    supabase_insert_rows). `params` are passed straight through as
+    PostgREST query params, e.g. {"select": "id,word", "topic": "eq.Vocabulary"}.
+    """
+    endpoint = f"{supabase_url.rstrip('/')}/rest/v1/{table}"
+    response = requests.get(
+        endpoint,
+        headers={
+            "apikey": service_role_key,
+            "Authorization": f"Bearer {service_role_key}",
+        },
+        params=params or {},
+        timeout=30,
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(f"Supabase select from {table} failed: {response.text}")
+    return list(response.json())
+
+
 def generate_presigned_url(client: BaseClient, bucket: str, key: str, *, expires_in: int = 3600) -> str:
     """Public, time-limited GET URL for an R2 object.
 
