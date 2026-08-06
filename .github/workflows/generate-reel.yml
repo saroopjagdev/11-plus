@@ -1,0 +1,61 @@
+name: Generate Reel
+
+on:
+  workflow_dispatch:
+    inputs:
+      template:
+        description: "Force a template instead of random 50/50 (vocab|tip)"
+        required: false
+        type: choice
+        options:
+          - ""
+          - vocab
+          - tip
+  schedule:
+    # GitHub Actions cron uses UTC. Runs an hour ahead of each Post Reel run
+    # (07:30/17:30 UTC in post-reel.yml) so a freshly generated reel is
+    # already sitting in R2 before that workflow picks one — twice a day to
+    # match posting cadence now that Canva isn't backfilling the pool
+    # manually. Reels aren't consumed on posting (post_reel.py picks
+    # randomly from the whole pool, no repeat-avoidance yet), so this
+    # steadily grows the pool's freshness/variety rather than 1:1 feeding it.
+    - cron: "30 6 * * *"
+    - cron: "30 16 * * *"
+
+jobs:
+  generate-reel:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+      R2_REELS_PREFIX: reels/
+      R2_MUSIC_PREFIX: music/
+      R2_BACKGROUNDS_PREFIX: backgrounds/
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate reel
+        run: python scripts/generate_reel.py ${{ inputs.template && format('--template {0}', inputs.template) || '' }}

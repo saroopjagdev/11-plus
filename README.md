@@ -279,6 +279,8 @@ Behavior:
 
 Not yet built: using Insights performance data (`instagram_media_insights`) to bias which content template gets generated more often — currently a flat 50/50 split. Worth revisiting once there's a few weeks of vocab-vs-tip performance data to compare.
 
+Runs automatically via [.github/workflows/generate-reel.yml](/C:/Users/ssjag/OneDrive/Programming/11-plus/.github/workflows/generate-reel.yml) — twice daily (`30 6,16 * * *` UTC), an hour ahead of each `post-reel.yml` run, matching the twice-a-day posting cadence now that Canva isn't backfilling the pool manually. Needs `OPENAI_API_KEY` set as a GitHub secret (`gh secret set OPENAI_API_KEY`) in addition to the R2/Supabase secrets already configured, or the `tip` half of the random 50/50 will fail on that scheduled run.
+
 ## Test Posting Locally
 
 Dry run:
