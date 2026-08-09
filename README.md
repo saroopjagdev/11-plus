@@ -271,7 +271,8 @@ Behavior:
 
 - output is forced to 1080×1920 (9:16) regardless of the background loop's original dimensions/aspect ratio — the background is scaled and cropped to fill, not letterboxed
 - each reel is a sequence of text cards (hook → content → [example, for vocab] → CTA), timed with ffmpeg `overlay` filters over the looped/cropped background, matching the existing bold-text-over-background tip/quote style
-- the CTA card ("Comment RESOURCE and we'll DM you our free 11+ diagnostic tool!") matches `post_reel.py`'s `INSTAGRAM_RESOURCE_CTA`, so the video and caption reinforce the same funnel
+- a "Save this for later!" card runs right before the CTA card — added because `instagram_media_insights` showed 0 saves across every tracked post; nothing was previously asking for one
+- the CTA card ("Comment RESOURCE and we'll DM you our free 11+ diagnostic tool!") matches `post_reel.py`'s `INSTAGRAM_RESOURCE_CTA` (now also save-prompting), so the video and caption reinforce the same funnel
 - uploaded filenames are prefixed with their content template (`vocab__<word>__<timestamp>.mp4` or `tip__<slug>__<timestamp>.mp4`) — this is assigned automatically by the generator, nothing to rename by hand
 - a JSON metadata sidecar (`<same filename>.json`) is uploaded alongside each reel; `post_reel.py` uses it to build a caption that actually matches the reel's content instead of a random pick from `captions.txt`. Reels without a sidecar (hand-made ones, or anything uploaded the old way) are unaffected — they keep using the existing random-caption behaviour
 - vocabulary content only pulls Vocabulary questions that have a non-null `example_sentence` (i.e. already backfilled with sentence context)
@@ -279,7 +280,7 @@ Behavior:
 
 Not yet built: using Insights performance data (`instagram_media_insights`) to bias which content template gets generated more often — currently a flat 50/50 split. Worth revisiting once there's a few weeks of vocab-vs-tip performance data to compare.
 
-Runs automatically via [.github/workflows/generate-reel.yml](/C:/Users/ssjag/OneDrive/Programming/11-plus/.github/workflows/generate-reel.yml) — twice daily (`30 6,16 * * *` UTC), an hour ahead of each `post-reel.yml` run, matching the twice-a-day posting cadence now that Canva isn't backfilling the pool manually. Needs `OPENAI_API_KEY` set as a GitHub secret (`gh secret set OPENAI_API_KEY`) in addition to the R2/Supabase secrets already configured, or the `tip` half of the random 50/50 will fail on that scheduled run.
+Runs automatically via [.github/workflows/generate-reel.yml](/C:/Users/ssjag/OneDrive/Programming/11-plus/.github/workflows/generate-reel.yml) — currently 4x/day (`30 1,6,11,16 * * *` UTC; two of those an hour ahead of each `post-reel.yml` run). Temporarily bumped up from 2x/day to grow the new-content share of the ~200-reel pool faster (see the cadence comment in the workflow file for the dial-back-to-2x/day TODO once the mix catches up). Needs `OPENAI_API_KEY` set as a GitHub secret (`gh secret set OPENAI_API_KEY`) in addition to the R2/Supabase secrets already configured, or the `tip` half of the random 50/50 will fail on that scheduled run.
 
 ## Test Posting Locally
 

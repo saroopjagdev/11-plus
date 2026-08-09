@@ -12,14 +12,25 @@ on:
           - vocab
           - tip
   schedule:
-    # GitHub Actions cron uses UTC. Runs an hour ahead of each Post Reel run
-    # (07:30/17:30 UTC in post-reel.yml) so a freshly generated reel is
-    # already sitting in R2 before that workflow picks one — twice a day to
-    # match posting cadence now that Canva isn't backfilling the pool
-    # manually. Reels aren't consumed on posting (post_reel.py picks
-    # randomly from the whole pool, no repeat-avoidance yet), so this
-    # steadily grows the pool's freshness/variety rather than 1:1 feeding it.
+    # GitHub Actions cron uses UTC. Two of these (06:30/16:30) run an hour
+    # ahead of each Post Reel run (07:30/17:30 UTC in post-reel.yml) so a
+    # freshly generated reel is already sitting in R2 before that workflow
+    # picks one. Bumped from 2x/day to 4x/day (temporary — see note below)
+    # to grow the new-content share of the pool faster: with ~200 pre-existing
+    # Canva-made reels and random (not FIFO) selection in post_reel.py, new
+    # reels don't replace old ones on any schedule, they just add to the mix
+    # — at 2/day that mix stays under ~10% for weeks, which is slower than
+    # wanted given the new template's research-backed content and save-cue
+    # card are expected to outperform the old batch (instagram_media_insights
+    # showed 0 saves/shares across every post under the old format).
+    #
+    # TODO: dial back to 2x/day (07:30 UTC once the mix is meaningfully
+    # newer content — check instagram_media_insights for reel_key/template
+    # coverage, or just eyeball how much of reels/ has a vocab__/tip__
+    # prefix) via `list_r2_keys`.
+    - cron: "30 1 * * *"
     - cron: "30 6 * * *"
+    - cron: "30 11 * * *"
     - cron: "30 16 * * *"
 
 jobs:

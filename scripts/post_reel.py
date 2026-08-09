@@ -42,8 +42,13 @@ DEFAULT_CAPTIONS_PATH = "captions.txt"
 # comments, so the call-to-action only makes sense there. Placed at the
 # start (not appended) so it's visible before Instagram truncates the
 # caption behind "... more", rather than buried where most viewers won't
-# see it.
-INSTAGRAM_RESOURCE_CTA = "💬 Comment RESOURCE and we'll DM you our free 11+ diagnostic tool!\n\n"
+# see it. The save-prompt is new (instagram_media_insights showed 0 saves
+# across every tracked post) — added here alongside the RESOURCE CTA, and
+# reinforced by its own card in generated reels (see SAVE_TEXT in
+# generate_reel.py), since nothing was previously asking for one at all.
+INSTAGRAM_RESOURCE_CTA = (
+    "📌 Save this for later! 💬 Comment RESOURCE and we'll DM you our free 11+ diagnostic tool!\n\n"
+)
 
 
 @dataclass

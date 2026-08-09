@@ -58,6 +58,13 @@ FONT_EXTRABOLD = FONT_DIR / "Montserrat-ExtraBold.ttf"
 # renders them as a blank/tofu box on the card.
 CTA_TEXT = "Comment RESOURCE\nand we'll DM you our\nfree 11+ diagnostic tool!"
 
+# Explicit save-prompt card, shown right before the CTA card. Analytics
+# (instagram_media_insights) showed 0 saves across every tracked post —
+# nothing in the reel was ever actually asking for one. Kept as its own
+# short card rather than folded into CTA_TEXT so it doesn't crowd out either
+# message.
+SAVE_TEXT = "Save this for later!"
+
 
 @dataclass
 class Card:
@@ -161,6 +168,7 @@ def build_card_sequence(template: str) -> tuple[list[Card], dict[str, Any], str]
             Card("Word of the Day", 3.0, FONT_EXTRABOLD, 110),
             Card(f'{entry["word"].upper()}\n\n{entry["meaning"]}', 5.0, FONT_BOLD, 80),
             Card(entry["example_sentence"], 4.5, FONT_BOLD, 60),
+            Card(SAVE_TEXT, 2.0, FONT_EXTRABOLD, 90),
             Card(CTA_TEXT, 3.5, FONT_EXTRABOLD, 68),
         ]
         metadata = {
@@ -176,6 +184,7 @@ def build_card_sequence(template: str) -> tuple[list[Card], dict[str, Any], str]
         cards = [
             Card(tip["hook"], 3.0, FONT_EXTRABOLD, 100),
             Card(tip["body"], 5.5, FONT_BOLD, 70),
+            Card(SAVE_TEXT, 2.0, FONT_EXTRABOLD, 90),
             Card(CTA_TEXT, 3.5, FONT_EXTRABOLD, 68),
         ]
         metadata = {"template": "tip", "hook": tip["hook"], "body": tip["body"]}
