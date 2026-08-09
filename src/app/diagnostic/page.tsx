@@ -157,8 +157,12 @@ export default async function DiagnosticPage() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 text-center px-4">
         <h1 className="text-2xl font-bold text-slate-800 mb-4">Not enough questions!</h1>
         <p className="text-slate-500 mb-8">We need at least 20 multiple-choice questions to run a diagnostic. Current count: {allQuestions.length}</p>
-        <Link href="/dashboard" className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">
-          Back to Dashboard
+        {/* Same guest-safety reason as the "Exit Test" link below: /dashboard is
+            auth-gated, so a logged-out visitor hitting this error state would be
+            bounced to /login. Label follows the destination so it doesn't promise
+            a dashboard the guest hasn't got. */}
+        <Link href={user ? '/dashboard' : '/'} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition">
+          {user ? 'Back to Dashboard' : 'Back to Home'}
         </Link>
       </div>
     )
@@ -171,7 +175,12 @@ export default async function DiagnosticPage() {
     <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
       <nav className="bg-white border-b border-slate-100 py-3 px-6 shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors font-bold text-sm">
+          {/* This diagnostic is public, so a guest may well be taking it. Sending
+              them to /dashboard on exit bounced them into /login (it's inside the
+              auth-gated (app) group) — a login wall is the last thing to show
+              someone who just chose to leave. Authenticated users still get the
+              dashboard, which is the useful destination for them. */}
+          <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors font-bold text-sm">
             <ArrowLeft className="h-4 w-4" />
             Exit Test
           </Link>

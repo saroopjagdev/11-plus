@@ -50,7 +50,7 @@ DEFAULT_LOOKBACK_HOURS = 24
 TRIGGER_WORD = "RESOURCE"
 DM_MESSAGE = (
     "Hi! Thanks for commenting. Here is the free 11+ diagnostic tool I "
-    "mentioned: https://www.ace11plus.org/diagnostics. Hope it helps your "
+    "mentioned: https://www.ace11plus.org/diagnostic. Hope it helps your "
     "child's prep 😊"
 )
 
