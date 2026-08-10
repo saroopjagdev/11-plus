@@ -58,15 +58,29 @@ export default async function DiagnosticPage() {
   const mediumTopics = shuffledTopics.slice(4, 10).map(t => t.topic)
   const hardTopics = shuffledTopics.slice(10, 16).map(t => t.topic)
 
-  // Fetch pools for each difficulty/topic group, ensuring no Comprehension or passage-tied questions
+  // Fetch pools for each difficulty/topic group, ensuring no Comprehension or passage-tied questions.
+  //
+  // Only the columns actually consumed downstream — `select('*')` also dragged
+  // along `explanation`, which is by far the widest column and is never read
+  // here (the diagnostic shows no explanations) nor by DiagnosticSession. On a
+  // six-topic pool that alone was ~40% of the payload.
+  //
+  // Every pool is bounded. Each (topic, difficulty) group currently holds at
+  // most ~140 rows, so these caps are comfortably above what a request needs
+  // (~100 candidates per topic to choose one from) while stopping the pools
+  // scaling with the question bank — it grows continuously, and three of these
+  // queries previously had no limit at all.
+  const QUESTION_COLUMNS = 'id,question_text,options,correct_answer,subject,topic,passage_id,type'
+  // .order('id') before .limit(): id is a random uuid, so this is an unbiased
+  // sample rather than "whichever topic was generated first" (Postgres has
+  // no obligation to return rows in any particular order without ORDER BY).
+  // It also keeps the cap proportional across the topics in each pool, so no
+  // topic gets starved of candidates by the limit.
   const [easyPool, mediumPool, hardPool, extraHardPool] = await Promise.all([
-    supabase.from('questions').select('*').in('topic', easyTopics).eq('difficulty', 'Easy').eq('type', 'mcq').is('passage_id', null),
-    supabase.from('questions').select('*').in('topic', mediumTopics).eq('difficulty', 'Medium').eq('type', 'mcq').is('passage_id', null),
-    supabase.from('questions').select('*').in('topic', hardTopics).eq('difficulty', 'Hard').eq('type', 'mcq').is('passage_id', null),
-    // .order('id') before .limit(): id is a random uuid, so this is an unbiased
-    // sample rather than "whichever topic was generated first" (Postgres has
-    // no obligation to return rows in any particular order without ORDER BY).
-    supabase.from('questions').select('*').eq('difficulty', 'Hard').eq('type', 'mcq').neq('topic', 'Comprehension').is('passage_id', null).order('id', { ascending: true }).limit(40) // Extra pool for variety and filling gaps
+    supabase.from('questions').select(QUESTION_COLUMNS).in('topic', easyTopics).eq('difficulty', 'Easy').eq('type', 'mcq').is('passage_id', null).order('id', { ascending: true }).limit(400),
+    supabase.from('questions').select(QUESTION_COLUMNS).in('topic', mediumTopics).eq('difficulty', 'Medium').eq('type', 'mcq').is('passage_id', null).order('id', { ascending: true }).limit(600),
+    supabase.from('questions').select(QUESTION_COLUMNS).in('topic', hardTopics).eq('difficulty', 'Hard').eq('type', 'mcq').is('passage_id', null).order('id', { ascending: true }).limit(600),
+    supabase.from('questions').select(QUESTION_COLUMNS).eq('difficulty', 'Hard').eq('type', 'mcq').neq('topic', 'Comprehension').is('passage_id', null).order('id', { ascending: true }).limit(40) // Extra pool for variety and filling gaps
   ])
 
   const selectedQuestions: DiagnosticQuestion[] = []
@@ -135,7 +149,7 @@ export default async function DiagnosticPage() {
   if (selectedQuestions.length < 20) {
     const { data: fallback } = await supabase
       .from('questions')
-      .select('*')
+      .select(QUESTION_COLUMNS)
       .eq('type', 'mcq')
       .neq('topic', 'Comprehension')
       .is('passage_id', null)
