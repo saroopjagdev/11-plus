@@ -5,8 +5,26 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { EmailOtpType } from '@supabase/supabase-js'
+import { logFunnelEvent } from '@/lib/funnel'
+import { sendEmail } from '@/lib/resend'
+import { wrapInTemplate } from '@/lib/email-automation'
+import { EMAIL_FALLBACKS } from '@/lib/ai-emails'
 
 const VALID_OTP_TYPES: EmailOtpType[] = ['signup', 'invite', 'magiclink', 'recovery', 'email_change', 'email']
+
+// Defaults for the starter child row. The plain `/signup` path has no child
+// details to work with (deliberately — it is the tail of the 20-question
+// diagnostic funnel, where extra form fields are what we are trying to avoid),
+// so it creates a placeholder and the dashboard onboarding modal collects the
+// real name and school year on first load. `signUpAndCreateChild` reuses the
+// same fallbacks for any field its wizard didn't supply.
+const STARTER_CHILD_NAME = 'Student'
+const STARTER_CHILD_AGE = 10
+const STARTER_CHILD_EXAMS = ['GL Assessment']
+
+function defaultExamDate() {
+  return new Date(Date.now() + 365 * 1.5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+}
 
 // Only allow relative, single-slash paths as post-confirmation redirect targets
 // (guards against open-redirect via a crafted ?next= param).
@@ -120,21 +138,50 @@ function createAdminClient() {
   )
 }
 
+/**
+ * Creates (or updates) the parent's starter child row during signup.
+ *
+ * Uses the service-role client, not the request-scoped one. Email
+ * confirmation is enabled, so `auth.signUp` returns a user but NO session —
+ * the request client is therefore still the anon role at this point, and
+ * `children`'s INSERT policy is `auth.uid() = parent_id`. Verified against
+ * production: that write fails with
+ * `42501 new row violates row-level security policy for table "children"`.
+ * Because the old code discarded the result, this failed silently, which is
+ * why the homepage planner never actually produced a child despite collecting
+ * four steps of detail from the user.
+ *
+ * `hasCompletedOnboarding` distinguishes the two callers: the planner has
+ * already collected name/year/exams so it passes true; the plain signup path
+ * creates a placeholder and passes false, which lets the dashboard's
+ * ConversionOnboarding modal fire and collect the real details.
+ *
+ * `overwriteExisting` guards the placeholder case. Re-submitting the signup
+ * form for an existing unconfirmed account is a supported flow, and blindly
+ * updating the oldest child would rewrite a real child's name to 'Student'
+ * and clobber their exam date. The planner passes true because the parent
+ * just explicitly supplied those details; the plain signup path passes false
+ * so an existing child is left completely untouched.
+ */
 async function upsertStarterChildProfile({
-  supabase,
   userId,
   childName,
   childAge,
   targetExams,
   examDate,
+  hasCompletedOnboarding,
+  overwriteExisting,
 }: {
-  supabase: Awaited<ReturnType<typeof createClient>>
   userId: string
   childName: string
   childAge: number
   targetExams: string[]
   examDate: string
-}) {
+  hasCompletedOnboarding: boolean
+  overwriteExisting: boolean
+}): Promise<{ childId: string | null; created: boolean }> {
+  const admin = createAdminClient()
+
   const childPayload = {
     name: childName,
     age: childAge,
@@ -144,10 +191,10 @@ async function upsertStarterChildProfile({
     xp: 0,
     total_points: 0,
     current_streak: 0,
-    has_completed_onboarding: true,
+    has_completed_onboarding: hasCompletedOnboarding,
   }
 
-  const { data: existingChild } = await supabase
+  const { data: existingChild, error: lookupError } = await admin
     .from('children')
     .select('id')
     .eq('parent_id', userId)
@@ -155,19 +202,46 @@ async function upsertStarterChildProfile({
     .limit(1)
     .maybeSingle()
 
+  if (lookupError) {
+    console.error('Starter child lookup failed:', lookupError)
+    return { childId: null, created: false }
+  }
+
   if (existingChild?.id) {
-    await supabase
+    if (!overwriteExisting) {
+      return { childId: existingChild.id, created: false }
+    }
+
+    const { error } = await admin
       .from('children')
       .update(childPayload)
       .eq('id', existingChild.id)
 
-    return
+    if (error) {
+      console.error('Starter child update failed:', error)
+      return { childId: null, created: false }
+    }
+
+    return { childId: existingChild.id, created: false }
   }
 
-  await supabase.from('children').insert({
-    parent_id: userId,
-    ...childPayload,
+  const { data: inserted, error } = await admin
+    .from('children')
+    .insert({ parent_id: userId, ...childPayload })
+    .select('id')
+    .single()
+
+  if (error) {
+    console.error('Starter child insert failed:', error)
+    return { childId: null, created: false }
+  }
+
+  await logFunnelEvent('child_created', {
+    userId,
+    properties: { source: 'signup', placeholder: !hasCompletedOnboarding },
   })
+
+  return { childId: inserted?.id ?? null, created: true }
 }
 
 function getFriendlyLoginError(message: string) {
@@ -288,6 +362,30 @@ export async function signup(formData: FormData) {
     })
 
     await attachLeadToUser(leadId, email, user.id)
+
+    // Every signup gets a child. Without one the dashboard is inert (no
+    // practice, no missions, no diagnostic claim) and — because
+    // DashboardOnboardingTrigger needs a childId — the onboarding modal that
+    // would guide the user cannot even render. That combination is what
+    // stranded 39 of the first 70 signups. A placeholder is created here and
+    // the modal collects the real name and school year on first dashboard
+    // load; `overwriteExisting: false` keeps a re-submitted signup from
+    // clobbering a child the parent already set up.
+    await upsertStarterChildProfile({
+      userId: user.id,
+      childName: STARTER_CHILD_NAME,
+      childAge: STARTER_CHILD_AGE,
+      targetExams: STARTER_CHILD_EXAMS,
+      examDate: defaultExamDate(),
+      hasCompletedOnboarding: false,
+      overwriteExisting: false,
+    })
+
+    await logFunnelEvent('signup_submitted', {
+      userId: user.id,
+      leadId: leadId || null,
+      properties: { path: 'signup', repeated: isRepeatedSignup, fromDiagnostic: Boolean(guestDiag) },
+    })
   }
 
   redirect(
@@ -311,11 +409,11 @@ export async function signUpAndCreateChild(formData: FormData) {
   const leadId = formData.get('leadId') as string | null
   const guestDiag = formData.get('guestDiag') as string | null
 
-  const childName = formData.get('childName') as string || 'Student'
-  const childAge = parseInt(formData.get('childAge') as string) || 10
-  const targetExamsRaw = formData.get('targetExams') as string || 'GL Assessment'
+  const childName = formData.get('childName') as string || STARTER_CHILD_NAME
+  const childAge = parseInt(formData.get('childAge') as string) || STARTER_CHILD_AGE
+  const targetExamsRaw = formData.get('targetExams') as string || STARTER_CHILD_EXAMS.join(',')
   const targetExams = targetExamsRaw.split(',').map(e => e.trim()).filter(Boolean)
-  const examDate = formData.get('examDate') as string || new Date(Date.now() + 365 * 1.5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const examDate = formData.get('examDate') as string || defaultExamDate()
 
   const { data: { user }, error } = await supabase.auth.signUp({
     email,
@@ -361,13 +459,22 @@ export async function signUpAndCreateChild(formData: FormData) {
 
     await attachLeadToUser(leadId, email, user.id)
 
+    // The wizard already collected name/year/exams, so onboarding has nothing
+    // left to ask — skip the dashboard modal for this path.
     await upsertStarterChildProfile({
-      supabase,
       userId: user.id,
       childName,
       childAge,
       targetExams,
       examDate,
+      hasCompletedOnboarding: true,
+      overwriteExisting: true,
+    })
+
+    await logFunnelEvent('signup_submitted', {
+      userId: user.id,
+      leadId: leadId || null,
+      properties: { path: 'planner', repeated: isRepeatedSignup, fromDiagnostic: Boolean(guestDiag) },
     })
   }
 
@@ -415,6 +522,27 @@ export async function confirmEmailToken(formData: FormData) {
   }
 
   if (verified) {
+    // Confirmation is the only reliable post-signup hook: `signup` itself runs
+    // before the account is usable (no session, unverified address), so this is
+    // the first moment the user is genuinely real. Both calls are best-effort —
+    // neither may block or fail the redirect the user is waiting on.
+    const { data: { user } } = await supabase.auth.getUser()
+
+    await logFunnelEvent('email_confirmed', { userId: user?.id })
+
+    if (user?.email) {
+      try {
+        const unsubLink = `${process.env.NEXT_PUBLIC_SITE_URL}/api/unsubscribe?token=${user.id}&type=nudges`
+        await sendEmail({
+          to: user.email,
+          subject: 'Welcome to Ace 11+',
+          html: wrapInTemplate(EMAIL_FALLBACKS.welcome(), unsubLink),
+        })
+      } catch (err) {
+        console.error('Welcome email failed:', err)
+      }
+    }
+
     revalidatePath('/', 'layout')
     redirect(next)
   }

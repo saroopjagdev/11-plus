@@ -1,5 +1,6 @@
 import { stripe } from '@/lib/stripe'
 import { syncSubscriptionEntitlement } from '@/lib/subscription-server'
+import { logFunnelEvent } from '@/lib/funnel'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
@@ -79,6 +80,14 @@ export async function POST(req: Request) {
         userId,
         stripeCustomerId,
         stripeSubscriptionId,
+      })
+
+      // Terminal step of the funnel. Recorded after the entitlement sync so
+      // the event only fires once the subscription is actually reflected on
+      // the profile.
+      await logFunnelEvent('trial_started', {
+        userId,
+        properties: { stripeSubscriptionId: stripeSubscriptionId ?? null },
       })
     } else {
       console.error('Missing metadata.userId on checkout.session.completed', {

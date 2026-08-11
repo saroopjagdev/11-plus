@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { logFunnelEvent } from '@/lib/funnel'
 
 export async function addChild(formData: FormData) {
   const supabase = await createClient()
@@ -33,6 +34,11 @@ export async function addChild(formData: FormData) {
     console.error('Error adding child:', error)
     return { error: error.message }
   }
+
+  await logFunnelEvent('child_created', {
+    userId: user.id,
+    properties: { source: 'add_student', placeholder: false },
+  })
 
   revalidatePath('/dashboard')
   redirect('/dashboard')

@@ -6,6 +6,7 @@ import { calculateLevel } from '@/lib/gamification'
 import OpenAI from 'openai'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { deriveHasEverMastered, normalizeSubjectAndTopic } from '@/lib/tracking'
+import { logFunnelEvent } from '@/lib/funnel'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -158,6 +159,11 @@ export async function submitDiagnostic(
       })
 
       const aiSummary = response.choices[0].message.content || ''
+
+      await logFunnelEvent('diagnostic_completed', {
+        properties: { score, isGuest: true },
+      })
+
       return { success: true, aiSummary, topicBreakdown, score, isGuest: true }
     }
 
@@ -211,6 +217,10 @@ export async function submitDiagnostic(
         level: newLevel,
       })
       .eq('id', childId)
+
+    await logFunnelEvent('diagnostic_completed', {
+      properties: { score, isGuest: false },
+    })
 
     revalidatePath('/dashboard')
     revalidatePath('/leaderboard')
@@ -298,6 +308,11 @@ export async function captureLead(payload: CapturedLeadPayload) {
   if (error || !lead) {
     throw new Error(error?.message || 'Failed to capture lead')
   }
+
+  await logFunnelEvent('lead_captured', {
+    leadId: lead.id,
+    properties: { score: leadPayload.diagnostic_score, landingPath: leadPayload.landing_path },
+  })
 
   return { success: true as const, leadId: lead.id }
 }

@@ -68,7 +68,28 @@ export async function generateInactivityNudgeEmail(childName: string, daysInacti
   }
 }
 
+// Welcome and setup-nudge copy is deliberately NOT AI-generated, unlike the
+// weekly report and inactivity nudge above.
+//
+// The welcome email fires inside the email-confirmation redirect, so an
+// OpenAI round trip would add seconds to a path the user is actively waiting
+// on, plus a failure mode — for a message that is identical for everybody.
+// The setup nudge has no child name to personalise with (that is precisely
+// why it is being sent), so there is nothing for a model to work with either.
 export const EMAIL_FALLBACKS = {
+  welcome: () => `
+    <p>Hi there,</p>
+    <p>Welcome to Ace 11+ — your account is confirmed and ready to go.</p>
+    <p>Your next step is to tell us a little about your child so we can tailor their practice. It takes about thirty seconds, and you'll be taken straight through it when you open your dashboard.</p>
+    <p>From there you'll get adaptive practice across GL, CEM and ISEB-style questions, plus progress tracking that shows exactly which topics need work.</p>
+    <p><a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ace11plus.org'}/dashboard">Open your dashboard</a></p>
+  `,
+  setup: () => `
+    <p>Hi there,</p>
+    <p>You created an Ace 11+ account, but haven't set up your child's profile yet — so there's nothing for us to tailor practice around just yet.</p>
+    <p>It's a quick step: add their first name and school year, and their personalised dashboard, practice and progress tracking all switch on straight away.</p>
+    <p><a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ace11plus.org'}/dashboard">Finish setting up</a></p>
+  `,
   weekly: (name: string) => `
     <p>Hi there,</p>
     <p>Here is your weekly update for ${name}. They are making steady progress on their 11+ journey!</p>

@@ -13,8 +13,22 @@ create table public.profiles (
   subscription_current_period_end timestamp with time zone,
   subscription_cancel_at_period_end boolean default false,
   subscription_last_synced_at timestamp with time zone,
+  -- Email preferences and per-cadence throttles. See
+  -- scripts/funnel-and-email-migration.sql.
+  email_consent_weekly boolean default true,
+  email_consent_nudges boolean default true,
+  last_weekly_report_at timestamp with time zone,
+  last_inactivity_nudge_at timestamp with time zone,
+  last_report_sent_at timestamp with time zone,
+  last_setup_nudge_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+-- NOTE: the live `profiles` table also carries referral and entitlement
+-- columns (referral_code, referred_by, referral_count, referral_rewarded,
+-- pending_referral_credits, lifetime_access) that were added out-of-band and
+-- are still not declared here. They are untouched by this work; their exact
+-- types/defaults need to be dumped from production before being committed
+-- rather than guessed at.
 
 -- CHILDREN: Students linked to a parent
 create table public.children (
@@ -31,6 +45,7 @@ create table public.children (
   level integer default 1,
   avatar_url text,
   target_exams text[] default '{}',
+  focus_areas text[] default '{}',
   last_practice_date date,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -133,6 +148,24 @@ create table public.leads (
 create index leads_email_idx on public.leads(email);
 create index leads_status_idx on public.leads(status);
 
+-- FUNNEL EVENTS: first-party analytics for the signup -> trial journey.
+-- Narrow/long so new event names never need a migration. Written only by
+-- src/lib/funnel.ts with the service-role client; never read from the client.
+-- Duplicates are expected -- dedupe at read time with
+-- `select distinct on (user_id, event_name) ...`.
+create table public.funnel_events (
+  id uuid primary key default uuid_generate_v4(),
+  event_name text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  lead_id uuid references public.leads(id) on delete set null,
+  properties jsonb default '{}',
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index funnel_events_event_name_idx on public.funnel_events(event_name);
+create index funnel_events_user_id_idx on public.funnel_events(user_id);
+create index funnel_events_created_at_idx on public.funnel_events(created_at);
+
 -- WEEKLY REPORTS: AI-generated summaries for parents
 create table public.weekly_reports (
   id uuid primary key default uuid_generate_v4(),
@@ -157,6 +190,8 @@ alter table public.topic_mastery enable row level security;
 alter table public.diagnostic_results enable row level security;
 alter table public.weekly_reports enable row level security;
 alter table public.leads enable row level security;
+-- No policies below: service-role writes only.
+alter table public.funnel_events enable row level security;
 
 -- Policies for Profiles
 create policy "Users can view their own profile" on public.profiles

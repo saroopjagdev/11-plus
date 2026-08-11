@@ -20,6 +20,7 @@ export async function processAutomatedEmails() {
   const results = {
     weeklySent: 0,
     nudgesSent: 0,
+    setupNudgesSent: 0,
     errors: [] as any[]
   }
 
@@ -27,7 +28,48 @@ export async function processAutomatedEmails() {
 
   for (const profile of profiles) {
     const child = profile.children?.[0]
-    if (!child) continue
+
+    // --- CASE 0: NO CHILD YET ---
+    // This used to be `if (!child) continue`, which silently excluded every
+    // profile without a child from all automated email — 39 of the first 70
+    // signups. They are precisely the users who got stuck, and they were the
+    // only ones we never contacted. Nudge them to finish setup instead.
+    if (!child) {
+      if (profile.email_consent_nudges) {
+        const lastSetupNudge = profile.last_setup_nudge_at ? new Date(profile.last_setup_nudge_at) : null
+        const daysSinceSetupNudge = lastSetupNudge
+          ? (now.getTime() - lastSetupNudge.getTime()) / (1000 * 60 * 60 * 24)
+          : 999
+
+        if (daysSinceSetupNudge >= 7) {
+          try {
+            const unsubLink = `${process.env.NEXT_PUBLIC_SITE_URL}/api/unsubscribe?token=${profile.id}&type=nudges`
+            const fullHtml = wrapInTemplate(EMAIL_FALLBACKS.setup(), unsubLink)
+
+            const sent = await sendEmail({
+              to: profile.email,
+              subject: 'Finish setting up your Ace 11+ account',
+              html: fullHtml
+            })
+
+            if (sent?.success) {
+              await supabase
+                .from('profiles')
+                .update({ last_setup_nudge_at: now.toISOString() })
+                .eq('id', profile.id)
+
+              results.setupNudgesSent++
+            } else {
+              results.errors.push({ profile: profile.id, type: 'setup', error: sent?.error })
+            }
+          } catch (err) {
+            results.errors.push({ profile: profile.id, type: 'setup', error: err })
+          }
+        }
+      }
+
+      continue
+    }
 
     // --- CASE A: WEEKLY PROGRESS REPORT ---
     if (profile.email_consent_weekly) {
@@ -46,11 +88,20 @@ export async function processAutomatedEmails() {
           const unsubLink = `${process.env.NEXT_PUBLIC_SITE_URL}/api/unsubscribe?token=${profile.id}&type=weekly`
           const fullHtml = wrapInTemplate(content, unsubLink)
 
-          await sendEmail({
+          // Only stamp the throttle if the send actually succeeded. sendEmail
+          // never throws — it returns {success:false} — so the old
+          // unconditional stamp meant a transient Resend outage silently cost
+          // the parent their report for a further 7 days.
+          const sent = await sendEmail({
             to: profile.email,
             subject: `Weekly 11+ Progress Update: ${child.name}`,
             html: fullHtml
           })
+
+          if (!sent?.success) {
+            results.errors.push({ profile: profile.id, type: 'weekly', error: sent?.error })
+            continue
+          }
 
           await supabase
             .from('profiles')
@@ -84,11 +135,16 @@ export async function processAutomatedEmails() {
           const unsubLink = `${process.env.NEXT_PUBLIC_SITE_URL}/api/unsubscribe?token=${profile.id}&type=nudges`
           const fullHtml = wrapInTemplate(content, unsubLink)
 
-          await sendEmail({
+          const sent = await sendEmail({
             to: profile.email,
             subject: `Thinking of ${child.name}'s 11+ journey`,
             html: fullHtml
           })
+
+          if (!sent?.success) {
+            results.errors.push({ profile: profile.id, type: 'nudge', error: sent?.error })
+            continue
+          }
 
           await supabase
             .from('profiles')
@@ -140,7 +196,7 @@ async function getChildProgressData(supabase: any, childId: string) {
   }
 }
 
-function wrapInTemplate(content: string, unsubLink: string) {
+export function wrapInTemplate(content: string, unsubLink: string) {
   return `
     <!DOCTYPE html>
     <html>
