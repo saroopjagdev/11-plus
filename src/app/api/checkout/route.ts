@@ -19,7 +19,7 @@ export async function POST() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('referred_by, stripe_customer_id, subscription_status, lifetime_access')
+      .select('referred_by, partner_referral_code, stripe_customer_id, subscription_status, lifetime_access')
       .eq('id', user.id)
       .single()
 
@@ -39,7 +39,17 @@ export async function POST() {
         },
       ],
       mode: 'subscription',
-      discounts: profile?.referred_by ? [{ coupon: 'REFERRAL50' }] : [],
+      // A signup matches at most one of these (see resolveReferralCode in
+      // app/actions/auth.ts), so checking referred_by first and falling
+      // back to partner_referral_code is safe — never both discounts at
+      // once. TUTORPARTNER15 is a flat 15%-off-once coupon shared by every
+      // partner for now; referral_partners.discount_pct exists for future
+      // per-partner customization but isn't wired to a dynamic coupon yet.
+      discounts: profile?.referred_by
+        ? [{ coupon: 'REFERRAL50' }]
+        : profile?.partner_referral_code
+          ? [{ coupon: 'TUTORPARTNER15' }]
+          : [],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing`,
       ...(profile?.stripe_customer_id

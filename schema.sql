@@ -1,6 +1,23 @@
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
+-- REFERRAL PARTNERS: tutor/business outreach partners, distinct from the
+-- user-to-user referral program on PROFILES below (referral_code/referred_by).
+-- Declared before PROFILES since profiles.partner_referral_code references
+-- it by column-level FK. See scripts/tutor-partner-referrals-migration.sql
+-- for full rationale.
+create table public.referral_partners (
+  code text primary key,
+  name text not null,
+  email text,
+  region text,
+  discount_pct integer not null default 15,
+  commission_pct integer not null default 20,
+  commission_months integer not null default 3,
+  status text not null default 'active' check (status in ('active', 'paused')),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- PROFILES: Links to Supabase Auth users
 create table public.profiles (
   id uuid references auth.users on delete cascade primary key,
@@ -29,6 +46,11 @@ create table public.profiles (
   utm_content text,
   utm_term text,
   landing_referrer text,
+  -- Set when a signup came through a tutor/business partner's referral
+  -- link. See referral_partners below. Mutually exclusive with the
+  -- pre-existing referred_by (profile uuid) in practice, though nothing in
+  -- the schema itself enforces that.
+  partner_referral_code text references public.referral_partners(code),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 -- NOTE: the live `profiles` table also carries referral and entitlement
@@ -166,6 +188,27 @@ create index leads_status_idx on public.leads(status);
 create index leads_utm_source_idx on public.leads(utm_source);
 create index profiles_utm_source_idx on public.profiles(utm_source);
 
+-- PARTNER COMMISSIONS: see referral_partners, declared earlier (before
+-- PROFILES) since profiles.partner_referral_code references it.
+create table public.partner_commissions (
+  id uuid primary key default uuid_generate_v4(),
+  partner_code text not null references public.referral_partners(code),
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  stripe_invoice_id text not null unique,
+  invoice_sequence integer not null,
+  amount_paid_cents integer not null,
+  commission_cents integer not null,
+  currency text not null default 'gbp',
+  period_start date not null,
+  paid_out boolean not null default false,
+  paid_out_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index partner_commissions_partner_code_idx on public.partner_commissions(partner_code);
+create index partner_commissions_period_start_idx on public.partner_commissions(period_start);
+create index partner_commissions_profile_id_idx on public.partner_commissions(profile_id);
+
 -- FUNNEL EVENTS: first-party analytics for the signup -> trial journey.
 -- Narrow/long so new event names never need a migration. Written only by
 -- src/lib/funnel.ts with the service-role client; never read from the client.
@@ -210,6 +253,8 @@ alter table public.weekly_reports enable row level security;
 alter table public.leads enable row level security;
 -- No policies below: service-role writes only.
 alter table public.funnel_events enable row level security;
+alter table public.referral_partners enable row level security;
+alter table public.partner_commissions enable row level security;
 
 -- Policies for Profiles
 create policy "Users can view their own profile" on public.profiles

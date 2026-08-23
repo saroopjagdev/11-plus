@@ -120,7 +120,7 @@ export async function POST(req: Request) {
     if ((invoice as Stripe.Invoice & { subscription?: string | null }).subscription && stripeCustomerId) {
       const { data: referee } = await supabase
         .from('profiles')
-        .select('id, referred_by, referral_rewarded')
+        .select('id, referred_by, referral_rewarded, partner_referral_code')
         .eq('stripe_customer_id', stripeCustomerId)
         .single()
 
@@ -154,6 +154,67 @@ export async function POST(req: Request) {
           } catch (stripeErr) {
             console.error('Error processing referral reward:', stripeErr)
           }
+        }
+      }
+
+      // Tutor/business partner commission -- a separate program from the
+      // referral credit above (see scripts/tutor-partner-referrals-migration.sql).
+      // Unlike that one-time-only reward, this runs on every paid invoice up
+      // to the partner's commission_months, since the reward is ongoing
+      // cash commission rather than a single credit.
+      if (referee?.partner_referral_code) {
+        try {
+          const { data: partner } = await supabase
+            .from('referral_partners')
+            .select('code, commission_pct, commission_months')
+            .eq('code', referee.partner_referral_code)
+            .single()
+
+          if (partner) {
+            // Sequence number = how many commission rows already exist for
+            // this profile + 1. Not strictly atomic against a concurrent
+            // duplicate webhook delivery for a *different* invoice on the
+            // same customer -- acceptable here since stripe_invoice_id's
+            // unique constraint still prevents any single invoice being
+            // double-counted, and this report is reviewed by a human before
+            // anyone is actually paid, not an auto-pay pipeline.
+            const { count: priorCount } = await supabase
+              .from('partner_commissions')
+              .select('id', { count: 'exact', head: true })
+              .eq('profile_id', referee.id)
+
+            const invoiceSequence = (priorCount ?? 0) + 1
+
+            if (invoiceSequence <= partner.commission_months) {
+              const amountPaidCents = invoice.amount_paid ?? 0
+              const commissionCents = Math.round((amountPaidCents * partner.commission_pct) / 100)
+              const periodStart = new Date(invoice.created * 1000)
+              periodStart.setUTCDate(1)
+
+              const { error: commissionError } = await supabase.from('partner_commissions').insert({
+                partner_code: partner.code,
+                profile_id: referee.id,
+                stripe_invoice_id: invoice.id,
+                invoice_sequence: invoiceSequence,
+                amount_paid_cents: amountPaidCents,
+                commission_cents: commissionCents,
+                currency: invoice.currency,
+                period_start: periodStart.toISOString().split('T')[0],
+              })
+
+              // Code 23505 = unique_violation: a redelivered webhook for an
+              // invoice already recorded, not a real failure.
+              if (commissionError && commissionError.code !== '23505') {
+                console.error('Error recording partner commission:', commissionError)
+              } else if (!commissionError) {
+                console.log(
+                  `Partner commission recorded: ${partner.code} earns ${commissionCents / 100} ${invoice.currency} for ${referee.id}'s invoice ${invoiceSequence}/${partner.commission_months}`
+                )
+              }
+            }
+          }
+        } catch (commissionErr) {
+          console.error('Error processing partner commission:', commissionErr)
         }
       }
     }

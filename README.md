@@ -52,6 +52,18 @@ Instagram-only — carousels aren't posted to Facebook or YouTube, unlike the Re
 - `.github/workflows/post-carousel.yml`
   Generates and posts a carousel in one run. Manual dispatch only (Actions tab) — no schedule, unlike `post-reel.yml`.
 
+## Tutor Partner Outreach (optional)
+
+A referral-partnership program aimed at private tutors/tuition businesses, separate from the in-app parent-to-parent referral program (`/referrals`) — different terms (15% off first payment / 20% commission for 3 months, vs. 50% off / a free month credit), different beneficiary (an external business with no Ace 11+ account, vs. an existing user), so it's a parallel system rather than an extension of the existing one. **Never sends anything automatically** — outreach is drafted to a local review folder for a human to read and send manually.
+
+- `scripts/tutor-partner-referrals-migration.sql`
+  Adds `referral_partners` (one row per partner, holding their code/name/region and discount/commission terms), `profiles.partner_referral_code` (which partner code, if any, a signup came through), and `partner_commissions` (a ledger row per commission-earning paid invoice, written by the Stripe webhook below). **Needs manual review and apply via the Supabase SQL editor before use.**
+- `scripts/generate_tutor_outreach.py`
+  Reads a CSV of leads (name/region/specialism/email/source columns), drafts a personalised outreach email per lead with a public email, generates and registers a unique referral code per lead in `referral_partners`, and writes each draft to a review folder. Idempotent — re-running against an updated CSV reuses an existing lead's code rather than duplicating it. `python scripts/generate_tutor_outreach.py --dry-run` previews without writing anything.
+- `scripts/commission_report.py`
+  Single-command report: per partner, signups, conversions to paid, commission owed this month, and total paid out historically. `python scripts/commission_report.py --mark-paid <code>` records that a partner has actually been paid.
+- The signup lookup (`app/actions/auth.ts`) checks a `?ref=` code against both the existing user-referral program and `referral_partners`, in that order — a code can match at most one. `api/checkout/route.ts` applies the matching Stripe coupon (`REFERRAL50` or `TUTORPARTNER15`) accordingly. The Stripe webhook (`api/webhooks/stripe/route.ts`) records a `partner_commissions` row on every `invoice.payment_succeeded` for a partner-referred customer, up to that partner's `commission_months` (default 3) — independent of, and running alongside, the existing one-time referral-credit logic in the same handler.
+
 ## Files
 
 - [scripts/upload_assets.py](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/upload_assets.py)

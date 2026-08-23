@@ -140,6 +140,43 @@ function createAdminClient() {
 }
 
 /**
+ * Resolves a `?ref=` code to either a referring user or a tutor/business
+ * partner — two separate systems (see scripts/tutor-partner-referrals-migration.sql
+ * for why they aren't unified) sharing the same query param and the same
+ * link shape (`/signup?ref=<code>`), since from a visitor's perspective
+ * they're both just "someone's referral link". Checks profiles first (the
+ * existing, higher-volume program) so a coincidental string collision with
+ * a partner code always resolves to the user program.
+ */
+async function resolveReferralCode(
+  admin: ReturnType<typeof createAdminClient>,
+  referralCode: string | null
+): Promise<{ referredBy: string | null; partnerReferralCode: string | null }> {
+  if (!referralCode) {
+    return { referredBy: null, partnerReferralCode: null }
+  }
+
+  const { data: referrer } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('referral_code', referralCode)
+    .single()
+
+  if (referrer) {
+    return { referredBy: referrer.id, partnerReferralCode: null }
+  }
+
+  const { data: partner } = await admin
+    .from('referral_partners')
+    .select('code')
+    .eq('code', referralCode)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  return { referredBy: null, partnerReferralCode: partner?.code ?? null }
+}
+
+/**
  * Creates (or updates) the parent's starter child row during signup.
  *
  * Uses the service-role client, not the request-scoped one. Email
@@ -349,19 +386,7 @@ export async function signup(formData: FormData) {
     // production: this is why `referred_by` was null on every one of the
     // first 72 signups regardless of referral code.
     const referralAdmin = createAdminClient()
-
-    let referredBy = null
-    if (referralCode) {
-      const { data: referrer } = await referralAdmin
-        .from('profiles')
-        .select('id')
-        .eq('referral_code', referralCode)
-        .single()
-
-      if (referrer) {
-        referredBy = referrer.id
-      }
-    }
+    const { referredBy, partnerReferralCode } = await resolveReferralCode(referralAdmin, referralCode)
 
     // Update the profile with the referral info
     // We use upsert in case the trigger already created it
@@ -371,6 +396,7 @@ export async function signup(formData: FormData) {
       email: email,
       referral_code: newReferralCode,
       referred_by: referredBy,
+      partner_referral_code: partnerReferralCode,
       subscription_status: 'free',
       ...attribution,
     })
@@ -453,19 +479,7 @@ export async function signUpAndCreateChild(formData: FormData) {
     // client because there is no session yet, and `profiles`' RLS would
     // otherwise silently block both the lookup and the write.
     const referralAdmin = createAdminClient()
-
-    let referredBy = null
-    if (referralCode) {
-      const { data: referrer } = await referralAdmin
-        .from('profiles')
-        .select('id')
-        .eq('referral_code', referralCode)
-        .single()
-
-      if (referrer) {
-        referredBy = referrer.id
-      }
-    }
+    const { referredBy, partnerReferralCode } = await resolveReferralCode(referralAdmin, referralCode)
 
     // Update the profile with the referral info
     const attribution = await getAttribution()
@@ -474,6 +488,7 @@ export async function signUpAndCreateChild(formData: FormData) {
       email: email,
       referral_code: newReferralCode,
       referred_by: referredBy,
+      partner_referral_code: partnerReferralCode,
       subscription_status: 'free',
       ...attribution,
     })
