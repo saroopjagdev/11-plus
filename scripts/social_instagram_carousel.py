@@ -235,28 +235,48 @@ def build_carousel_caption_from_metadata(metadata: dict[str, Any]) -> str | None
     carousel format: wording nudges the viewer to swipe through the slides
     rather than describing a single clip, since that's the whole point of
     posting a carousel instead of a Reel for this content.
+
+    A carousel covers *multiple* words/tips (generate_carousel.py writes a
+    `words`/`tips` list, one entry per content slide — not the single
+    `word`/`hook` a reel's metadata sidecar has), so the caption lists all of
+    them rather than describing just one.
     """
     template = metadata.get("template")
 
     if template == "vocab":
-        word = str(metadata.get("word", "")).strip()
-        meaning = str(metadata.get("meaning", "")).strip()
-        example = str(metadata.get("example_sentence", "")).strip()
-        if not word or not meaning:
+        words = metadata.get("words")
+        if not isinstance(words, list):
             return None
-        parts = [f"Swipe through for this week's Word of the Day: {word.upper()} — {meaning}."]
-        if example:
-            parts.append(f'\n\nExample: "{example}"')
+        lines = []
+        for item in words:
+            if not isinstance(item, dict):
+                continue
+            word = str(item.get("word", "")).strip()
+            meaning = str(item.get("meaning", "")).strip()
+            if word and meaning:
+                lines.append(f"{word.upper()} — {meaning}")
+        if not lines:
+            return None
+        parts = [f"Swipe through for {len(lines)} words every 11+ candidate should know this week 👉\n\n"]
+        parts.append("\n".join(lines))
         parts.append("\n\n#11Plus #Vocabulary #WordOfTheDay #GrammarSchool #11PlusPreparation")
         return "".join(parts)
 
     if template == "tip":
-        hook = str(metadata.get("hook", "")).strip()
-        body = str(metadata.get("body", "")).strip()
-        if not body:
+        tips = metadata.get("tips")
+        if not isinstance(tips, list):
             return None
-        parts = [f"{hook}\n\nSwipe through 👉\n\n"] if hook else ["Swipe through for this tip 👉\n\n"]
-        parts.append(body)
+        hooks = []
+        for item in tips:
+            if not isinstance(item, dict):
+                continue
+            hook = str(item.get("hook", "")).strip()
+            if hook:
+                hooks.append(hook)
+        if not hooks:
+            return None
+        parts = [f"Swipe through for {len(hooks)} tips for 11+ success 👉\n\n"]
+        parts.append("\n".join(f"• {hook}" for hook in hooks))
         parts.append("\n\n#11Plus #11PlusTips #11PlusPreparation #GrammarSchool")
         return "".join(parts)
 

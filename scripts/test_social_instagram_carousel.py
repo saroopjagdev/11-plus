@@ -205,47 +205,80 @@ class PostCarouselToInstagramTests(unittest.TestCase):
 
 
 class CaptionBuildingTests(unittest.TestCase):
+    # Metadata shapes below are copied verbatim from what generate_carousel.py
+    # actually writes (build_slide_sequence's `metadata` dict for each
+    # template) — not reinvented to match what the reader expects. That
+    # distinction matters: the previous version of these tests fabricated
+    # metadata already shaped the way the (buggy) reader wanted, so they
+    # passed while the real writer->reader handoff was silently broken
+    # (generate_carousel.py writes a `words`/`tips` list — one entry per
+    # content slide, since a carousel covers several words/tips, not one —
+    # while the reader was checking for singular `word`/`hook` keys that
+    # never existed, so every real carousel caption fell back to the pool).
     def test_vocab_template_uses_swipe_through_framing(self) -> None:
         caption = build_carousel_caption_from_metadata(
             {
                 "template": "vocab",
-                "word": "ephemeral",
-                "meaning": "lasting for a very short time",
-                "example_sentence": "The morning mist was ephemeral.",
+                "words": [
+                    {
+                        "word": "ephemeral",
+                        "meaning": "lasting for a very short time",
+                        "example_sentence": "The morning mist was ephemeral.",
+                    },
+                    {
+                        "word": "resilient",
+                        "meaning": "able to recover quickly from difficulty",
+                        "example_sentence": "She stayed resilient after the setback.",
+                    },
+                ],
             }
         )
         self.assertIsNotNone(caption)
         assert caption is not None
         self.assertIn("Swipe through", caption)
         self.assertIn("EPHEMERAL", caption)
+        self.assertIn("RESILIENT", caption)
         self.assertIn("#Vocabulary", caption)
 
     def test_vocab_template_missing_required_fields_returns_none(self) -> None:
-        self.assertIsNone(build_carousel_caption_from_metadata({"template": "vocab", "word": ""}))
+        self.assertIsNone(build_carousel_caption_from_metadata({"template": "vocab", "words": []}))
+        self.assertIsNone(
+            build_carousel_caption_from_metadata({"template": "vocab", "words": [{"word": "x", "meaning": ""}]})
+        )
 
     def test_tip_template_uses_swipe_through_framing(self) -> None:
         caption = build_carousel_caption_from_metadata(
-            {"template": "tip", "hook": "Timing tip", "body": "Practice under a clock."}
+            {
+                "template": "tip",
+                "tips": [
+                    {"hook": "Timing tip", "body": "Practice under a clock."},
+                    {"hook": "Reading tip", "body": "Skim the questions first."},
+                ],
+            }
         )
         self.assertIsNotNone(caption)
         assert caption is not None
         self.assertIn("Swipe through", caption)
-        self.assertIn("Practice under a clock.", caption)
+        self.assertIn("Timing tip", caption)
+        self.assertIn("Reading tip", caption)
 
     def test_tip_template_missing_body_returns_none(self) -> None:
-        self.assertIsNone(build_carousel_caption_from_metadata({"template": "tip", "body": ""}))
+        self.assertIsNone(build_carousel_caption_from_metadata({"template": "tip", "tips": []}))
+        self.assertIsNone(
+            build_carousel_caption_from_metadata({"template": "tip", "tips": [{"hook": "", "body": "x"}]})
+        )
 
     def test_unknown_template_returns_none(self) -> None:
         self.assertIsNone(build_carousel_caption_from_metadata({"template": "something-else"}))
 
     def test_build_instagram_carousel_caption_prefers_metadata_and_prepends_cta(self) -> None:
         caption, index = build_instagram_carousel_caption(
-            {"template": "tip", "hook": "Hook", "body": "Body text."},
+            {"template": "tip", "tips": [{"hook": "Hook", "body": "Body text."}]},
             captions=["pool caption one", "pool caption two"],
             fallback_caption="fallback",
         )
         self.assertTrue(caption.startswith(CAROUSEL_RESOURCE_CTA))
-        self.assertIn("Body text.", caption)
+        self.assertIn("Hook", caption)
         self.assertIsNone(index)
 
     def test_build_instagram_carousel_caption_falls_back_to_pool_when_no_metadata(self) -> None:
