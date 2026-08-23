@@ -158,11 +158,20 @@ def render_carousel_card_png(
     bar_right = (width + max_line_width) // 2 + pad_x
     bar_top = start_y - pad_y
     bar_bottom = start_y + total_block_height + pad_y
-    draw.rounded_rectangle(
+
+    # Drawn on its own transparent layer and alpha-composited onto the
+    # gradient rather than filled straight onto `img` — Draw.rectangle
+    # ignores existing pixels and just overwrites them with the fill's own
+    # RGBA, so filling directly with alpha=165 then flattening to RGB later
+    # would bake in a flat, fully-opaque bar instead of a blended one.
+    bar_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    ImageDraw.Draw(bar_layer).rounded_rectangle(
         [max(bar_left, 20), bar_top, min(bar_right, width - 20), bar_bottom],
         radius=40,
-        fill=(*BAR_FILL, 165) if img.mode == "RGBA" else BAR_FILL,
+        fill=(*BAR_FILL, 165),
     )
+    img = Image.alpha_composite(img, bar_layer)
+    draw = ImageDraw.Draw(img)
 
     y = start_y
     for line in lines:
