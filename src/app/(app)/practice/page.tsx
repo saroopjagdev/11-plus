@@ -1,74 +1,45 @@
 import { createClient } from '@/lib/supabase/server'
-import { PracticeSession } from '@/components/PracticeSession'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { hasProAccess } from '@/lib/entitlements'
+import { getStudentRecommendations } from '@/lib/recommendations'
 
+export const dynamic = 'force-dynamic'
+
+// Bare `/practice` has no topic/category of its own to build a session
+// around. It exists only as a landing target for CTAs that don't specify
+// one — the Library Handbook's "Start Practice" and the Leaderboard's
+// "Start My Next Session" both point here. It used to fetch 10 questions
+// with no `.order()`/randomization, which deterministically returned the
+// same `Maths::Arithmetic` rows for every child, forever.
+//
+// Fix: redirect to the same "what should this child practice next" pick
+// the dashboard and study plan already compute (weakest-topic focus
+// recommendation from `getStudentRecommendations`), instead of inventing a
+// second heuristic here. That target route (`/practice/topic/[category]`)
+// already does real randomization/adaptive selection within the topic.
 export default async function PracticePage() {
   const supabase = await createClient()
 
-  // 1. Check if user is logged in
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     redirect('/login')
   }
 
-  const [{ data: profile }, { data: children }] = await Promise.all([
-    supabase.from('profiles').select('subscription_status, lifetime_access').eq('id', user.id).single(),
-    supabase.from('children').select('id').eq('parent_id', user.id).limit(1),
-  ])
+  const { data: children } = await supabase
+    .from('children')
+    .select('id')
+    .eq('parent_id', user.id)
+    .limit(1)
 
   const childId = children?.[0]?.id
-  const isPro = hasProAccess(profile)
 
-  // 2. Fetch 10 random questions
-  // In a real app, you might want to fetch based on difficulty or topic.
-  // For now, we'll fetch 10 random questions from the database.
-  const { data: questions, error: questionsError } = await supabase
-    .from('questions')
-    .select('*')
-    .limit(10)
-
-  if (questionsError || !questions || questions.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 text-center px-4">
-        <h1 className="text-2xl font-bold text-slate-800 mb-4">No questions found!</h1>
-        <p className="text-slate-500 mb-8">
-          The question bank is empty. Run <code className="bg-slate-200 px-2 py-1 rounded">node scripts/run-batch.js</code> to generate questions.
-        </p>
-        <a 
-          href="/dashboard" 
-          className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition"
-        >
-          Back to Dashboard
-        </a>
-      </div>
-    )
+  if (!childId) {
+    // No child profile yet (e.g. between signup and the onboarding modal) —
+    // there is nothing to base a recommendation on yet.
+    redirect('/dashboard')
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Simple Practice Header */}
-      <nav className="bg-white border-b border-slate-100 py-4 px-6 mb-8">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
-              A
-            </div>
-            <span className="font-bold text-slate-800 text-lg">Ace11+ Practice</span>
-          </div>
-          <Link
-            href="/dashboard"
-            className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
-          >
-            Quit Session
-          </Link>
-        </div>
-      </nav>
+  const recommendations = await getStudentRecommendations(supabase, childId)
+  const focus = recommendations.find((r) => r.type === 'focus') || recommendations[0]
 
-      <main className="max-w-5xl mx-auto pb-20">
-        <PracticeSession questions={questions} childId={childId} isPro={isPro} />
-      </main>
-    </div>
-  )
+  redirect(focus?.action.href || '/dashboard')
 }
