@@ -39,6 +39,19 @@ The reel automation is intentionally simple:
 
 All three platforms post the **same rendered video** — there's still only one content source (your own reels in R2), not separate pipelines per platform. Instagram and YouTube are each optional: leave their environment variables unset and `post_reel.py` skips that platform with a log line, still posting to the others. This automation does not include TikTok, scraping, browser automation, or group posting — it only publishes your own produced content.
 
+## Carousel Automation
+
+Instagram-only — carousels aren't posted to Facebook or YouTube, unlike the Reel automation above.
+
+- `scripts/generate_carousel.py`
+  Generates an Instagram carousel (multiple still image slides) and uploads it to R2, the carousel counterpart to `generate_reel.py`.
+- `scripts/social_instagram_carousel.py`
+  Posts a generated carousel to Instagram as a multi-image carousel post via the Graph API, the carousel counterpart to `social_instagram.py`.
+- `scripts/instagram-insights-content-format-migration.sql`
+  Adds a `content_format` (`'reel' | 'carousel'`) column to `instagram_media_insights` so carousel vs. reel performance can be compared — see "Insights Setup" below. **Needs manual review and apply via the Supabase SQL editor before use; not run automatically by any workflow.**
+- `.github/workflows/post-carousel.yml`
+  Generates and posts a carousel in one run. Manual dispatch only (Actions tab) — no schedule, unlike `post-reel.yml`.
+
 ## Files
 
 - [scripts/upload_assets.py](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/upload_assets.py)
@@ -195,6 +208,7 @@ Behavior:
 - only collects for posts between `INSTAGRAM_INSIGHTS_MIN_AGE_HOURS` (default 24) and `INSTAGRAM_INSIGHTS_MAX_AGE_HOURS` (default 168/7 days) old, so numbers have had time to settle but the window stays bounded
 - re-collecting the same post's metrics on a later day is intentional, not a duplicate — that's how a trend gets built; only exact duplicate rows (same media, metric, and collection timestamp) are prevented
 - `instagram_media_insights` is a narrow (long) table — one row per post/metric/collection-run — rather than fixed columns per metric, so it keeps working if Meta adds or retires a metric later
+- each row also carries a `content_format` (`'reel'` or `'carousel'`), inferred from the Graph API's `media_type` on the post, so Carousel Automation's performance can be compared against Reels — apply [scripts/instagram-insights-content-format-migration.sql](/C:/Users/ssjag/OneDrive/Programming/11-plus/scripts/instagram-insights-content-format-migration.sql) (manual review required) to add the column before running `collect_insights.py` against a carousel post
 - `python scripts/collect_insights.py --dry-run` prints what would be collected without writing to Supabase
 
 ## YouTube Setup (optional)

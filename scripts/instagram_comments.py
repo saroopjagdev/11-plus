@@ -31,11 +31,19 @@ def list_recent_media(
     recent first. Single page only — fine at this account's posting volume
     (a handful of reels a day); would need cursor pagination to be safe for
     a much higher-volume account.
+
+    Includes `media_type` (Meta returns IMAGE/VIDEO/CAROUSEL_ALBUM) — added
+    so scripts/collect_insights.py can tell Reels and carousels apart when
+    it stores insights; unused by reply_to_comments.py, the other caller.
     """
     endpoint = f"https://graph.facebook.com/{graph_api_version}/{ig_user_id}/media"
     response = requests.get(
         endpoint,
-        params={"fields": "id,timestamp,caption", "limit": limit, "access_token": access_token},
+        params={
+            "fields": "id,timestamp,caption,media_type",
+            "limit": limit,
+            "access_token": access_token,
+        },
         timeout=30,
     )
     if response.status_code >= 400:

@@ -97,10 +97,25 @@ def eligible_media(
     return eligible
 
 
+# Maps Graph API's media_type (see instagram_comments.list_recent_media)
+# to this repo's own content_format vocabulary (scripts/
+# instagram-insights-content-format-migration.sql). IMAGE isn't mapped —
+# this account doesn't post single-image posts, and the migration's
+# 'reel'/'carousel' check constraint would reject an unmapped value —
+# extend this if that ever changes.
+MEDIA_TYPE_TO_CONTENT_FORMAT = {
+    "VIDEO": "reel",
+    "CAROUSEL_ALBUM": "carousel",
+}
+
+
 def build_rows(media: dict[str, Any], insights: list[dict[str, Any]]) -> list[dict[str, Any]]:
     collected_at = datetime.now(timezone.utc).isoformat()
     caption = (media.get("caption") or "").strip()
     caption_excerpt = caption[:CAPTION_EXCERPT_LENGTH] if caption else None
+    # None (rather than a guess) when media_type is missing/unrecognized —
+    # the migration defaults the column to 'reel' server-side for that case.
+    content_format = MEDIA_TYPE_TO_CONTENT_FORMAT.get(media.get("media_type") or "")
 
     rows = []
     for metric in insights:
@@ -116,6 +131,7 @@ def build_rows(media: dict[str, Any], insights: list[dict[str, Any]]) -> list[di
                 "media_id": media["id"],
                 "media_timestamp": media.get("timestamp"),
                 "media_caption_excerpt": caption_excerpt,
+                "content_format": content_format,
                 "metric_name": name,
                 "metric_value": value,
                 "collected_at": collected_at,
