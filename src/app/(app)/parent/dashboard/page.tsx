@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation'
 import { getWeeklyReport, getParentDashboardData, generateWeeklyReport } from '@/app/actions/parent'
 import { TrendingUp, AlertTriangle, Clock, ChevronRight, LayoutDashboard, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
 import { ParentCharts } from '@/components/ParentCharts'
 
 interface ParentDashboardSession {
@@ -143,8 +144,18 @@ export default async function ParentDashboardPage() {
                   </div>
                 ) : report ? (
                   <div className="prose prose-invert max-w-none">
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 leading-relaxed text-slate-300 text-sm whitespace-pre-wrap">
-                      {report.ai_summary}
+                    {/* generateWeeklyReport's prompt (app/actions/parent.ts)
+                        explicitly asks for "### Overview..."-style markdown
+                        structure, but this was rendering the raw string
+                        instead of parsing it — every heading showed up as
+                        literal "###" text. ReactMarkdown is the established
+                        pattern for AI-generated markdown elsewhere in the app
+                        (see AiExplanation.tsx). whitespace-pre-wrap is
+                        dropped since ReactMarkdown produces its own
+                        paragraph/heading elements — keeping it would double
+                        up spacing on top of that. */}
+                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 leading-relaxed text-slate-300 text-sm">
+                      <ReactMarkdown>{report.ai_summary}</ReactMarkdown>
                     </div>
                   </div>
                 ) : (
