@@ -21,6 +21,14 @@ create table public.profiles (
   last_inactivity_nudge_at timestamp with time zone,
   last_report_sent_at timestamp with time zone,
   last_setup_nudge_at timestamp with time zone,
+  -- First-touch marketing attribution. See
+  -- scripts/utm-attribution-migration.sql.
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  utm_content text,
+  utm_term text,
+  landing_referrer text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 -- NOTE: the live `profiles` table also carries referral and entitlement
@@ -141,12 +149,22 @@ create table public.leads (
   claimed_by_user_id uuid references public.profiles(id) on delete set null,
   referral_code text,
   landing_path text,
+  -- First-touch marketing attribution. See
+  -- scripts/utm-attribution-migration.sql.
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  utm_content text,
+  utm_term text,
+  landing_referrer text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 create index leads_email_idx on public.leads(email);
 create index leads_status_idx on public.leads(status);
+create index leads_utm_source_idx on public.leads(utm_source);
+create index profiles_utm_source_idx on public.profiles(utm_source);
 
 -- FUNNEL EVENTS: first-party analytics for the signup -> trial journey.
 -- Narrow/long so new event names never need a migration. Written only by

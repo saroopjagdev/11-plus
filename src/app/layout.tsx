@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { AttributionCapture } from "@/components/AttributionCapture";
 import "./globals.css";
 
 const inter = Inter({
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body className="min-h-full font-sans bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
         {children}
         <Analytics />
+        <AttributionCapture />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

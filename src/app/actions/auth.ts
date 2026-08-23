@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { logFunnelEvent } from '@/lib/funnel'
+import { getAttribution } from '@/lib/attribution'
 import { sendEmail } from '@/lib/resend'
 import { wrapInTemplate } from '@/lib/email-automation'
 import { EMAIL_FALLBACKS } from '@/lib/ai-emails'
@@ -353,12 +354,14 @@ export async function signup(formData: FormData) {
 
     // Update the profile with the referral info
     // We use upsert in case the trigger already created it
+    const attribution = await getAttribution()
     await supabase.from('profiles').upsert({
       id: user.id,
       email: email,
       referral_code: newReferralCode,
       referred_by: referredBy,
-      subscription_status: 'free'
+      subscription_status: 'free',
+      ...attribution,
     })
 
     await attachLeadToUser(leadId, email, user.id)
@@ -449,12 +452,14 @@ export async function signUpAndCreateChild(formData: FormData) {
     }
 
     // Update the profile with the referral info
+    const attribution = await getAttribution()
     await supabase.from('profiles').upsert({
       id: user.id,
       email: email,
       referral_code: newReferralCode,
       referred_by: referredBy,
-      subscription_status: 'free'
+      subscription_status: 'free',
+      ...attribution,
     })
 
     await attachLeadToUser(leadId, email, user.id)

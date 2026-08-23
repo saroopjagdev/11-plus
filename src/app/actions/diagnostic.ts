@@ -7,6 +7,7 @@ import OpenAI from 'openai'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { deriveHasEverMastered, normalizeSubjectAndTopic } from '@/lib/tracking'
 import { logFunnelEvent } from '@/lib/funnel'
+import { getAttribution } from '@/lib/attribution'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -296,10 +297,16 @@ export async function captureLead(payload: CapturedLeadPayload) {
     return { success: true as const, leadId: existingLead.id }
   }
 
+  // Attribution is only set on the initial insert, never on the update branch
+  // above — first-touch, not last-touch. A guest who retakes the diagnostic
+  // days later should keep whatever channel originally brought them in.
+  const attribution = await getAttribution()
+
   const { data: lead, error } = await supabase
     .from('leads')
     .insert({
       ...leadPayload,
+      ...attribution,
       created_at: new Date().toISOString(),
     })
     .select('id')
@@ -311,7 +318,12 @@ export async function captureLead(payload: CapturedLeadPayload) {
 
   await logFunnelEvent('lead_captured', {
     leadId: lead.id,
-    properties: { score: leadPayload.diagnostic_score, landingPath: leadPayload.landing_path },
+    properties: {
+      score: leadPayload.diagnostic_score,
+      landingPath: leadPayload.landing_path,
+      utmSource: attribution.utm_source,
+      referrer: attribution.landing_referrer,
+    },
   })
 
   return { success: true as const, leadId: lead.id }
