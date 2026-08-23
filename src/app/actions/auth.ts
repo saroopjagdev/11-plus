@@ -339,14 +339,25 @@ export async function signup(formData: FormData) {
     const base = email.split('@')[0].substring(0, 5).toUpperCase()
     const newReferralCode = `${base}${randomSuffix}`
 
+    // Referrer lookup + the referred_by write below must run on the
+    // service-role client, not the request-scoped one: email confirmation
+    // means `signUp()` returns no session, so `auth.uid()` is null here and
+    // `profiles`' RLS (`auth.uid() = id`) silently blocks both the lookup
+    // (can't select another user's row) and the write (the trigger already
+    // inserted this profile, so this is an UPDATE gated on auth.uid() = id,
+    // which never matches while unauthenticated). Verified against
+    // production: this is why `referred_by` was null on every one of the
+    // first 72 signups regardless of referral code.
+    const referralAdmin = createAdminClient()
+
     let referredBy = null
     if (referralCode) {
-      const { data: referrer } = await supabase
+      const { data: referrer } = await referralAdmin
         .from('profiles')
         .select('id')
         .eq('referral_code', referralCode)
         .single()
-      
+
       if (referrer) {
         referredBy = referrer.id
       }
@@ -355,7 +366,7 @@ export async function signup(formData: FormData) {
     // Update the profile with the referral info
     // We use upsert in case the trigger already created it
     const attribution = await getAttribution()
-    await supabase.from('profiles').upsert({
+    await referralAdmin.from('profiles').upsert({
       id: user.id,
       email: email,
       referral_code: newReferralCode,
@@ -438,14 +449,19 @@ export async function signUpAndCreateChild(formData: FormData) {
     const base = email.split('@')[0].substring(0, 5).toUpperCase()
     const newReferralCode = `${base}${randomSuffix}`
 
+    // See the comment in `signup` above: this must use the service-role
+    // client because there is no session yet, and `profiles`' RLS would
+    // otherwise silently block both the lookup and the write.
+    const referralAdmin = createAdminClient()
+
     let referredBy = null
     if (referralCode) {
-      const { data: referrer } = await supabase
+      const { data: referrer } = await referralAdmin
         .from('profiles')
         .select('id')
         .eq('referral_code', referralCode)
         .single()
-      
+
       if (referrer) {
         referredBy = referrer.id
       }
@@ -453,7 +469,7 @@ export async function signUpAndCreateChild(formData: FormData) {
 
     // Update the profile with the referral info
     const attribution = await getAttribution()
-    await supabase.from('profiles').upsert({
+    await referralAdmin.from('profiles').upsert({
       id: user.id,
       email: email,
       referral_code: newReferralCode,
