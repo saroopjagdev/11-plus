@@ -74,8 +74,18 @@ def slugify_code(name: str) -> str:
     """Lowercased, no spaces or punctuation -- per the brief. Messy source
     names (`Acn (Alison)`, `Mr Alam`) are common in this CSV; strip down to
     alphanumerics only rather than trying to guess a "real" name out of them.
+
+    A `Name (Business Name)` pattern is also common (tutor listing sites
+    often pair a person's name with their trading name in parentheses) --
+    e.g. "Jacqui Robinson (Jacqui Robinson Education)". Naively stripping
+    punctuation from the whole string concatenates both, producing a long,
+    redundant code (`jacquirobinsonjacquirobinsoneducation`). The
+    parenthetical is the more distinctive, business-facing name in this
+    pattern, so prefer it alone when present.
     """
-    slug = re.sub(r"[^a-z0-9]", "", name.lower())
+    paren_match = re.search(r"\(([^)]+)\)", name)
+    source = paren_match.group(1) if paren_match else name
+    slug = re.sub(r"[^a-z0-9]", "", source.lower())
     return slug or "partner"
 
 
