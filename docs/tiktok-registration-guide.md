@@ -1,6 +1,6 @@
 # TikTok Content Posting API — Manual Registration Guide
 
-This is a manual, human-only process — TikTok requires business verification tied to a real person/company, so this can't be automated or done on your behalf. Follow these steps yourself at developers.tiktok.com. Where I'm not fully certain of a current exact button label or menu path (TikTok's developer UI changes fairly often), I've flagged it — treat those as "look for something like this" rather than a literal script.
+This is a manual, human-only process — the account creation, developer registration, and the audit review itself all require actions and identity tied to a real person, so this can't be automated or done on your behalf. Follow these steps yourself at developers.tiktok.com. Where I'm not fully certain of a current exact button label or menu path (TikTok's developer UI changes fairly often), I've flagged it — treat those as "look for something like this" rather than a literal script.
 
 ## 1. Create a TikTok Business Account for Ace 11+
 
@@ -26,15 +26,24 @@ If you already post to TikTok personally/informally, do **not** reuse that perso
 4. You'll be asked to specify the intended scope(s) — for this use case you want video upload/publish scopes (commonly named something like `video.publish` and `video.upload`; exact scope names have changed over time, so pick whatever is labeled for posting/publishing video, not just reading user data).
 5. Fill in the use-case description field with the text from `docs/tiktok-use-case.md`.
 
-## 4. Business Verification
+## 4. The real gate: the Content Posting API audit (not "Business Verification")
 
-TikTok will require verifying that you're a real, operating business before granting Content Posting API access beyond a small sandbox/test quota. Typically this includes:
+**Correction from an earlier version of this guide**, checked against TikTok's own developer docs (developers.tiktok.com/doc/verify-your-business and developers.tiktok.com/doc/content-posting-api-get-started) — TikTok actually has three separate things that are easy to conflate:
 
-- **Business name and registration details** — if Ace 11+ is a registered company (check what's on file — the terms of service at `src/app/terms/page.tsx` currently refers to "Ace 11+ Intelligence" as the entity holding IP), have your company registration number and registered address ready. If it isn't currently a registered legal entity, be prepared for this to be a blocker or to need sole-trader/individual verification instead.
-- **Privacy Policy URL** — use `https://ace11plus.org/privacy` (now updated and adequate per Deliverable 1 above).
+1. **The Business Account toggle** (step 1 above) — free, instant, in-app. A sensible prerequisite, but doesn't itself grant API access.
+2. **"Business verification"** (an org-level KYC process on the Developer Portal, under "My organizations" — business certificate, photo ID of the legal representative, proof of authority to represent the company) — per TikTok's own documentation, this is tied specifically to organizations publishing **mini-games, mini-dramas, or accessing monetization features**. It is not confirmed to apply to Content Posting API access.
+3. **The Content Posting API audit** — a separate application at `developers.tiktok.com/application/content-posting-api`, reviewed against TikTok's Developer Terms of Service. **This is the actual thing that gates you.**
+
+Without passing it, your API client is "unaudited": every post lands as `SELF_ONLY` (private) visibility, capped at 5 accounts posting per 24 hours, and the TikTok account itself must be set to private at the time of posting. None of that is compatible with public 2x/day posting — the audit is not optional for this use case.
+
+What the audit actually requires isn't published in detail by TikTok. Their own docs only say it verifies compliance with the Developer Terms of Service; third-party integration guides describe it as needing "a compliant UX" and sometimes a demo of your posting flow, but there's no official checklist. Be ready to submit:
+
+- **Privacy Policy URL** — `https://ace11plus.org/privacy` (now updated and adequate per the earlier deliverable).
 - **Terms of Service URL** — `https://ace11plus.org/terms` exists and is live, so use that.
 - **A working website** with content matching what you describe (ace11plus.org already qualifies).
-- Possibly a short video demo or screen recording showing your intended posting flow, depending on the review stage — some apps are asked for this, some aren't.
+- Possibly a short demo video/screen recording of your intended posting flow, if asked — some apps are, some aren't.
+
+If, separately, you ever pursue monetization features or a mini-app, expect the org-level KYC (business certificate + photo ID) to come up then — but don't assume it's needed just to get Content Posting API working.
 
 ## 5. Review and Approval Timelines
 
@@ -59,4 +68,4 @@ Once you have Client Key, Client Secret, and a refresh token, hand those back (a
 
 ## A note on certainty
 
-Steps 1–2 and the general shape of steps 3–6 reflect how TikTok's developer program has worked in recent years, but exact menu labels, scope names, and verification document requirements do change without much notice. If anything on the actual site doesn't match what's described here, go with what's on screen — the concepts (business account → developer registration → app → request Content Posting API product → business verification → OAuth → refresh token) are what matter, not the precise wording.
+Steps 1–2 and the general shape of steps 3–6 reflect how TikTok's developer program has worked in recent years, but exact menu labels, scope names, and audit requirements do change without much notice. If anything on the actual site doesn't match what's described here, go with what's on screen — the concepts (business account → developer registration → app → request Content Posting API product → pass the audit → OAuth → refresh token) are what matter, not the precise wording.
