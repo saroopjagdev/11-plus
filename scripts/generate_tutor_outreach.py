@@ -125,12 +125,23 @@ def load_leads(csv_path: Path) -> tuple[list[Lead], int]:
     return leads, skipped_no_email
 
 
+def greeting_name(name: str) -> str:
+    """Name to use in "Hi {name}," -- the opposite preference from
+    slugify_code. For a "Name (Business Name)" lead, the parenthetical is
+    the right choice for a code (distinctive, business-facing) but wrong
+    for a greeting: "Hi Jacqui Robinson (Jacqui Robinson Education)," reads
+    like a mail-merge failure, not a personal email. Use whatever's outside
+    the parens -- the person's actual name -- for the greeting instead.
+    """
+    return re.sub(r"\s*\([^)]*\)", "", name).strip()
+
+
 def build_email(lead: Lead, code: str) -> str:
     region_clause = f"{lead.region} " if lead.region else ""
     signup_link = f"{SITE_URL}/signup?ref={code}"
     return EMAIL_TEMPLATE.format(
         region_clause=region_clause,
-        name=lead.name or "there",
+        name=greeting_name(lead.name) or "there",
         discount_pct=DISCOUNT_PCT,
         commission_pct=COMMISSION_PCT,
         commission_months=COMMISSION_MONTHS,
