@@ -53,10 +53,13 @@ function sleep(ms: number) {
 }
 
 async function exchangeCodeForToken(code: string): Promise<{ accessToken: string } | { error: string }> {
-  const clientKey = process.env.TIKTOK_CLIENT_KEY
-  const clientSecret = process.env.TIKTOK_CLIENT_SECRET
+  // Sandbox, not the production app -- same open.tiktokapis.com endpoints
+  // either way (TikTok doesn't use a separate sandbox host), sandbox mode is
+  // determined entirely by which client_key/client_secret pair this is.
+  const clientKey = process.env.TIKTOK_SANDBOX_CLIENT_KEY
+  const clientSecret = process.env.TIKTOK_SANDBOX_CLIENT_SECRET
   if (!clientKey || !clientSecret) {
-    return { error: 'TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET are not set in this environment.' }
+    return { error: 'TIKTOK_SANDBOX_CLIENT_KEY / TIKTOK_SANDBOX_CLIENT_SECRET are not set in this environment.' }
   }
 
   const response = await fetch(TOKEN_ENDPOINT, {
