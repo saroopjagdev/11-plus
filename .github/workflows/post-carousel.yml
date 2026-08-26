@@ -2,6 +2,13 @@ name: Post Carousel (Instagram)
 
 on:
   workflow_dispatch:
+  schedule:
+    # GitHub Actions cron uses UTC. Mon/Wed/Fri at 12:00 UTC -- offset from
+    # the reel posting times (07:30/17:30 UTC in post-reel.yml) so carousels
+    # land in a separate feed slot rather than competing with a reel just
+    # posted or about to post, and at a lower cadence since carousels are a
+    # distinct, more static content type, not a replacement for reels.
+    - cron: "0 12 * * 1,3,5"
 
 jobs:
   post-carousel:
