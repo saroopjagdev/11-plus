@@ -27,6 +27,16 @@ export interface SeoGuide {
   description: string
   h1: string
   subtitle?: string
+  /**
+   * A standalone 40-60 word direct answer to the guide's core question,
+   * rendered prominently right after the H1/subtitle, before the intro
+   * paragraphs. Written to be lifted verbatim -- by a featured snippet, an
+   * AI Overview, or a chat answer engine citing the page -- without needing
+   * surrounding context. Optional: only worth writing for guides that
+   * answer one clear, high-intent question (a school's format, "what's the
+   * pass mark", etc.); skip it for guides that are more of a walkthrough.
+   */
+  quickAnswer?: string
   category: GuideCategoryKey
   intro: string[]
   sections: GuideSection[]
@@ -81,6 +91,7 @@ function schoolGuide(config: {
   title: string
   description: string
   h1: string
+  quickAnswer?: string
   focus: string
   pressure: string
   prepAdvice: string
@@ -94,6 +105,7 @@ function schoolGuide(config: {
     title: config.title,
     description: config.description,
     h1: config.h1,
+    quickAnswer: config.quickAnswer,
     subtitle:
       'A practical parent guide to what this route typically asks of pupils, how to prepare sensibly, and where families often lose marks.',
     category: 'schools-and-consortia' as const,
@@ -597,6 +609,8 @@ const guides: SeoGuide[] = [
     description:
       'A clear Bucks 11+ guide for parents: what the test style often demands, how to prepare effectively, and where children commonly come unstuck.',
     h1: 'Bucks 11+ guide',
+    quickAnswer:
+      'The Bucks 11+ typically follows a GL-style format testing verbal reasoning, non-verbal reasoning, and mathematical and English aptitude as a mixed profile rather than one subject. Children generally do best when they build secure core maths and English first, then add reasoning practice and timed, mixed-topic papers, instead of only revisiting the question types they already find comfortable.',
     focus:
       'The Bucks 11+ is typically associated with a GL-style selective profile, commonly combining verbal, non-verbal and mathematical thinking. Families often benefit from seeing it as a mixed-profile challenge rather than a single-subject race.',
     pressure:
@@ -1249,6 +1263,8 @@ const guides: SeoGuide[] = [
     description:
       'A clear explanation of 11+ pass marks and standardised scores: why there is no fixed national pass mark, what a “good” score looks like, and how superselective thresholds differ.',
     h1: '11+ pass mark: what score does your child need?',
+    quickAnswer:
+      'There is no single 11+ pass mark. Each school or area sets its own standardised-score threshold, and it moves every year with the cohort. On the common GL scale (roughly 69 to 141, average 100), a score around 121 is broadly the national top 10%, around 130 is roughly top 5%, and the most oversubscribed superselective schools often need 128 to 140+.',
     subtitle:
       'How standardised scores really work, why the “pass mark” changes, and what a genuinely competitive score looks like.',
     category: 'scores-and-readiness',
@@ -1412,6 +1428,8 @@ const guides: SeoGuide[] = [
     description:
       'How to choose the best 11+ online platform for your child: what to compare, the main types of platform, and how to avoid paying for the wrong one.',
     h1: 'How to choose the best 11+ online platform',
+    quickAnswer:
+      "There is no single best 11+ online platform — the right one depends on your child's current level, target schools, and how much time is left before the exam. Compare platforms on diagnostic clarity, adaptivity, exam-board coverage (GL, CEM, CSSE, independent), topic-level reporting, and mock-exam quality, rather than on question-bank size alone.",
     subtitle:
       'A practical framework for comparing 11+ platforms, so you pay for the one that fits your child rather than the loudest brand.',
     category: 'practice-and-mocks',
@@ -1499,6 +1517,8 @@ const guides: SeoGuide[] = [
     description:
       "A practical guide to Queen Elizabeth's School Barnet (QE Boys) 11+: the two-paper GL Assessment format, why the published qualifying score is not the real bar, and how to prepare sensibly.",
     h1: "Queen Elizabeth's School Barnet (QE Boys) 11+ guide",
+    quickAnswer:
+      "QE Barnet (QE Boys) tests only English and Maths — two GL Assessment papers sat on one day, with no verbal or non-verbal reasoning paper. The school's published qualifying standard is only a minimum floor: with around 180 places for thousands of applicants, boys typically need a standardised score well above that published figure to actually be offered a place.",
     focus:
       "QE Barnet's entrance test is a single-stage exam: two GL Assessment papers sat on the same day with a break in between, and nothing else. Paper One is English, with a strong focus on inference-based comprehension and careful spelling, punctuation and grammar. Paper Two is Maths, built around curriculum-based problem solving rather than separate reasoning papers. There is no verbal or non-verbal reasoning test at QE Barnet, which surprises some families who assume every grammar school tests all four areas.",
     pressure:

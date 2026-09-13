@@ -131,6 +131,17 @@ export default async function GuidePage({ params }: GuidePageProps) {
       <main className="mx-auto -mt-14 max-w-6xl px-6 pb-16">
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <article className="rounded-[2.5rem] border border-slate-100 bg-white p-8 shadow-xl shadow-slate-200/40 lg:p-10">
+            {guide.quickAnswer && (
+              <div className="mb-8 rounded-2xl border border-indigo-100 bg-indigo-50 px-6 py-5">
+                <p className="text-xs font-black uppercase tracking-widest text-indigo-500">
+                  Quick answer
+                </p>
+                <p className="mt-2 text-lg font-medium leading-relaxed text-slate-800">
+                  {guide.quickAnswer}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-5">
               {guide.intro.map((paragraph) => (
                 <p key={paragraph} className="text-lg leading-relaxed text-slate-600">
