@@ -9,10 +9,30 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+const siteUrl = "https://www.ace11plus.org";
+
 export const metadata: Metadata = {
-  title: "Ace 11+ | Adaptive 11+ Preparation for Grammar Schools",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Ace 11+ | Adaptive 11+ Preparation for Grammar Schools",
+    template: "%s | Ace 11+",
+  },
   description: "Personalized 11+ preparation for GL, CEM, and ISEB exams. Adaptive tutoring, full mock exams, and real-time performance tracking for Year 4 and Year 5 students.",
   keywords: ["11 plus", "grammar school exam", "GL Assessment", "CEM 11+", "Eleven Plus tutor", "Year 4 11+", "Year 5 11+"],
+  openGraph: {
+    type: "website",
+    siteName: "Ace 11+",
+    url: siteUrl,
+    title: "Ace 11+ | Adaptive 11+ Preparation for Grammar Schools",
+    description: "Personalized 11+ preparation for GL, CEM, and ISEB exams. Adaptive tutoring, full mock exams, and real-time performance tracking for Year 4 and Year 5 students.",
+    images: [{ url: "/logo-clear.png", width: 512, height: 512, alt: "Ace 11+" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Ace 11+ | Adaptive 11+ Preparation for Grammar Schools",
+    description: "Personalized 11+ preparation for GL, CEM, and ISEB exams. Adaptive tutoring, full mock exams, and real-time performance tracking for Year 4 and Year 5 students.",
+    images: ["/logo-clear.png"],
+  },
 };
 
 export default function RootLayout({
@@ -24,12 +44,18 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
     "name": "Ace 11+",
-    "url": "https://ace11plus.org",
+    "url": siteUrl,
+    "logo": `${siteUrl}/logo-clear.png`,
     "description": "Adaptive 11+ preparation platform for GL, CEM, and ISEB exams.",
     "audience": {
       "@type": "EducationalAudience",
       "educationalRole": "student"
     }
+    // "sameAs": [ ... official Instagram/Facebook/YouTube/TikTok URLs ... ]
+    // Add once we have the canonical profile URLs handy -- linking real,
+    // active profiles here is what ties this Organization entity together
+    // across the web for AI/Knowledge-Graph purposes; a placeholder or
+    // stale link is worse than omitting the field.
   };
 
   return (
