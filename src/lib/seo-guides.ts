@@ -161,6 +161,7 @@ function examGuide(config: {
   title: string
   description: string
   h1: string
+  quickAnswer?: string
   focus: string
   sectionTips: string[]
   relatedSlugs: string[]
@@ -171,6 +172,7 @@ function examGuide(config: {
     title: config.title,
     description: config.description,
     h1: config.h1,
+    quickAnswer: config.quickAnswer,
     subtitle:
       'A parent-facing breakdown of what this assessment style commonly rewards, and how to prepare without overcomplicating things.',
     category: 'exam-boards-and-formats' as const,
@@ -225,6 +227,7 @@ function yearGuide(config: {
   title: string
   description: string
   h1: string
+  quickAnswer?: string
   priorities: string[]
   timingAdvice: string
   relatedSlugs: string[]
@@ -234,6 +237,7 @@ function yearGuide(config: {
     title: config.title,
     description: config.description,
     h1: config.h1,
+    quickAnswer: config.quickAnswer,
     subtitle:
       'A realistic guide for parents who want to know what matters most this year, what can wait, and how to keep preparation calm and productive.',
     category: 'year-group-planning' as const,
@@ -296,6 +300,7 @@ function skillGuide(config: {
   title: string
   description: string
   h1: string
+  quickAnswer?: string
   whatItMeans: string
   prepBullets: string[]
   mistakes: string[]
@@ -307,6 +312,7 @@ function skillGuide(config: {
     title: config.title,
     description: config.description,
     h1: config.h1,
+    quickAnswer: config.quickAnswer,
     subtitle:
       'A clear guide to what this skill really involves in 11+ preparation, and how parents can help without making practice feel chaotic.',
     category: 'subject-and-skills' as const,
@@ -357,6 +363,8 @@ const guides: SeoGuide[] = [
     description:
       'A practical guide for parents preparing for Tiffin Girls: what the route typically focuses on, where marks are often lost, and how to prepare sensibly.',
     h1: 'Tiffin Girls 11+ guide',
+    quickAnswer:
+      "Tiffin Girls' School sets an academically demanding, GL-style entrance test where English and maths both carry significant weight, with no single 'signature' question type deciding the result. Children who read carefully, work accurately under time pressure and stay composed tend to outperform those who have only practised familiar question formats.",
     focus:
       'For Tiffin Girls, parents should usually expect a very strong academic field, with English and maths carrying significant weight. The standard tends to reward pupils who can read carefully, work accurately and stay composed under pressure, rather than those who have only practised obvious question types.',
     pressure:
@@ -399,6 +407,8 @@ const guides: SeoGuide[] = [
     description:
       'A parent-friendly Tiffin Boys 11+ guide covering typical focus areas, practical preparation, and common mistakes to avoid.',
     h1: 'Tiffin Boys 11+ guide',
+    quickAnswer:
+      'Tiffin School (Boys) preparation rewards secure maths, strong reading comprehension and the ability to hold accuracy under competitive time pressure, rather than one standout subject. Balanced practice across arithmetic, comprehension, vocabulary and problem-solving — with timed work added only once accuracy is stable — is the most reliable route in.',
     focus:
       'Tiffin Boys preparation typically rewards secure maths, strong reading comprehension and the ability to keep accuracy under competitive time pressure. Parents usually do best when they prepare broadly rather than assuming one “signature” paper pattern will decide the result.',
     pressure:
@@ -441,6 +451,8 @@ const guides: SeoGuide[] = [
     description:
       'A clear parent guide to Henrietta Barnett School 11+ preparation, including likely strengths tested, mistakes to avoid, and practical next steps.',
     h1: 'Henrietta Barnett School 11+ guide',
+    quickAnswer:
+      'Henrietta Barnett School sets an exceptionally high standard, particularly in careful reading, strong literacy and mature mathematical thinking — surface familiarity with question types is not enough. Families who invest in reading quality, vocabulary depth, written reasoning and secure maths foundations, and who slow down quick-but-careless children to rebuild checking habits, are best placed.',
     focus:
       'Henrietta Barnett School preparation is usually associated with an exceptionally high standard, especially in careful reading, strong literacy habits and mature mathematical thinking. Parents should assume that surface familiarity is not enough: precision and depth matter.',
     pressure:
@@ -483,6 +495,8 @@ const guides: SeoGuide[] = [
     description:
       'A straightforward guide to the Sutton SET: what it commonly tests, how to prepare sensibly, and how to avoid wasting time on the wrong things.',
     h1: 'Sutton SET 11+ guide',
+    quickAnswer:
+      'The Sutton SET is a shared eligibility test used as an initial screening stage across the Sutton grammar schools, so it rewards broad readiness across English and maths rather than one narrow specialism. Children who can switch confidently between question styles do better than those who have over-prepared a single format.',
     focus:
       'The Sutton SET is typically used as an initial shared eligibility test for the area, so it often rewards broad readiness rather than narrow specialism. Families usually need a child who can switch between core English and maths demands without losing confidence or pace.',
     pressure:
@@ -525,6 +539,8 @@ const guides: SeoGuide[] = [
     description:
       'A practical Kent Test guide for parents covering the skills usually needed, common preparation mistakes, and sensible next steps.',
     h1: 'Kent Test 11+ guide',
+    quickAnswer:
+      'The Kent Test is a broad selective assessment covering English, maths and reasoning, and Kent sets a minimum standardised score in each of its three tests (recently around 106–108 per subject) plus an aggregate total — so a child can still miss out with one weak subject even if their average looks fine. All-round, balanced preparation matters more than one standout strength.',
     focus:
       'The Kent Test is commonly built around a broad selective profile, with English and maths alongside reasoning-based demands. The children who cope best usually have strong all-round habits rather than one standout area carrying the rest.',
     pressure:
@@ -567,6 +583,8 @@ const guides: SeoGuide[] = [
     description:
       'A parent guide to CSSE 11+ preparation, with practical advice on likely focus areas, timing pressure, and the next steps that usually help most.',
     h1: 'CSSE 11+ guide',
+    quickAnswer:
+      'The CSSE 11+ (used across Essex) tests English and maths, and its English paper includes a distinctive Continuous Writing section — typically two short, tightly timed prompts worth around a quarter of the English marks. Unlike many other 11+ formats, writing is a real, separately marked component, so short, timed creative-writing practice needs to be a regular part of preparation, not an afterthought.',
     focus:
       'CSSE routes often require strong literacy and maths control, with a premium on careful reading and disciplined execution. One distinctive feature of the CSSE English paper is a dedicated Continuous Writing section, typically two short, tightly timed prompts worth around a quarter of the English marks — so unlike many other 11+ formats, writing is a real, separately marked part of the test rather than an occasional extra. Children usually do better when they can sustain concentration and recover quickly from a difficult question rather than panicking mid-paper.',
     pressure:
@@ -653,6 +671,8 @@ const guides: SeoGuide[] = [
     description:
       'A practical Birmingham and West Midlands grammar guide for parents, with advice on broad preparation, timing pressure and avoiding common traps.',
     h1: 'Birmingham / West Midlands grammar 11+ guide',
+    quickAnswer:
+      'Birmingham and West Midlands grammar entrance tests commonly reward broad readiness — strong literacy, secure maths and accurate work under tight timing — rather than strength in one subject alone. Vocabulary depth, reading stamina and time control are often what separates a competitive score from one that falls short despite good underlying knowledge.',
     focus:
       'Birmingham and West Midlands grammar routes commonly reward broad readiness, especially strong literacy, secure maths and the ability to work accurately under tight timing. Parents generally do best when they plan for a mixed challenge rather than preparing one subject in isolation.',
     pressure:
@@ -695,6 +715,8 @@ const guides: SeoGuide[] = [
     description:
       'A useful GL Assessment 11+ guide for parents covering the skills GL-style papers commonly reward and how to prepare with a sensible sequence.',
     h1: 'GL Assessment 11+ guide',
+    quickAnswer:
+      'GL Assessment is the exam board used by many grammar school areas across England, typically testing some combination of English, maths, verbal reasoning and non-verbal reasoning in a multiple-choice format, with the exact subjects varying by school. Preparation should build secure arithmetic, careful reading and reasoning pattern-recognition, since all-round accuracy under time pressure matters more than raw speed.',
     focus:
       'GL-style 11+ preparation usually rewards familiarity with multiple-choice formats, solid arithmetic, careful English, and whichever combination of verbal reasoning, non-verbal reasoning or broader English and maths the school has chosen. The most successful candidates tend to be all-round accurate rather than just quick.',
     sectionTips: [
@@ -729,6 +751,8 @@ const guides: SeoGuide[] = [
     description:
       'A parent guide to CEM 11+ preparation, including vocabulary, mixed paper pressure, and how to prepare without turning everything into a speed contest.',
     h1: 'CEM 11+ guide',
+    quickAnswer:
+      "CEM-style 11+ tests (associated with Durham University's former CEM board) are known for demanding timing, mixed question sequences within a single paper, and heavy emphasis on vocabulary and reading agility. Children need strong underlying vocabulary, mental arithmetic and calm switching between question types before speed itself becomes an advantage.",
     focus:
       'CEM-style preparation is often associated with demanding timing, mixed question sequences and a heavy premium on vocabulary, reading agility and fast mental control. Children usually need strong underlying habits before the speed element starts to work in their favour, especially where schools still use this label for a mixed, fast-paced paper style.',
     sectionTips: [
@@ -762,6 +786,8 @@ const guides: SeoGuide[] = [
     description:
       'A straightforward Quest Assessment 11+ guide for parents: what this style of assessment commonly values and how to prepare without overfitting.',
     h1: 'Quest Assessment 11+ guide',
+    quickAnswer:
+      'QUEST Assessment is used by a number of individual and independent schools as a school-specific test rather than one fixed national format, so the exact blend of English, maths and reasoning it covers varies by school. The most reliable preparation is broad academic readiness and adaptability, not trying to guess one school\'s exact paper pattern.',
     focus:
       'Quest-style 11+ routes are best treated as school-specific assessments rather than one fixed national format. The key preparation principle is usually flexibility: children need to adapt to whatever blend of English, maths or broader reasoning the school uses while relying on solid fundamentals.',
     sectionTips: [
@@ -795,6 +821,8 @@ const guides: SeoGuide[] = [
     description:
       'What parents should look for in an Atom Learning alternative, including diagnostics, progress tracking, question quality and practical day-to-day usability.',
     h1: 'Atom Learning alternative guide',
+    quickAnswer:
+      "The best Atom Learning alternative is judged on diagnostic clarity, topic-level reporting and whether it tells you what to practise next — not on question-bank size or brand recognition alone. Start from your child's current level and biggest bottleneck, then compare platforms against that specific need rather than a generic feature list.",
     subtitle:
       'A calm, parent-facing guide for families comparing 11+ platforms and trying to decide what actually matters in practice.',
     category: 'practice-and-mocks',
@@ -865,6 +893,8 @@ const guides: SeoGuide[] = [
     description:
       'A realistic Year 4 11+ preparation guide for parents who want to build strong foundations without burning their child out too early.',
     h1: 'Year 4 11+ preparation guide',
+    quickAnswer:
+      'In Year 4, 11+ preparation should focus on building foundations, not exam practice: secure arithmetic fluency, daily reading with discussion, growing vocabulary, and steady concentration habits. Heavy timed-paper work is premature at this stage — most children need strong habits and confidence far more than exam mileage a year or more before the test.',
     priorities: [
       'Secure arithmetic fluency and number confidence',
       'Daily or near-daily reading with discussion',
@@ -887,6 +917,8 @@ const guides: SeoGuide[] = [
     description:
       'A practical Year 5 11+ preparation guide for parents who need a clearer plan for timing, mocks, consolidation and avoiding panic.',
     h1: 'Year 5 11+ preparation guide',
+    quickAnswer:
+      'In Year 5, 11+ preparation should shift from foundation-building to consolidation: closing weak topics honestly, building timed-section stamina in a controlled way, and using mixed practice so children can switch confidently between question types. Full mocks are best introduced as checkpoints once the basics are secure, not as the main form of practice.',
     priorities: [
       'Consolidate weaker maths and English topics quickly and honestly',
       'Build timed-section stamina in a controlled way',
@@ -909,6 +941,8 @@ const guides: SeoGuide[] = [
     description:
       'A helpful 11+ comprehension guide for parents, including what strong comprehension really looks like, how to prepare, and common answer-choice traps.',
     h1: '11+ comprehension guide',
+    quickAnswer:
+      '11+ comprehension is more than fluent reading — it requires locating evidence in the text, understanding vocabulary in context, making sensible inferences, and staying accurate under time pressure. Children who read a lot but answer from instinct rather than the passage often underperform relative to their reading ability, so practice should focus on proving answers from evidence.',
     whatItMeans:
       '11+ comprehension is not just “can they read the passage”. It usually includes locating evidence, understanding vocabulary in context, making sensible inferences, tracking tone, and staying accurate while time is running.',
     prepBullets: [
@@ -948,6 +982,8 @@ const guides: SeoGuide[] = [
     description:
       'A practical 11+ vocabulary guide covering what to learn, how to build word knowledge steadily, and how to avoid shallow memorisation.',
     h1: '11+ vocabulary guide',
+    quickAnswer:
+      '11+ vocabulary preparation is about more than matching synonyms — children need broad word knowledge, an understanding of tone and usage, and enough reading exposure to work out unfamiliar words from context. Wide reading, discussing new words as they come up, and revisiting vocabulary repeatedly over time build it more reliably than memorising isolated word lists.',
     whatItMeans:
       '11+ vocabulary is usually about more than matching one word to another. Children often need broad word knowledge, understanding of tone and usage, and enough reading exposure to recognise unfamiliar vocabulary in context.',
     prepBullets: [
@@ -987,6 +1023,8 @@ const guides: SeoGuide[] = [
     description:
       'A useful 11+ maths timing guide for parents who want to improve pace without encouraging panic, shortcuts or careless arithmetic.',
     h1: '11+ maths timing guide',
+    quickAnswer:
+      "11+ maths timing is about efficient decision-making, not frantic speed: recognising the right method quickly, avoiding avoidable arithmetic slips, and knowing when to skip a sticky question and return later. Timing practice should only begin once a child's untimed accuracy is secure — timing children too early usually rehearses panic rather than genuine improvement.",
     whatItMeans:
       'Maths timing in the 11+ is usually about efficient decision-making, not frantic speed. Children need to recognise the method quickly, avoid avoidable arithmetic slips, and know when to move on from a sticky question.',
     prepBullets: [
@@ -1026,6 +1064,8 @@ const guides: SeoGuide[] = [
     description:
       'A parent-friendly 11+ verbal reasoning guide explaining what verbal reasoning really tests, how to practise it, and where children usually get stuck.',
     h1: '11+ verbal reasoning guide',
+    quickAnswer:
+      '11+ verbal reasoning tests a child\'s ability to recognise language and number patterns, manipulate letter and word information, and work methodically under time pressure — it is pattern recognition, not simply a vocabulary test. The most effective preparation teaches one question type at a time, with worked explanations of the underlying rule, before mixing types together under timed conditions.',
     whatItMeans:
       'Verbal reasoning usually tests how well a child can recognise language and number patterns, manipulate letter or word information, and stay methodical under time pressure. It is not simply a vocabulary test, though vocabulary often helps.',
     prepBullets: [
@@ -1065,6 +1105,8 @@ const guides: SeoGuide[] = [
     description:
       'A clear 11+ non-verbal reasoning guide for parents, covering what the questions test, how to practise patterns, and common errors under time pressure.',
     h1: '11+ non-verbal reasoning guide',
+    quickAnswer:
+      '11+ non-verbal reasoning tests visual pattern recognition — rotation, reflection, symmetry, sequences and spatial logic — rather than general intelligence or drawing ability. Children need to be taught to identify the governing rule behind each pattern family explicitly, ideally describing it aloud, before timed practice is introduced; guessing from appearance alone rarely holds up under exam pressure.',
     whatItMeans:
       'Non-verbal reasoning typically tests visual pattern recognition, transformations, symmetry, sequences and spatial logic. Children often need to slow down enough to see the governing rule before they can answer quickly.',
     prepBullets: [
@@ -1104,6 +1146,8 @@ const guides: SeoGuide[] = [
     description:
       'A practical 11+ mock tests guide explaining when mocks help, when they are premature, and how parents can use them without creating noise.',
     h1: '11+ mock tests guide',
+    quickAnswer:
+      '11+ mock tests are most useful once a child has reasonable familiarity with the core content and can benefit from exam-style feedback on timing, stamina and question-switching — not as the main form of learning. Used too early, before arithmetic, comprehension and reasoning basics are secure, a mock mostly reveals foundation gaps rather than genuine exam readiness.',
     subtitle:
       'How to use mock exams as checkpoints rather than as a substitute for proper preparation.',
     category: 'practice-and-mocks',
@@ -1173,6 +1217,8 @@ const guides: SeoGuide[] = [
     description:
       'A practical way to judge whether your child is ready for the 11+, covering reading age, arithmetic, working habits and emotional resilience — not just school reports.',
     h1: 'Is my child ready for the 11+?',
+    quickAnswer:
+      "11+ readiness isn't the same as doing well at school — it means a reading age comfortably above your child's actual age, secure arithmetic, the ability to concentrate for 30–45 minutes, and staying calm after a hard question rather than giving up. A short mixed baseline across maths, English and reasoning is the fastest way to check these signals objectively rather than guessing from a school report.",
     subtitle:
       'A calm, honest way to judge 11+ readiness using real signals rather than a school report or a gut feeling.',
     category: 'scores-and-readiness',
@@ -1348,6 +1394,8 @@ const guides: SeoGuide[] = [
     description:
       'A realistic guide to when to start 11+ preparation, how long it usually takes, and how to build a steady plan without cramming or burning your child out.',
     h1: 'When should you start 11+ preparation?',
+    quickAnswer:
+      "Most families begin structured 11+ preparation at the end of Year 4 or start of Year 5 — roughly 12 to 18 months before Year 6 tests — with a two-year plan from Year 4 increasingly common for more competitive or superselective targets. The right start point depends on your child's current level, not a fixed date: a baseline shows whether the need is catch-up, consolidation or stretch.",
     subtitle:
       'A sensible answer to the timing question, covering how far ahead to begin and how to pace it without panic.',
     category: 'scores-and-readiness',
@@ -1561,6 +1609,8 @@ const guides: SeoGuide[] = [
     description:
       "A clear guide to St Olave's Grammar School 11+ admissions: the two-stage SET and Stage 2 process, how many boys progress at each stage, and how to prepare for both.",
     h1: "St Olave's Grammar School 11+ guide",
+    quickAnswer:
+      "St Olave's uses a two-stage process: Stage 1 is a one-hour, four-section multiple-choice SET (English, Maths, Verbal Reasoning, Non-Verbal Reasoning), and only the highest scorers progress to Stage 2 — two further written papers, English and Maths, on the same day. Because Stage 2 drops reasoning for extended English and full maths working, boys need to prepare broadly for Stage 1 first, then pivot to writing and full-working maths once through.",
     focus:
       "St Olave's uses a two-stage process rather than a single exam day. Stage 1 is a Selective Eligibility Test (SET): a one-hour, roughly 60-question multiple-choice paper split across four sections — English, Maths, Verbal Reasoning and Non-Verbal Reasoning. Only the highest-scoring boys from the SET are invited back for Stage 2, which consists of two further one-hour papers on the same day (English, covering reading and writing, and Maths), with a short break between them. Final places are decided by standardising and combining the SET and Stage 2 marks together.",
     pressure:
@@ -1603,6 +1653,8 @@ const guides: SeoGuide[] = [
     description:
       'A clear explanation of what the 11+ is, the four subjects it can cover, who sits it and why, and how the different boards and school-specific tests relate to each other.',
     h1: 'What is the 11+?',
+    quickAnswer:
+      'The 11+ is a selective entrance assessment sat by children in Year 6 (aged 10–11) for grammar and some independent school places, used to rank and select candidates where there are more applicants than places. It can cover up to four subjects — English, Maths, Verbal Reasoning and Non-Verbal Reasoning — but the exact subjects, exam board, and number of stages all vary by school and by area, so there is no single fixed format.',
     subtitle:
       'The foundational explainer for parents just starting out, covering the subjects, the boards, and how the whole process fits together.',
     category: 'exam-boards-and-formats',
@@ -1693,6 +1745,8 @@ const guides: SeoGuide[] = [
     description:
       'A practical 11+ creative writing guide covering which schools actually test it, what examiners look for, and how to prepare without wasting time on the wrong format.',
     h1: '11+ creative writing guide',
+    quickAnswer:
+      "Creative writing is not part of every 11+ test — most core boards used for general grammar-school selection, including GL Assessment, don't include it — but it is a genuine, separately marked component of several specific tests, notably the Essex CSSE exam and many independent-school entrance exams. The first step is checking whether your target schools test it at all, and in what format, before investing preparation time.",
     whatItMeans:
       'Creative writing is not part of every 11+ test — most of the core boards used for general grammar-school selection, including GL Assessment and similar consortium-style tests, do not include it. But it is a genuine component of several specific tests: the Essex CSSE exam includes a dedicated Continuous Writing section worth roughly a quarter of the English paper, several school-specific Stage 2 tests include a writing element alongside comprehension, and many independent school entrance exams weight writing heavily. The first job is finding out whether your target schools test it at all, rather than assuming either way.',
     prepBullets: [
@@ -1732,6 +1786,8 @@ const guides: SeoGuide[] = [
     description:
       "A parent guide to the shared Stage 2 process for Wilson's School, Wallington County Grammar and Sutton Grammar School, including how it differs from the Sutton SET and what each school adds on top.",
     h1: "Wilson's, Wallington County Grammar & Sutton Grammar 11+ guide",
+    quickAnswer:
+      "Wilson's, Wallington County Grammar and Sutton Grammar School share the Sutton consortium's multiple-choice Stage 1 SET, then a common written Stage 2 — a full-working maths paper and an English writing task — unlike some other Sutton schools' formats. Wilson's alone adds a further Aptitude Test Day for shortlisted boys, so families should prepare broadly for the SET first, then pivot to written maths and timed writing for Stage 2.",
     focus:
       "These three boys' schools sit within the wider Sutton consortium and share the same Stage 1 Selective Eligibility Test (SET) used across the group, typically with only around the top quarter to third of candidates progressing beyond it. Where they differ from some other Sutton schools is Stage 2: Wilson's, Wallington County Grammar and Sutton Grammar School share a common second-stage test that is written rather than multiple-choice, covering a maths paper and an English writing task, each around 45 minutes to an hour. Each school then sets its own threshold on top of that shared test, based on its own applicant numbers and places available.",
     pressure:
