@@ -51,3 +51,6 @@ scratch/
 # claude code — auto-generated worktrees for spawned background tasks
 # (full repo + node_modules copies, never meant to be committed)
 .claude/worktrees/
+# local token caches
+scratch/*token*.json
+*_tokens.json
